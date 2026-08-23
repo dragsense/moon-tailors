@@ -1,0 +1,298 @@
+# Ports from env/docker.env:
+#   *_INTERNAL = inside container (always; Docker network)
+#   *_EXPOSE   = outside host (optional — omit = no host publish, no deploy check)
+#
+# Host publish is added only when *_EXPOSE is set (see scripts/docker-env.mjs
+# → docker/.compose-publish.yml). This file only `expose`s INTERNAL.
+
+name: ${COMPOSE_PROJECT_NAME:-template}
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-postgres
+    expose:
+      - "${POSTGRES_INTERNAL:-5432}"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-template_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: ${RESTART_POLICY:-no}
+    networks:
+      - app
+
+  redis:
+    image: redis:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-redis
+    expose:
+      - "${REDIS_INTERNAL:-6379}"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: ${RESTART_POLICY:-no}
+    networks:
+      - app
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-mailpit
+    expose:
+      - "${MAILPIT_SMTP_INTERNAL:-1025}"
+      - "${MAILPIT_UI_INTERNAL:-8025}"
+    command: ["--webroot", "/mailpit"]
+    restart: ${RESTART_POLICY:-no}
+    networks:
+      - app
+
+  # MQTT broker (Eclipse Mosquitto) — Nest hybrid microservice transport
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-mqtt
+    expose:
+      - "${MQTT_INTERNAL:-1883}"
+      - "${MQTT_WS_INTERNAL:-9001}"
+    volumes:
+      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    restart: ${RESTART_POLICY:-no}
+    networks:
+      - app
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/server.Dockerfile
+      target: ${SERVER_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
+        CLIENT_MODE: ${CLIENT_MODE:-nginx}
+    image: ${COMPOSE_PROJECT_NAME:-template}-server${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-server
+    expose:
+      - "${SERVER_INTERNAL:-3000}"
+    environment:
+      NODE_ENV: ${SERVER_NODE_ENV:-${NODE_ENV:-production}}
+      ENV_FILE: /app/env/server.env
+      PORT: ${SERVER_INTERNAL:-3000}
+      # Prod: SPA bind-mounted at /app/client-static (nest serves it; nginx/ssr ignore /app on Nest).
+      CLIENT_STATIC_DIR: ${CLIENT_STATIC_DIR:-}
+      FORCE_COLOR: "1"
+      # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      WATCHPACK_POLL_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
+      TSC_WATCHFILE: ${TSC_WATCHFILE:-DynamicPriorityPolling}
+      TSC_WATCHDIRECTORY: ${TSC_WATCHDIRECTORY:-DynamicPriorityPolling}
+      CORS_ORIGIN: http://localhost:${GATEWAY_EXPOSE:-8088}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_INTERNAL:-5432}/${POSTGRES_DB:-template_db}
+      REDIS_URL: redis://redis:${REDIS_INTERNAL:-6379}
+      MQTT_URL: mqtt://mqtt:${MQTT_INTERNAL:-1883}
+      MEDIAMTX_HOST: mediamtx
+      MEDIAMTX_API_PORT: ${MEDIAMTX_API_INTERNAL:-9997}
+      MEDIAMTX_HLS_PORT: ${MEDIAMTX_HLS_INTERNAL:-8888}
+      MEDIAMTX_WEBRTC_PORT: ${MEDIAMTX_WEBRTC_INTERNAL:-8889}
+      MEDIAMTX_PUBLIC_HOST: ${MEDIAMTX_PUBLIC_HOST:-localhost}
+      GATEWAY_EXPOSE: ${GATEWAY_EXPOSE:-8088}
+      MEDIAMTX_API_USER: ${MEDIAMTX_API_USER:-admin}
+      MEDIAMTX_API_PASS: ${MEDIAMTX_API_PASS:-admin123}
+    volumes:
+      - ${V_SERVER_1}
+      - ${V_SERVER_2}
+      - ${V_SERVER_3}
+      - ${V_SERVER_4}
+      - ${V_SERVER_5}
+      - ${V_SERVER_6}
+      - ${V_SERVER_7}
+      - ${V_SERVER_8}
+      - ${V_SERVER_9}
+      - ${V_SERVER_10}
+      - ${V_SERVER_11}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      mqtt:
+        condition: service_started
+      mediamtx:
+        condition: service_started
+    restart: ${SERVER_RESTART:-${RESTART_POLICY:-no}}
+    networks:
+      - app
+
+  # MediaMTX: camera RTSP → HLS / WebRTC (WHEP). Path name = camera UUID.
+  # Browser playback via gateway /hls + /webrtc only (no host publish).
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-mediamtx
+    expose:
+      - "${MEDIAMTX_HLS_INTERNAL:-8888}"
+      - "${MEDIAMTX_WEBRTC_INTERNAL:-8889}"
+      - "${MEDIAMTX_API_INTERNAL:-9997}"
+      - "${MEDIAMTX_ICE_INTERNAL:-8189}"
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro
+    command: ["/mediamtx.yml"]
+    restart: ${MEDIAMTX_RESTART:-${RESTART_POLICY:-no}}
+    networks:
+      - app
+
+  client:
+    build:
+      context: ..
+      dockerfile: docker/client.Dockerfile
+      target: ${CLIENT_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
+        CLIENT_SSR: ${CLIENT_SSR:-false}
+        CLIENT_ENV_FILE: ${CLIENT_ENV_FILE:-env/client.env}
+    image: ${COMPOSE_PROJECT_NAME:-template}-client${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-client
+    expose:
+      - "${CLIENT_INTERNAL:-5173}"
+    environment:
+      NODE_ENV: ${CLIENT_NODE_ENV:-${NODE_ENV:-production}}
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
+      # From env/client.env (Vite) or forced true when clientMode=ssr — see react-router.config.ts
+      CLIENT_SSR: ${CLIENT_SSR:-false}
+      # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      WATCHPACK_POLL_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
+      CHOKIDAR_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
+    volumes:
+      - ${V_CLIENT_1}
+      - ${V_CLIENT_2}
+      - ${V_CLIENT_3}
+      - ${V_CLIENT_4}
+      - ${V_CLIENT_5}
+      - ${V_CLIENT_6}
+      - ${V_CLIENT_7}
+      - ${V_CLIENT_8}
+      - ${V_CLIENT_9}
+      - ${V_CLIENT_10}
+    restart: ${CLIENT_RESTART:-${RESTART_POLICY:-no}}
+    networks:
+      - app
+
+  mcp:
+    build:
+      context: ..
+      dockerfile: docker/mcp.Dockerfile
+      target: ${MCP_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
+    image: ${COMPOSE_PROJECT_NAME:-template}-mcp${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-mcp
+    expose:
+      - "${MCP_INTERNAL:-4000}"
+    environment:
+      NODE_ENV: ${MCP_NODE_ENV:-${NODE_ENV:-production}}
+      MCP_PORT: ${MCP_INTERNAL:-4000}
+      MCP_API_BASE_URL: ${MCP_API_BASE_URL:-http://server:${SERVER_INTERNAL:-3000}/api}
+      ENV_FILE: /app/env/mcp.env
+      # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      WATCHPACK_POLL_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
+      TSC_WATCHFILE: ${TSC_WATCHFILE:-DynamicPriorityPolling}
+      TSC_WATCHDIRECTORY: ${TSC_WATCHDIRECTORY:-DynamicPriorityPolling}
+    volumes:
+      - ${V_MCP_1}
+      - ${V_MCP_2}
+      - ${V_MCP_3}
+      - ${V_MCP_4}
+      - ${V_MCP_5}
+      - ${V_MCP_6}
+      - ${V_MCP_7}
+      - ${V_MCP_8}
+    restart: ${MCP_RESTART:-${RESTART_POLICY:-no}}
+    networks:
+      - app
+
+  website:
+    build:
+      context: ..
+      dockerfile: docker/website.Dockerfile
+      target: ${WEBSITE_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
+      args:
+        WEBSITE_ENV_FILE: ${WEBSITE_ENV_FILE:-env/website.env}
+    image: ${COMPOSE_PROJECT_NAME:-template}-website${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-website
+    expose:
+      - "${WEBSITE_INTERNAL:-4321}"
+    environment:
+      NODE_ENV: ${WEBSITE_NODE_ENV:-${NODE_ENV:-production}}
+      # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
+      WATCHPACK_POLL_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
+      CHOKIDAR_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
+    volumes:
+      - ${V_WEBSITE_1}
+      - ${V_WEBSITE_2}
+      - ${V_WEBSITE_3}
+      - ${V_WEBSITE_4}
+      - ${V_WEBSITE_5}
+      - ${V_WEBSITE_6}
+      - ${V_WEBSITE_7}
+      - ${V_WEBSITE_8}
+    restart: ${WEBSITE_RESTART:-${RESTART_POLICY:-no}}
+    networks:
+      - app
+
+  # Single public HTTP entry (local GATEWAY_EXPOSE=8088). All other services stay internal.
+  gateway:
+    image: nginx:alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-template}-gateway
+    expose:
+      - "${GATEWAY_INTERNAL:-80}"
+    environment:
+      GATEWAY_INTERNAL: ${GATEWAY_INTERNAL:-80}
+      GATEWAY_DOMAIN: ${GATEWAY_DOMAIN:-localhost}
+      SERVER_INTERNAL: ${SERVER_INTERNAL:-3000}
+      CLIENT_INTERNAL: ${CLIENT_INTERNAL:-5173}
+      MCP_INTERNAL: ${MCP_INTERNAL:-4000}
+      WEBSITE_INTERNAL: ${WEBSITE_INTERNAL:-4321}
+      MAILPIT_UI_INTERNAL: ${MAILPIT_UI_INTERNAL:-8025}
+      MEDIAMTX_HLS_INTERNAL: ${MEDIAMTX_HLS_INTERNAL:-8888}
+      MEDIAMTX_WEBRTC_INTERNAL: ${MEDIAMTX_WEBRTC_INTERNAL:-8889}
+      GATEWAY_APP_UPSTREAM: ${GATEWAY_APP_UPSTREAM:-client:5173}
+    volumes:
+      - ${GATEWAY_NGINX_TEMPLATE:-./nginx-gateway.conf.template}:/etc/nginx/templates/default.conf.template:ro
+      - ./gateway-www:/usr/share/nginx/gateway-www:ro
+      # Static builds for gateway (prod). Local Vite/Astro use proxy — mounts can be empty.
+      - ${GATEWAY_CLIENT_STATIC:-../client/build/client}:/var/www/client:ro
+      - ${GATEWAY_WEBSITE_STATIC:-../website/dist}:/var/www/website:ro
+    restart: ${GATEWAY_RESTART:-${RESTART_POLICY:-no}}
+    networks:
+      - app
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_VOLUME_NAME:-template_postgres_data}
+  uploads:
+    name: ${UPLOADS_VOLUME_NAME:-template_uploads}
+  server_logs:
+    name: ${LOGS_VOLUME_NAME:-template_server_logs}
+  server_nm:
+  server_pkg_nm:
+  server_contracts_nm:
+  client_nm:
+  client_pkg_nm:
+  client_contracts_nm:
+  mcp_nm:
+  mcp_pkg_nm:
+  website_nm:
+  website_pkg_nm:
+
+networks:
+  app:
+    name: ${COMPOSE_PROJECT_NAME:-template}-net
+    driver: bridge

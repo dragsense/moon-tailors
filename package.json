@@ -1,0 +1,23 @@
+{
+  "name": "template",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "tpl": "node ./cli/index.mjs",
+    "bootstrap": "node ./cli/index.mjs setup",
+    "start": "node ./cli/index.mjs start",
+    "reload": "node ./cli/index.mjs restart",
+    "stop": "node ./cli/index.mjs stop",
+    "logs": "node ./cli/index.mjs logs",
+    "build": "node ./cli/index.mjs build",
+    "add-pkg": "node ./cli/index.mjs pkg",
+    "migrate": "node ./cli/index.mjs migrate",
+    "remote": "node ./cli/index.mjs remote",
+    "clean": "node ./cli/index.mjs clean",
+    "lint": "pnpm -r run lint",
+    "typecheck": "pnpm -r run typecheck"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

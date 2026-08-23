@@ -1,0 +1,32 @@
+---
+import Base from "../layouts/global/base.astro";
+import { appHref, getSiteConfig } from "../config/site";
+
+const site = getSiteConfig();
+const loginUrl = appHref(site.loginPath, site);
+
+Astro.response.status = 404;
+---
+
+<Base title="Page not found" description="The page you requested could not be found.">
+  <main class="hero">
+    <div class="hero__atmosphere"></div>
+    <div class="hero__grain"></div>
+
+    <section class="hero__content">
+      <p class="hero__support animate-rise">404</p>
+      <h1 class="hero__brand animate-rise animate-rise--delay-1">{site.name}</h1>
+      <h2 class="hero__headline animate-rise animate-rise--delay-2">
+        This page could not be found.
+      </h2>
+      <p class="hero__support animate-rise animate-rise--delay-3">
+        The link may be outdated, or the page may have moved. You can return to the
+        website homepage or open the app.
+      </p>
+      <div class="hero__cta animate-rise animate-rise--delay-3">
+        <a class="btn btn--primary" href="/">Back to website</a>
+        <a class="btn btn--ghost" href={loginUrl}>Open app</a>
+      </div>
+    </section>
+  </main>
+</Base>

@@ -1,0 +1,63 @@
+import { ELanguage } from "@template/contracts";
+import { ar } from "./ar";
+import { en, type EnDict } from "./en";
+
+export type LocaleDict = EnDict;
+
+export const LOCALE_CATALOG: Record<
+  ELanguage,
+  {
+    dict: LocaleDict;
+    intl: string;
+    dir: "ltr" | "rtl";
+    /** Native endonym — never translate (English, العربية, …). */
+    nativeLabel: string;
+  }
+> = {
+  [ELanguage.EN]: {
+    dict: en as LocaleDict,
+    intl: "en-US",
+    dir: "ltr",
+    nativeLabel: "English",
+  },
+  [ELanguage.AR]: {
+    dict: ar,
+    intl: "ar-AE",
+    dir: "rtl",
+    nativeLabel: "العربية",
+  },
+};
+
+export const DEFAULT_LANGUAGE = ELanguage.EN;
+export const LANGUAGE_STORAGE_KEY = "app.language";
+
+/** Dotted paths into the nested locale dictionary (from English source). */
+export type TranslationKey = LeavePaths<typeof en>;
+
+type LeavePaths<T, Prefix extends string = ""> = {
+  [K in keyof T & string]: T[K] extends string
+    ? Prefix extends ""
+      ? K
+      : `${Prefix}.${K}`
+    : LeavePaths<T[K], Prefix extends "" ? K : `${Prefix}.${K}`>;
+}[keyof T & string];
+
+export function resolveTranslation(
+  dict: LocaleDict,
+  key: string,
+  params?: Record<string, string | number>,
+): string {
+  const parts = key.split(".");
+  let cursor: unknown = dict;
+  for (const part of parts) {
+    if (!cursor || typeof cursor !== "object" || !(part in cursor)) {
+      return key;
+    }
+    cursor = (cursor as Record<string, unknown>)[part];
+  }
+  if (typeof cursor !== "string") return key;
+  if (!params) return cursor;
+  return cursor.replace(/\{\{(\w+)\}\}/g, (_, name: string) =>
+    params[name] != null ? String(params[name]) : `{{${name}}}`,
+  );
+}

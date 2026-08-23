@@ -1,0 +1,26 @@
+---
+import Base from "../layouts/global/base.astro";
+import { LandingPage } from "../features/landing/landing-page";
+import { appHref, getSiteConfig } from "../config/site";
+import { en } from "../locales/en";
+
+const site = getSiteConfig();
+const loginUrl = appHref(site.loginPath, site);
+const signupUrl = appHref(site.signupPath, site);
+
+const taglineOverride =
+  site.tagline !== en.hero.tagline ? site.tagline : undefined;
+const descriptionOverride =
+  site.description !== en.hero.description ? site.description : undefined;
+---
+
+<Base title={site.name} description={site.description}>
+  <LandingPage
+    client:load
+    brand={site.name}
+    loginUrl={loginUrl}
+    signupUrl={signupUrl}
+    taglineOverride={taglineOverride}
+    descriptionOverride={descriptionOverride}
+  />
+</Base>

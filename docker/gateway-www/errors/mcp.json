@@ -1,0 +1,1 @@
+{"error":"service_unavailable","service":"mcp","message":"The MCP server is not running or not reachable. Start it with: pnpm tpl start"}

@@ -1,0 +1,56 @@
+---
+description: Always load README + project docs as source of truth for this monorepo
+alwaysApply: true
+---
+
+# Project context (always)
+
+Before architectural, deploy, env, or naming decisions, read and follow:
+
+1. `@README.md` — monorepo map, local URLs, entry commands
+2. `@docs/LOCAL.md` — `pnpm tpl` / start / stop / bootstrap / Docker local profile
+3. `@docs/DEPLOY.md` — `pnpm remote`, hosts, compose envs
+4. `@docs/ENV.md` — secrets and env layout under `env/`
+5. `@docs/NAMING.md` — `I*` / `E*` / `T*` contracts conventions
+
+When editing a package, also check its package README if present (`server/`, `client/`, `contracts/`).
+
+## Monorepo layout
+
+```txt
+template/
+  contracts/   Shared Zod schemas, types (I*/E*/T*), helpers
+  server/      NestJS API + TypeORM migrations (nest mode: serve separately built SPA)
+  client/      React Router v7 (Vite SPA in dev; deploy: nginx | ssr | nest | cdn)
+  website/     Astro + React SSG (Docker locally + deploy; optional CDN)
+  mcp/         MCP server (NestJS, HTTP + stdio)
+  cli/         pnpm commands
+  docker/      compose.yml + environments.json (server/client/mcp/website)
+  deploy/      hosts.json (SSH hosts only)
+  env/         Runtime secrets (gitignored). Local `env/*.env`; remote `env/<host>/*.env`
+  scripts/     Deploy + docker-env loader
+  docs/
+```
+
+## Commands (do not invent alternatives)
+
+- Prefer `pnpm tpl` (menu) or `pnpm tpl start` / `pnpm remote`
+- Do **not** use `pnpm setup`, `pnpm restart`, `pnpm pkg`, or `pnpm deploy` (reserved by pnpm/npm)
+- Use `pnpm bootstrap`, `pnpm reload`, `pnpm add-pkg`, and `pnpm remote` instead
+
+## Local URLs
+
+| URL | Service |
+|---|---|
+| http://localhost:8088/ | Website |
+| http://localhost:8088/app/ | Client |
+| http://localhost:8088/server/api | Server |
+| http://localhost:8088/server/docs | Swagger |
+| http://localhost:8088/mcp | MCP |
+| http://localhost:8088/mailpit/ | Mailpit |
+
+## Agent habits
+
+- Treat `README.md` + `docs/*` as authoritative; update them when behavior you change is user-facing
+- Keep shared types/schemas in `contracts/`; do not duplicate domain types in server/client
+- Follow `@docs/NAMING.md` for enums, interfaces, types, and Zod schema names

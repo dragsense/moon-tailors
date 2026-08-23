@@ -1,0 +1,32 @@
+{
+  "user": "root",
+  "host": "YOUR_SERVER_IP",
+  "path": "/opt/projects/template",
+  "branch": "main",
+  "sshKey": "~/.ssh/id_ed25519",
+  "githubSshKey": "~/.ssh/id_ed25519",
+  "gitUrl": "git@github.com:ORG/REPO.git",
+  "defaultHost": null,
+  "hosts": {
+    "development": {
+      "host": "YOUR_DEV_SERVER_IP",
+      "path": "/opt/projects/template",
+      "branch": "main"
+    },
+    "testing": {
+      "host": "YOUR_TEST_SERVER_IP",
+      "path": "/opt/projects/template",
+      "branch": "testing"
+    },
+    "staging": {
+      "host": "YOUR_STAGING_SERVER_IP",
+      "path": "/opt/projects/template",
+      "branch": "staging"
+    },
+    "production": {
+      "host": "YOUR_PRODUCTION_SERVER_IP",
+      "path": "/opt/projects/template",
+      "branch": "main"
+    }
+  }
+}

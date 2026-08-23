@@ -1,0 +1,15 @@
+.git
+.cursor
+.github
+docs
+**/node_modules
+**/dist
+**/build
+**/.astro
+**/.vite
+**/.cache
+logs
+**/*.log
+coverage
+**/.DS_Store
+docker/.compose-publish.yml

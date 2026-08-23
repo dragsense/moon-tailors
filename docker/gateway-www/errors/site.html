@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Website unavailable — Template</title>
+    <link rel="stylesheet" href="/errors/style.css" />
+  </head>
+  <body>
+    <main>
+      <div class="badge">502 · service down</div>
+      <div class="icon" aria-hidden="true">◉</div>
+      <h1>Website is not running</h1>
+      <p>
+        The Astro site (<code>/site</code>) did not respond. It may be stopped,
+        still starting, or crashed.
+      </p>
+      <p>Start (or restart) it from the monorepo:</p>
+      <p><code>pnpm tpl start</code></p>
+      <div class="actions">
+        <a class="button primary" href="javascript:location.reload()">Try again</a>
+        <a class="button" href="/">Gateway hub</a>
+      </div>
+      <p class="hint">
+        Check logs with <code>pnpm logs website</code> if it keeps failing.
+      </p>
+    </main>
+  </body>
+</html>

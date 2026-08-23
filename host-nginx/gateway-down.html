@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gateway unavailable — Template</title>
+    <!--
+      ALWAYS on the HOST — never served from the Docker gateway image.
+      If Docker (or the gateway container) is down, only host/main nginx can show this.
+
+      Install once on the machine:
+        sudo mkdir -p /var/www/template
+        sudo cp host-nginx/gateway-down.html /var/www/template/
+
+      Wire it from host nginx — see nginx-snippet.conf.example in this folder.
+    -->
+    <style>
+      :root {
+        --bg: #0f1419;
+        --panel: #1a222c;
+        --text: #e8eef4;
+        --muted: #8b9aab;
+        --line: #2a3542;
+        --accent: #3d9cf0;
+        --warn: #e8a54b;
+        --warn-dim: #8a6230;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(1000px 500px at 15% -10%, #3a2a18 0%, transparent 50%),
+          radial-gradient(900px 500px at 100% 0%, #1a3a55 0%, transparent 45%),
+          var(--bg);
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 2rem 1.25rem;
+      }
+      main {
+        width: min(28rem, 100%);
+        padding: 1.75rem 1.5rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        text-align: center;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-bottom: 1rem;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--warn-dim);
+        background: rgb(232 165 75 / 0.12);
+        color: var(--warn);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .icon {
+        width: 3rem;
+        height: 3rem;
+        margin: 0 auto 1rem;
+        border-radius: 1rem;
+        display: grid;
+        place-items: center;
+        background: rgb(232 165 75 / 0.12);
+        border: 1px solid var(--warn-dim);
+        color: var(--warn);
+        font-size: 1.4rem;
+      }
+      h1 {
+        margin: 0 0 0.5rem;
+        font-size: 1.35rem;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0 0 0.85rem;
+        color: var(--muted);
+        line-height: 1.5;
+        font-size: 0.95rem;
+      }
+      code {
+        font-family: ui-monospace, "Cascadia Code", monospace;
+        font-size: 0.85em;
+        color: var(--accent);
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        justify-content: center;
+        margin-top: 1.35rem;
+      }
+      a.button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.55rem 0.95rem;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: transparent;
+        color: var(--text);
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      a.button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #061018;
+      }
+      a.button:hover {
+        filter: brightness(1.08);
+      }
+      .hint {
+        margin-top: 1.1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="badge">502 · gateway down</div>
+      <div class="icon" aria-hidden="true">⬡</div>
+      <h1>Edge gateway is not running</h1>
+      <p>
+        The Docker nginx gateway did not respond. The whole stack behind
+        <code>/app</code>, <code>/api</code>, <code>/site</code>, and
+        <code>/mcp</code> is unreachable until it comes back.
+      </p>
+      <p>On the host, start (or restart) the gateway:</p>
+      <p><code>pnpm start gateway</code></p>
+      <p>Or bring the full local stack up:</p>
+      <p><code>pnpm start</code></p>
+      <div class="actions">
+        <a class="button primary" href="javascript:location.reload()">Try again</a>
+      </div>
+      <p class="hint">
+        Check container status with <code>docker compose ps gateway</code>
+        and logs with <code>pnpm logs gateway</code>.
+      </p>
+    </main>
+  </body>
+</html>

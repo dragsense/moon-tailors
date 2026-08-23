@@ -1,0 +1,201 @@
+{
+  "compose": "docker/compose.yml",
+  "envDir": "env",
+  "environments": {
+    "local": {
+      "projectName": "template",
+      "dockerEnv": "env/docker.env",
+      "server": {
+        "buildTarget": "dev",
+        "nodeEnv": "development",
+        "restart": "no",
+        "env": "env/server.env",
+        "needs": [
+          "postgres",
+          "redis",
+          "mailpit",
+          "mqtt",
+          "mediamtx"
+        ]
+      },
+      "client": {
+        "buildTarget": "dev",
+        "nodeEnv": "development",
+        "restart": "no",
+        "env": "env/client.env"
+      },
+      "mcp": {
+        "buildTarget": "dev",
+        "nodeEnv": "development",
+        "restart": "no",
+        "env": "env/mcp.env"
+      },
+      "website": {
+        "buildTarget": "dev",
+        "nodeEnv": "development",
+        "restart": "no",
+        "env": "env/website.env"
+      },
+      "gateway": {
+        "restart": "no"
+      }
+    },
+    "development": {
+      "projectName": "template-development",
+      "dockerEnv": "env/development/docker.env",
+      "server": {
+        "buildTarget": "runtime",
+        "nodeEnv": "development",
+        "restart": "unless-stopped",
+        "env": "env/development/server.env",
+        "needs": [
+          "postgres",
+          "redis",
+          "mqtt",
+          "mediamtx"
+        ]
+      },
+      "client": {
+        "clientMode": "nginx",
+        "buildTarget": "runtime",
+        "nodeEnv": "development",
+        "restart": "unless-stopped",
+        "env": "env/development/client.env"
+      },
+      "mcp": {
+        "buildTarget": "runtime",
+        "nodeEnv": "development",
+        "restart": "unless-stopped",
+        "env": "env/development/mcp.env"
+      },
+      "website": {
+        "buildTarget": "runtime",
+        "nodeEnv": "development",
+        "restart": "unless-stopped",
+        "mode": "docker",
+        "env": "env/development/website.env"
+      },
+      "gateway": {
+        "restart": "unless-stopped"
+      }
+    },
+    "testing": {
+      "projectName": "template-testing",
+      "dockerEnv": "env/testing/docker.env",
+      "server": {
+        "buildTarget": "runtime",
+        "nodeEnv": "testing",
+        "restart": "unless-stopped",
+        "env": "env/testing/server.env",
+        "needs": [
+          "postgres",
+          "redis",
+          "mqtt",
+          "mediamtx"
+        ]
+      },
+      "client": {
+        "clientMode": "nginx",
+        "buildTarget": "runtime",
+        "nodeEnv": "testing",
+        "restart": "unless-stopped",
+        "env": "env/testing/client.env"
+      },
+      "mcp": {
+        "buildTarget": "runtime",
+        "nodeEnv": "testing",
+        "restart": "unless-stopped",
+        "env": "env/testing/mcp.env"
+      },
+      "website": {
+        "buildTarget": "runtime",
+        "nodeEnv": "testing",
+        "restart": "unless-stopped",
+        "mode": "docker",
+        "env": "env/testing/website.env"
+      },
+      "gateway": {
+        "restart": "unless-stopped"
+      }
+    },
+    "staging": {
+      "projectName": "template-staging",
+      "dockerEnv": "env/staging/docker.env",
+      "server": {
+        "buildTarget": "runtime",
+        "nodeEnv": "staging",
+        "restart": "unless-stopped",
+        "env": "env/staging/server.env",
+        "needs": [
+          "postgres",
+          "redis",
+          "mailpit",
+          "mqtt",
+          "mediamtx"
+        ]
+      },
+      "client": {
+        "clientMode": "nginx",
+        "buildTarget": "runtime",
+        "nodeEnv": "staging",
+        "restart": "unless-stopped",
+        "env": "env/staging/client.env"
+      },
+      "mcp": {
+        "buildTarget": "runtime",
+        "nodeEnv": "staging",
+        "restart": "unless-stopped",
+        "env": "env/staging/mcp.env"
+      },
+      "website": {
+        "buildTarget": "runtime",
+        "nodeEnv": "staging",
+        "restart": "unless-stopped",
+        "mode": "docker",
+        "env": "env/staging/website.env"
+      },
+      "gateway": {
+        "restart": "unless-stopped"
+      }
+    },
+    "production": {
+      "projectName": "template-production",
+      "dockerEnv": "env/production/docker.env",
+      "server": {
+        "buildTarget": "runtime",
+        "nodeEnv": "production",
+        "restart": "unless-stopped",
+        "env": "env/production/server.env",
+        "needs": [
+          "postgres",
+          "redis",
+          "mqtt",
+          "mediamtx"
+        ]
+      },
+      "client": {
+        "clientMode": "nginx",
+        "buildTarget": "runtime",
+        "nodeEnv": "production",
+        "restart": "unless-stopped",
+        "env": "env/production/client.env"
+      },
+      "mcp": {
+        "buildTarget": "runtime",
+        "nodeEnv": "production",
+        "restart": "unless-stopped",
+        "env": "env/production/mcp.env"
+      },
+      "website": {
+        "buildTarget": "runtime",
+        "nodeEnv": "production",
+        "restart": "unless-stopped",
+        "mode": "docker",
+        "env": "env/production/website.env"
+      },
+      "gateway": {
+        "restart": "unless-stopped"
+      }
+    }
+  }
+}

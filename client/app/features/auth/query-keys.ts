@@ -1,0 +1,9 @@
+/** Domain query keys for auth — session is global, not pack-scoped. */
+export const authKeys = {
+  all: ["auth"] as const,
+  session: () => [...authKeys.all, "me"] as const,
+  options: () => [...authKeys.all, "options"] as const,
+};
+
+/** @deprecated use authKeys.session() */
+export const AUTH_SESSION_QUERY_KEY = authKeys.session();

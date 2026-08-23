@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Template — local gateway</title>
+    <style>
+      :root {
+        --bg: #0f1419;
+        --panel: #1a222c;
+        --text: #e8eef4;
+        --muted: #8b9aab;
+        --line: #2a3542;
+        --accent: #3d9cf0;
+        --accent-dim: #2a6fa8;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "Segoe UI", system-ui, sans-serif;
+        background:
+          radial-gradient(1200px 600px at 10% -10%, #1a3a55 0%, transparent 55%),
+          radial-gradient(900px 500px at 100% 0%, #243044 0%, transparent 50%),
+          var(--bg);
+        color: var(--text);
+        display: grid;
+        place-items: center;
+        padding: 2rem 1.25rem;
+      }
+      main {
+        width: min(36rem, 100%);
+      }
+      h1 {
+        margin: 0 0 0.35rem;
+        font-size: 1.65rem;
+        font-weight: 650;
+        letter-spacing: -0.02em;
+      }
+      p {
+        margin: 0 0 1.5rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.65rem;
+      }
+      a {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.95rem 1.1rem;
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        color: var(--text);
+        text-decoration: none;
+        transition:
+          border-color 0.15s ease,
+          transform 0.15s ease;
+      }
+      a:hover {
+        border-color: var(--accent-dim);
+        transform: translateY(-1px);
+      }
+      a strong {
+        font-weight: 600;
+      }
+      a span {
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-family: ui-monospace, "Cascadia Code", monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Local gateway</h1>
+      <p>Open a service through this edge entry (paths below). Hub is at <code>/hub/</code>.</p>
+      <ul>
+        <li>
+          <a href="/">
+            <strong>Website</strong>
+            <span>/</span>
+          </a>
+        </li>
+        <li>
+          <a href="/app/">
+            <strong>Client</strong>
+            <span>/app/</span>
+          </a>
+        </li>
+        <li>
+          <a href="/server/api/">
+            <strong>API</strong>
+            <span>/server/api/</span>
+          </a>
+        </li>
+        <li>
+          <a href="/server/api/docs">
+            <strong>Scalar</strong>
+            <span>/server/api/docs</span>
+          </a>
+        </li>
+        <li>
+          <a href="/server/api/queues">
+            <strong>Bull Board</strong>
+            <span>/server/api/queues</span>
+          </a>
+        </li>
+        <li>
+          <a href="/mcp/">
+            <strong>MCP</strong>
+            <span>/mcp/</span>
+          </a>
+        </li>
+        <li>
+          <a href="/mailpit/">
+            <strong>Mailpit</strong>
+            <span>/mailpit/</span>
+          </a>
+        </li>
+        <li>
+          <a href="/hls/">
+            <strong>Stream HLS</strong>
+            <span>/hls/</span>
+          </a>
+        </li>
+        <li>
+          <a href="/webrtc/">
+            <strong>Stream WebRTC</strong>
+            <span>/webrtc/</span>
+          </a>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>
