@@ -6,7 +6,6 @@ import { registerAs } from "@nestjs/config";
  *
  * Env (optional extras, comma-separated):
  * CSRF_SKIP_PATHS=/api/payments/stripe/webhook,/api/webhooks/.+
- * ENCRYPTION_SKIP_PATHS=/api/files/.+/download
  */
 export type SecuritySkipConfig = {
   /** Always bypass CSRF even when the path is CSRF-protected. */
@@ -16,8 +15,7 @@ export type SecuritySkipConfig = {
  * Bearer APIs are not covered — only these paths.
  */
   csrfProtectedPaths: RegExp[];
-  /** Responses left as plain JSON (auth, docs, webhooks, downloads, …). */
-  encryptionSkipPaths: RegExp[];
+
 };
 
 function compilePatterns(
@@ -45,35 +43,16 @@ function fromEnv(key: string): string[] {
 
 /** Defaults — keep in sync with env/server.env.example comments. */
 export const DEFAULT_CSRF_SKIP_PATHS = [
-  "^/api/payments/stripe/webhook/?$",
   "^/api/health/?$",
   "^/api/docs",
   "^/api/docs-json",
   "^/api/swagger-docs",
-  "^/api/queues",
-];
-
-export const DEFAULT_CSRF_PROTECTED_PATHS = [
-  "^/api/auth/refresh/?$",
-  "^/api/auth/logout/?$",
-];
-
-export const DEFAULT_ENCRYPTION_SKIP_PATHS = [
-  "^/api/?$",
-  "^/api/health",
-  "^/api/docs",
-  "^/api/docs-json",
-  "^/api/swagger-docs",
-  "^/docs",
-  "^/api/auth/csrf/?$",
   "^/api/auth/login/?$",
-  "^/api/auth/refresh/?$",
-  "^/api/auth/logout/?$",
-  "^/api/auth/me/?$",
-  "^/api/payments/stripe/webhook/?$",
-  "^/api/cache/status/?$",
-  "^/api/queues",
 ];
+
+/** All mutating `/api` routes — cookie JWT is sent automatically by the browser. */
+export const DEFAULT_CSRF_PROTECTED_PATHS = ["^/api/"];
+
 
 export default registerAs(
   "securitySkip",
@@ -89,10 +68,7 @@ export default registerAs(
           ? csrfProtectedEnv
           : DEFAULT_CSRF_PROTECTED_PATHS,
       ),
-      encryptionSkipPaths: compilePatterns([
-        ...DEFAULT_ENCRYPTION_SKIP_PATHS,
-        ...fromEnv("ENCRYPTION_SKIP_PATHS"),
-      ]),
+ 
     };
   },
 );

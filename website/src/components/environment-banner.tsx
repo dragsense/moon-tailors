@@ -43,8 +43,6 @@ const TONE: Record<
 const GATEWAY_LINKS = [
   { href: "/hub/", label: "Hub" },
   { href: "/app/", label: "App" },
-  { href: "/server/api/queues", label: "Bull Board" },
-  { href: "/mailpit/", label: "Mailpit" },
   { href: "/server/api/docs", label: "Scalar" },
   { href: "/server/api/", label: "API" },
 ] as const;

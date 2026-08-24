@@ -1,4 +1,4 @@
-export { entitySettingsService } from "./api";
+export { userSettingsService } from "./api";
 export { UserSettingsPage } from "./user-settings-page";
 export { SettingsPrefsSync } from "./components/settings-prefs-sync";
 export { settingsOps, settingsKeys } from "./ops";

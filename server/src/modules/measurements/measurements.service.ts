@@ -3,7 +3,7 @@ import type {
   IMeasurement,
   TMeasurementValues,
 } from "@moon-tailors/contracts";
-import { EResource } from "@moon-tailors/contracts";
+import { EResource, hasMeasurementValues } from "@moon-tailors/contracts";
 import { PermissionsService } from "../../common/base";
 import {
   EntityService,
@@ -92,11 +92,18 @@ export class MeasurementsService implements OnModuleInit {
     };
   }
 
-  createDefault(customerId: string): Promise<MeasurementEntity> {
-    return this.entity.create({
+  async createDefault(
+    customerId: string,
+    values?: TMeasurementValues,
+  ): Promise<MeasurementEntity> {
+    const created = await this.entity.create({
       customerId,
       orderId: null,
     });
+    if (hasMeasurementValues(values)) {
+      return this.updateValues(created.id, values);
+    }
+    return created;
   }
 
   copyForOrder(

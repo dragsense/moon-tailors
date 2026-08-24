@@ -45,18 +45,6 @@ const PUBLISH = {
       internalDefault: "5432",
     },
   ],
-  mailpit: [
-    {
-      exposeKey: "MAILPIT_UI_EXPOSE",
-      internalKey: "MAILPIT_UI_INTERNAL",
-      internalDefault: "8025",
-    },
-    {
-      exposeKey: "MAILPIT_SMTP_EXPOSE",
-      internalKey: "MAILPIT_SMTP_INTERNAL",
-      internalDefault: "1025",
-    },
-  ],
   gateway: [
     {
       exposeKey: "GATEWAY_EXPOSE",
@@ -114,7 +102,7 @@ export function collectPublishBindings(cfg, services = null, rootDir = process.c
         service,
         host,
         internal,
-        label: service === "mailpit" ? e.exposeKey : service,
+        label: service,
       });
     }
   }

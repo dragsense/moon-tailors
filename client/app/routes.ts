@@ -37,6 +37,7 @@ export default [
           route("customers/:id", "pages/protected/customers/detail.tsx"),
           route(path(APP_ROUTES.ORDERS), "pages/protected/orders/list.tsx"),
           route("orders/:id", "pages/protected/orders/detail.tsx"),
+          route(path(APP_ROUTES.PROFILE), "pages/protected/profile.tsx"),
           route(path(APP_ROUTES.SETTINGS), "pages/protected/settings.tsx"),
           route(
             path(COMMON_ROUTES.UNAUTHORIZED),

@@ -4,8 +4,6 @@ export enum EAppMode {
   SINGLE_USER = "single_user",
   /** One domain; tenant via header/query/cookie (`x-tenant-id`). */
   SINGLE_DOMAIN_TENANT = "single_domain_tenant",
-  /** Subdomain → business (e.g. acme.app.com). */
-  MULTI_DOMAIN_TENANT = "multi_domain_tenant",
 }
 
 /** How tenant data is isolated. */

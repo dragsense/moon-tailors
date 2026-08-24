@@ -58,10 +58,7 @@ export function clearCsrfCookie(
  */
 export function csrfMiddleware(options: CsrfOptions) {
   const skipPaths = options.skipPaths ?? [];
-  const protectedPaths = options.protectedPaths ?? [
-    /^\/api\/auth\/refresh\/?$/,
-    /^\/api\/auth\/logout\/?$/,
-  ];
+  const protectedPaths = options.protectedPaths ?? [/^\/api\//];
 
   return (req: Request, res: Response, next: NextFunction) => {
     if (!options.enabled) return next();
@@ -72,6 +69,14 @@ export function csrfMiddleware(options: CsrfOptions) {
     }
 
     if (req.headers["x-sender"] === "mobile") {
+      return next();
+    }
+
+    const authorization = req.headers.authorization;
+    if (
+      typeof authorization === "string" &&
+      authorization.toLowerCase().startsWith("bearer ")
+    ) {
       return next();
     }
 

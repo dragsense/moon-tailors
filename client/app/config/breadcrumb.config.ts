@@ -13,6 +13,7 @@ const ROUTE_CRUMB_KEYS: Record<string, TranslationKey> = {
   [APP_ROUTES.DASHBOARD]: "nav.items.dashboard",
   [APP_ROUTES.CUSTOMERS]: "nav.items.customers",
   [APP_ROUTES.ORDERS]: "nav.items.orders",
+  [APP_ROUTES.PROFILE]: "nav.items.profile",
   [APP_ROUTES.SETTINGS]: "nav.items.settings",
 };
 

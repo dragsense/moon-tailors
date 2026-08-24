@@ -4,18 +4,18 @@ import { settingRowSchema, userPreferencesSchema } from "./schema.js";
 
 export interface ISettingRow extends z.infer<typeof settingRowSchema> {}
 
-export interface IEntitySettingsResponse {
-  entityId: string;
+export interface IUserSettingsResponse {
+  userId: string;
   settings: Record<string, unknown>;
 }
 
-export type TSaveEntitySettingsResponse = IMessageResponse & {
-  entityId: string;
+export type TSaveUserSettingsResponse = IMessageResponse & {
+  userId: string;
   settings: Record<string, unknown>;
 };
 
-export type TDeleteEntitySettingResponse = IMessageResponse & {
-  entityId: string;
+export type TDeleteUserSettingResponse = IMessageResponse & {
+  userId: string;
   key: string;
 };
 

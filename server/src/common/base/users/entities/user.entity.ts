@@ -5,7 +5,7 @@ import {
   Index,
   OneToMany,
 } from "typeorm";
-import { EUserLevel } from "@moon-tailors/contracts";
+import { EGender, EUserLevel } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../entities";
 import { UserPermissionEntity } from "../../permissions/entities/user-permission.entity";
 
@@ -21,13 +21,19 @@ export class UserEntity extends GeneralBaseEntity {
   @Column({ type: "varchar", length: 100 })
   lastName!: string;
 
+  @Column({ type: "int", nullable: true })
+  age!: number | null;
+
+  @Column({ type: "varchar", length: 20, nullable: true })
+  gender!: EGender | null;
+
   /** Hydrated from first/last — available when user is loaded via relations. */
   name!: string;
 
   @Column({ type: "varchar", length: 255, select: false })
   passwordHash!: string;
 
-  @Column({ type: "int", default: EUserLevel.MEMBER })
+  @Column({ type: "int", default: EUserLevel.CUSTOMER })
   level!: EUserLevel;
 
   @Column({ type: "boolean", default: true })

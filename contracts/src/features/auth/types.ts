@@ -6,7 +6,6 @@ import {
   encryptedResponseSchema,
   forgotPasswordSchema,
   loginSchema,
-  refreshTokenResponseSchema,
   resetPasswordWithOtpSchema,
   resetPasswordWithTokenSchema,
   signupSchema,
@@ -27,5 +26,4 @@ export type TResetPasswordWithTokenData = z.infer<
 >;
 export type TAuthChallengeResponse = z.infer<typeof authChallengeResponseSchema>;
 export type TAuthOptions = z.infer<typeof authOptionsSchema>;
-export type TRefreshTokenResponse = z.infer<typeof refreshTokenResponseSchema>;
 export type TEncryptedResponse = z.infer<typeof encryptedResponseSchema>;

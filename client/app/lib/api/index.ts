@@ -19,11 +19,9 @@ export {
   downloadFileWithName,
   ensureCsrfToken,
   isUnauthorizedError,
-  setApiSessionRefreshHandler,
   setApiUnauthorizedHandler,
   type THttpMethod,
 } from "./api";
-export { getApiAccessToken, setApiAccessToken } from "./token";
 export { getCsrfToken, setCsrfToken } from "./csrf";
 export {
   getBrowserTimezone,

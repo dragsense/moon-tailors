@@ -6,19 +6,17 @@ import {
   Post,
   Req,
   Res,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { ApiTags } from "@nestjs/swagger";
 import type {
   ICsrfTokenResponse,
   ILoginResponse,
-  IRefreshTokenResponse,
   TLoginData,
   IAuthUser,
 } from "@moon-tailors/contracts";
 import { loginSchema } from "@moon-tailors/contracts";
-import type { Request, Response } from "express";
+import type { CookieOptions, Request, Response } from "express";
 import {
   clearCsrfCookie,
   createCsrfToken,
@@ -47,7 +45,10 @@ export class AuthController {
 
   @Get("csrf")
   @Public()
-  csrf(@Req() req: Request, @Res({ passthrough: true }) res: Response): ICsrfTokenResponse {
+  csrf(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ): ICsrfTokenResponse {
     const existing = readCsrfCookie(req);
     const token = existing ?? createCsrfToken();
     if (!existing) this.issueCsrf(res, token);
@@ -62,28 +63,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<ILoginResponse & ICsrfTokenResponse> {
     const session = await this.authService.login(body);
-    this.setRefreshCookie(res, session.refreshToken);
+    this.setAccessCookie(res, session.accessToken);
     const csrfToken = createCsrfToken();
     this.issueCsrf(res, csrfToken);
     return { ...session.response, csrfToken };
-  }
-
-  @Post("refresh")
-  @Public()
-  @HttpCode(200)
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<IRefreshTokenResponse & ICsrfTokenResponse> {
-    const raw = req.cookies?.[this.authConfig.refreshCookieName] as
-      | string
-      | undefined;
-    if (!raw) throw new UnauthorizedException("Missing refresh token");
-    const { response, refreshToken } = await this.authService.refresh(raw);
-    this.setRefreshCookie(res, refreshToken);
-    const csrfToken = readCsrfCookie(req) ?? createCsrfToken();
-    this.issueCsrf(res, csrfToken);
-    return { ...response, csrfToken };
   }
 
   @Get("me")
@@ -94,16 +77,10 @@ export class AuthController {
   @Post("logout")
   @Public()
   @HttpCode(200)
-  async logout(
-    @Req() req: Request,
+  logout(
     @Res({ passthrough: true }) res: Response,
-  ): Promise<{ message: string }> {
-    await this.authService.logout(
-      req.cookies?.[this.authConfig.refreshCookieName],
-    );
-    res.clearCookie(this.authConfig.refreshCookieName, {
-      path: this.refreshCookiePath(),
-    });
+  ): { message: string } {
+    this.clearAccessCookie(res);
     clearCsrfCookie(res, {
       cookieSecret: this.appConfig.cookieSecret,
       secure: this.appConfig.environment === "production",
@@ -112,36 +89,28 @@ export class AuthController {
     return { message: "Logged out" };
   }
 
-  @Post("logout-all")
-  @HttpCode(200)
-  async logoutAll(
-    @CurrentUser() user: UserEntity,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<{ message: string }> {
-    await this.authService.logoutAll(user.id);
-    res.clearCookie(this.authConfig.refreshCookieName, {
-      path: this.refreshCookiePath(),
-    });
-    clearCsrfCookie(res, {
-      cookieSecret: this.appConfig.cookieSecret,
-      secure: this.appConfig.environment === "production",
-      publicServerPath: this.appConfig.publicServerPath,
-    });
-    return { message: "Logged out from all devices" };
+  private cookiePath(): string {
+    return `${this.appConfig.publicServerPath}/api`;
   }
 
-  private refreshCookiePath(): string {
-    return `${this.appConfig.publicServerPath}/api/auth`;
-  }
-
-  private setRefreshCookie(res: Response, token: string) {
-    res.cookie(this.authConfig.refreshCookieName, token, {
+  private cookieBase(): CookieOptions {
+    return {
       httpOnly: true,
       sameSite: "lax",
       secure: this.appConfig.environment === "production",
-      path: this.refreshCookiePath(),
-      maxAge: this.authConfig.refreshTtlSeconds * 1000,
+      path: this.cookiePath(),
+    };
+  }
+
+  private setAccessCookie(res: Response, token: string) {
+    res.cookie(this.authConfig.accessCookieName, token, {
+      ...this.cookieBase(),
+      maxAge: this.authConfig.accessTtlSeconds * 1000,
     });
+  }
+
+  private clearAccessCookie(res: Response) {
+    res.clearCookie(this.authConfig.accessCookieName, this.cookieBase());
   }
 
   private issueCsrf(res: Response, token: string) {

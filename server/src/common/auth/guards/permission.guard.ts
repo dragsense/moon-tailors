@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { EPermissionAction } from "@moon-tailors/contracts";
-import { PermissionsService, UserEntity } from "../../base";
+import { PermissionsService } from "../../base";
 import {
   REQUIRED_PERMISSIONS_KEY,
   type RequiredPermission,
@@ -33,18 +33,7 @@ export class PermissionGuard implements CanActivate {
     const user = request.user;
     if (!user) throw new ForbiddenException("Forbidden");
 
-    let names = await this.permissions.resolveForUser(user.id);
-
-    // API key with scopes → intersect with user permissions (never escalate).
-    const keyScopes = request.apiKeyScopes;
-    if (keyScopes?.length) {
-      names = names.filter(
-        (name) =>
-          keyScopes.includes(name) ||
-          keyScopes.includes("*:*") ||
-          matchesScopedWildcard(name, keyScopes),
-      );
-    }
+    const names = await this.permissions.resolveForUser(user.id);
 
     const allowed = required.every(({ resource, action }) =>
       [
@@ -59,15 +48,4 @@ export class PermissionGuard implements CanActivate {
     if (!allowed) throw new ForbiddenException("Forbidden");
     return true;
   }
-}
-
-function matchesScopedWildcard(userPerm: string, scopes: string[]): boolean {
-  const [res, act] = userPerm.split(":");
-  return scopes.some((scope) => {
-    const [sRes, sAct] = scope.split(":");
-    if (sRes === "*" && sAct === "*") return true;
-    if (sRes === "*" && sAct === act) return true;
-    if (sRes === res && sAct === "*") return true;
-    return false;
-  });
 }

@@ -1,47 +1,47 @@
 import type {
-  IEntitySettingsResponse,
-  TDeleteEntitySettingResponse,
-  TSaveEntitySettingsData,
-  TSaveEntitySettingsResponse,
+  IUserSettingsResponse,
+  TDeleteUserSettingResponse,
+  TSaveUserSettingsData,
+  TSaveUserSettingsResponse,
 } from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
 
-class EntitySettingsService extends BaseService<
-  IEntitySettingsResponse,
-  TSaveEntitySettingsData,
-  TSaveEntitySettingsData
+class UserSettingsService extends BaseService<
+  IUserSettingsResponse,
+  TSaveUserSettingsData,
+  TSaveUserSettingsData
 > {
   constructor() {
-    super("/entity-settings");
+    super("/user-settings");
   }
 
   getMine() {
-    return this.getSingle<IEntitySettingsResponse>(
+    return this.getSingle<IUserSettingsResponse>(
       undefined,
       undefined,
       "/me",
     );
   }
 
-  saveMine(body: TSaveEntitySettingsData) {
-    return this.put<TSaveEntitySettingsResponse>()(body, undefined, "/me");
+  saveMine(body: TSaveUserSettingsData) {
+    return this.put<TSaveUserSettingsResponse>()(body, undefined, "/me");
   }
 
-  getForEntity(entityId: string) {
-    return this.getSingle<IEntitySettingsResponse>(entityId);
+  getForUser(userId: string) {
+    return this.getSingle<IUserSettingsResponse>(userId);
   }
 
-  saveForEntity(entityId: string, body: TSaveEntitySettingsData) {
-    return this.put<TSaveEntitySettingsResponse>(entityId)(body);
+  saveForUser(userId: string, body: TSaveUserSettingsData) {
+    return this.put<TSaveUserSettingsResponse>(userId)(body);
   }
 
-  deleteKey(entityId: string, key: string) {
-    return this.delete<TDeleteEntitySettingResponse>(
+  deleteKey(userId: string, key: string) {
+    return this.delete<TDeleteUserSettingResponse>(
       key,
       undefined,
-      `/${entityId}/keys`,
+      `/${userId}/keys`,
     );
   }
 }
 
-export const entitySettingsService = new EntitySettingsService();
+export const userSettingsService = new UserSettingsService();

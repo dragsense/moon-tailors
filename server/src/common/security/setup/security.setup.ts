@@ -22,6 +22,7 @@ export function setupSecurity(
       enabled: appConfig.csrfEnabled,
       cookieSecret: appConfig.cookieSecret,
       secure: appConfig.environment === "production",
+      publicServerPath: appConfig.publicServerPath,
       skipPaths: skip.csrfSkipPaths,
       protectedPaths: skip.csrfProtectedPaths,
     }),

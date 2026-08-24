@@ -54,7 +54,6 @@ export function setupCors(
       "X-Timezone",
       "X-CSRF-Token",
       "X-Sender",
-      "X-Api-Key",
       "X-Tenant-Id",
     ],
     exposedHeaders: ["Content-Disposition", "X-Request-Id"],

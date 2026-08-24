@@ -52,7 +52,6 @@ Only the **gateway** is published on the host (default `:8088`). Everything else
 | http://localhost:8088/server/api | Server |
 | http://localhost:8088/server/api/docs | Scalar API docs |
 | http://localhost:8088/mcp | MCP |
-| http://localhost:8088/mailpit/ | Mailpit |
 
 ```bash
 pnpm tpl                   # menu: bootstrap / start / stop / remote / …
@@ -93,12 +92,12 @@ pnpm remote                # deploy + SSH host control
 | **schedule** | Cron / scheduled actions per tenant |
 | **activity-logs** | Request/module activity audit |
 | **encryption** | Field-level DB encryption helpers |
-| **cache** / **cluster** / **mqtt** / **gateways** | Infra helpers |
+| **cache** / **cluster** / **gateways** | Infra helpers |
 | **security** / **validation** / **logging** / **docs** | Cross-cutting |
 
 ## Server — `src/modules/` (features)
 
-`auth` · `users` · `tasks` · `chat` · `notifications` · `billing` · `payment-adapter` · `cameras` (+ streams) · `files` (via common file-upload) · `sms` · `email` · `ai-adapter` · `api-keys` · `user-availability` · `business` · `entity-settings` · `dashboard`
+`auth` · `users` · `customers` · `orders` · `measurements` · `business` · `user-settings` · `dashboard`
 
 Query model: clients may request any real `_select` / `_relations` path; secrets use `restrictedFields`. Nested searchable/filters/sort supported (`sender.firstName`, `participants.user.email`).
 
@@ -108,10 +107,10 @@ Query model: clients may request any real `_select` / `_relations` path; secrets
 
 | Feature | Notes |
 |---|---|
-| **auth** | Login at `/` (email + password) |
+| **auth** | Login at `/` (email + password). JWT in an HttpOnly cookie; client sends it with `withCredentials` |
 | **dashboard** | Level home after login |
 | **customers** / **orders** | Shop surfaces |
-| **settings** / **business-theme** | Prefs + applied business theme |
+| **settings** | Prefs (appearance + date/time) |
 
 Routing: `client/app/config/routes.config.ts` · tree: `client/app/routes.ts`  
 Guards: guest → auth shell (`/`); session → access → app shell.  

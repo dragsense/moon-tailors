@@ -7,27 +7,20 @@ import {
 } from "react-router";
 import { useEffect, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import type { ILoginResponse } from "@moon-tailors/contracts";
 import type { Route } from "./+types/root";
 import { AppErrorScreen, AppLoader } from "~/components/layout-ui";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import {
-  applyRefreshedSession,
   clearSession,
 } from "~/features/auth/session";
 import {
   ensureCsrfToken,
-  setApiSessionRefreshHandler,
   setApiUnauthorizedHandler,
 } from "~/lib/api";
 import { stripAppBasename, withAppBasename } from "~/lib/app-base";
 import { queryClient } from "~/lib/query";
 import { ThemeProvider, THEME_STORAGE_KEY, I18nProvider } from "~/hooks";
 import { LANGUAGE_STORAGE_KEY } from "~/locales";
-import {
-  BusinessThemeRoot,
-  businessThemeOps,
-} from "~/features/business-theme";
 import { SettingsPrefsSync, settingsOps } from "~/features/settings";
 import { OpsProvider } from "~/ops";
 import "./app.css";
@@ -74,16 +67,6 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 }
 
-function isLoginResponse(payload: unknown): payload is ILoginResponse {
-  if (!payload || typeof payload !== "object") return false;
-  const candidate = payload as Partial<ILoginResponse>;
-  return (
-    typeof candidate.accessToken?.token === "string" &&
-    typeof candidate.accessToken.expiresIn === "number" &&
-    typeof candidate.user?.id === "string"
-  );
-}
-
 const PUBLIC_AUTH_PATHS = new Set([
   "/",
   "/login",
@@ -100,15 +83,9 @@ export default function App() {
       if (PUBLIC_AUTH_PATHS.has(path)) return;
       window.location.assign(withAppBasename("/"));
     });
-    setApiSessionRefreshHandler((payload) => {
-      if (isLoginResponse(payload)) {
-        applyRefreshedSession(payload);
-      }
-    });
     void ensureCsrfToken();
     return () => {
       setApiUnauthorizedHandler(null);
-      setApiSessionRefreshHandler(null);
     };
   }, []);
 
@@ -119,14 +96,10 @@ export default function App() {
           <QueryClientProvider client={queryClient}>
             <OpsProvider store={settingsOps}>
               {() => (
-                <OpsProvider store={businessThemeOps}>
-                  {() => (
-                    <BusinessThemeRoot>
-                      <SettingsPrefsSync />
-                      <Outlet />
-                    </BusinessThemeRoot>
-                  )}
-                </OpsProvider>
+                <>
+                  <SettingsPrefsSync />
+                  <Outlet />
+                </>
               )}
             </OpsProvider>
           </QueryClientProvider>

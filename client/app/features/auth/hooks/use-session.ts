@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { PUBLIC_ROUTES } from "~/config";
 import { useApiQueryKeyed } from "~/hooks";
 import { disconnectSocket } from "~/lib/socket";
-import { logout as logoutRequest, logoutAll } from "../api";
+import { logout as logoutRequest } from "../api";
 import {
   AUTH_SESSION_QUERY_KEY,
   clearSession,
@@ -33,30 +33,21 @@ export function useSession(): AppSession | null {
   return useSessionState().session;
 }
 
-/**
- * Logout helpers:
- * - `logout()` / `logout(false)` — this device only
- * - `logout(true)` — all devices
- */
 export function useLogout() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
-  const logout = useCallback(
-    async (all = false) => {
-      setIsLoading(true);
-      try {
-        if (all) await logoutAll();
-        else await logoutRequest();
-      } finally {
-        disconnectSocket();
-        clearSession();
-        setIsLoading(false);
-        navigate(PUBLIC_ROUTES.LOGIN, { replace: true });
-      }
-    },
-    [navigate],
-  );
+  const logout = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await logoutRequest();
+    } finally {
+      disconnectSocket();
+      clearSession();
+      setIsLoading(false);
+      navigate(PUBLIC_ROUTES.LOGIN, { replace: true });
+    }
+  }, [navigate]);
 
   return { logout, isLoading };
 }

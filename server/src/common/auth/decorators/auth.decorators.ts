@@ -20,17 +20,14 @@ export const RequirePermissions = (...permissions: RequiredPermission[]) =>
 
 /**
  * Restrict which credential types may call this route.
- * Default (when omitted): JWT + API key when API keys are enabled.
+ * Default (when omitted): JWT.
  */
 export const AUTH_MODES_KEY = "authModes";
 export const AuthModes = (...modes: EAuthMethod[]) =>
   SetMetadata(AUTH_MODES_KEY, modes);
 
-/** Session JWT only — e.g. managing API keys, interactive UI routes. */
+/** Session JWT only. */
 export const JwtOnly = () => AuthModes(EAuthMethod.JWT);
-
-/** Machine API key only. */
-export const ApiKeyOnly = () => AuthModes(EAuthMethod.API_KEY);
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): UserEntity | undefined =>

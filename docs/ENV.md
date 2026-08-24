@@ -32,7 +32,7 @@ UPLOADS_VOLUME_NAME=moon_tailors_uploads
 
 Containers become `moon-tailors-server`, `moon-tailors-postgres`, `moon-tailors-redis`, … Pin **volume names** so swapping containers does not create a new empty database. Staging must use different names (`moon_tailors_staging_postgres_data`).
 
-Only **`GATEWAY_EXPOSE`** is published on the host. Do not set `SERVER_EXPOSE`, `CLIENT_EXPOSE`, `WEBSITE_EXPOSE`, `MCP_EXPOSE`, or Mailpit host ports unless you need them — traffic goes through the gateway (`/`, `/app/`, `/server/`, `/mcp/`, `/mailpit/`).
+Only **`GATEWAY_EXPOSE`** is published on the host. Do not set `SERVER_EXPOSE`, `CLIENT_EXPOSE`, `WEBSITE_EXPOSE`, or `MCP_EXPOSE` unless you need them — traffic goes through the gateway (`/`, `/app/`, `/server/`, `/mcp/`).
 
 ## Local credentials
 
@@ -73,6 +73,18 @@ Site:     import.meta.env.PUBLIC_*
 ```
 
 On the VPS, `environments.json` may say `env/staging/client.env`; compose still bind-mounts it as **`/app/env/client.env`** inside the image, so Vite/Astro keep looking at that container path. Deploy copies laptop `env/staging/server.env` → VPS `…/env/staging/server.env` (same relative path). Do not flatten to `env/server.env` on the host.
+
+### Nest (`env/server.env`)
+
+| Key | Role |
+|---|---|
+| `JWT_SECRET` | Signs the access JWT (min 32 chars) |
+| `JWT_ACCESS_TTL_SEC` | Cookie JWT lifetime in seconds (default **604800** / 7 days) |
+| `ACCESS_COOKIE_NAME` | HttpOnly cookie name (default `access_token`) |
+| `CSRF_ENABLED` | Cookie↔header CSRF on mutating `/api` (typically on in staging) |
+| `COOKIE_SECRET` | Signs the CSRF cookie |
+
+Login sets an HttpOnly JWT cookie on `{SERVER_PUBLIC_PATH}/api` (e.g. `/server/api`). The JSON body is `{ user, message }` — the token is never returned to JavaScript. There is **no refresh token**. Logout clears the access cookie. Browser clients use `withCredentials`; non-browser clients may send `Authorization: Bearer`.
 
 ### Vite (`env/client.env`)
 
@@ -138,7 +150,7 @@ env/**/*.env
 "staging": {
   "projectName": "moon-tailors-staging",
   "dockerEnv": "env/staging/docker.env",
-  "server": { "env": "env/staging/server.env", "needs": ["postgres", "redis", "mailpit"] },
+  "server": { "env": "env/staging/server.env", "needs": ["postgres", "redis"] },
   "client": { "clientMode": "nginx", "env": "env/staging/client.env" },
   "website": { "mode": "docker", "env": "env/staging/website.env" }
 }

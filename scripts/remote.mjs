@@ -57,7 +57,7 @@ const ACTIONS = [...COMPOSE_ACTIONS, ...HOST_ACTIONS];
 const DOCKER_APPS = ["server", "client", "mcp", "website"];
 const GATEWAY = "gateway";
 const COMPOSE_TARGETS = [...DOCKER_APPS, GATEWAY];
-const INFRA = ["postgres", "redis", "mailpit"];
+const INFRA = ["postgres", "redis"];
 
 function die(msg, code = 1) {
   console.error(msg);
@@ -838,7 +838,7 @@ function runLocalAction(args) {
 
       const CLEAN = {
         server: {
-          compose: ["server", "postgres", "redis", "mailpit"],
+          compose: ["server", "postgres", "redis"],
           volumes: [
             "server_nm",
             "server_pkg_nm",

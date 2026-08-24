@@ -70,6 +70,7 @@ export class CustomersService implements OnModuleInit {
 
     const defaultMeasurement = await this.measurements.createDefault(
       customer.id,
+      input.defaultMeasurement,
     );
     await this.entity.update(customer.id, {
       defaultMeasurementId: defaultMeasurement.id,

@@ -1,5 +1,5 @@
 import type { IAuthUser, ILoginResponse } from "@moon-tailors/contracts";
-import { setApiAccessToken, setCsrfToken } from "~/lib/api";
+import { setCsrfToken } from "~/lib/api";
 import { queryClient } from "~/lib/query";
 import { getMe } from "../api";
 import { authKeys, AUTH_SESSION_QUERY_KEY } from "../query-keys";
@@ -26,26 +26,16 @@ export async function fetchSessionUser(): Promise<IAuthUser | null> {
   }
 }
 
-/** Keep access tokens in memory; the server owns the HttpOnly refresh cookie. */
+/** Cookie JWT is HttpOnly; keep only the user + CSRF header token in memory. */
 export function writeSession(response: ILoginResponse): AppSession {
   const session = sessionFromLoginResponse(response);
-  setApiAccessToken(response.accessToken.token);
   const csrf = (response as ILoginResponse & { csrfToken?: string }).csrfToken;
   if (typeof csrf === "string") setCsrfToken(csrf);
   queryClient.setQueryData(AUTH_SESSION_QUERY_KEY, response.user);
   return session;
 }
 
-/** Sync session after silent refresh without forcing a remount. */
-export function applyRefreshedSession(response: ILoginResponse): void {
-  setApiAccessToken(response.accessToken.token);
-  const csrf = (response as ILoginResponse & { csrfToken?: string }).csrfToken;
-  if (typeof csrf === "string") setCsrfToken(csrf);
-  queryClient.setQueryData(AUTH_SESSION_QUERY_KEY, response.user);
-}
-
 export function clearSession() {
-  setApiAccessToken(null);
   setCsrfToken(null);
   queryClient.setQueryData(AUTH_SESSION_QUERY_KEY, null);
   queryClient.removeQueries({

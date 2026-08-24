@@ -4,3 +4,10 @@ export enum EUserLevel {
   STAFF = 1,
   CUSTOMER = 2,
 }
+
+/** Self-reported gender on the logged-in user profile. */
+export enum EGender {
+  MALE = "male",
+  FEMALE = "female",
+  OTHER = "other",
+}

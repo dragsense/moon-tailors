@@ -1,5 +1,6 @@
 import {
   ClipboardList,
+  CircleUser,
   House,
   Settings,
   Users,
@@ -61,6 +62,11 @@ const baseNavItems: NavItemGroup[] = [
     groupTitleKey: "nav.groups.account",
     items: [
       {
+        titleKey: "nav.items.profile",
+        url: APP_ROUTES.PROFILE,
+        icon: CircleUser,
+      },
+      {
         titleKey: "nav.items.settings",
         url: APP_ROUTES.SETTINGS,
         icon: Settings,
@@ -111,15 +117,12 @@ export const navItemsByLevel: Record<
 > = {
   [EUserLevel.PLATFORM_OWNER]: (user) =>
     buildNavItemsForLevel(EUserLevel.PLATFORM_OWNER, user),
-  [EUserLevel.SUPER_ADMIN]: (user) =>
-    buildNavItemsForLevel(EUserLevel.SUPER_ADMIN, user),
-  [EUserLevel.ADMIN]: (user) => buildNavItemsForLevel(EUserLevel.ADMIN, user),
   [EUserLevel.STAFF]: (user) => buildNavItemsForLevel(EUserLevel.STAFF, user),
-  [EUserLevel.MEMBER]: (user) =>
-    buildNavItemsForLevel(EUserLevel.MEMBER, user),
+  [EUserLevel.CUSTOMER]: (user) =>
+    buildNavItemsForLevel(EUserLevel.CUSTOMER, user),
 };
 
 export function getNavItems(user?: IAuthUser | null): NavItemGroup[] {
-  const level = user?.level ?? EUserLevel.MEMBER;
+  const level = user?.level ?? EUserLevel.CUSTOMER;
   return navItemsByLevel[level](user);
 }

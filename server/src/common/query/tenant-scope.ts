@@ -77,7 +77,7 @@ export function resolveDefaultOwnerScope<Entity extends ObjectLiteral>(
 /**
  * Row ACL for a query:
  * - If caller passes `access`, that replaces the default owner scope
- *   (e.g. notifications use `recipientId`, api-keys use `userId`).
+ *   (e.g. a feature that scopes rows by `recipientId` or `userId`).
  * - Otherwise apply default owner for non-admins.
  */
 export function resolveAccessScopes<Entity extends ObjectLiteral>(

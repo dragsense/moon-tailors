@@ -47,7 +47,6 @@ moon-tailors/
 | http://localhost:8088/server/api | Server |
 | http://localhost:8088/server/docs | Swagger |
 | http://localhost:8088/mcp | MCP |
-| http://localhost:8088/mailpit/ | Mailpit |
 
 ## Agent habits
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { field } from "../../lib/field-meta.js";
-import { userLevelSchema } from "../user/schema.js";
+import { genderSchema, userLevelSchema } from "../user/schema.js";
 import { EOtpPurpose, EPasswordResetMode } from "./enum.js";
 
 export const otpPurposeSchema = z.nativeEnum(EOtpPurpose);
@@ -130,8 +130,6 @@ export const authOptionsSchema = z.object({
   loginPasswordOtp: z.boolean(),
   loginEmailOtp: z.boolean(),
   passwordResetMode: passwordResetModeSchema,
-  /** Whether user API keys are accepted for API auth. */
-  apiKeyEnabled: z.boolean(),
 });
 
 /** Auth user embedded in authenticated responses. */
@@ -140,14 +138,11 @@ export const authUserSchema = z.object({
   email: z.string().email(),
   firstName: z.string(),
   lastName: z.string(),
+  age: z.number().int().nullable().optional(),
+  gender: genderSchema.nullable().optional(),
   level: userLevelSchema,
   /** Flattened effective permissions, e.g. `tasks:read` or `*:*`. */
   permissions: z.array(z.string()),
-});
-
-export const accessTokenSchema = z.object({
-  token: z.string(),
-  expiresIn: z.number(),
 });
 
 /**
@@ -166,17 +161,9 @@ export const authMessageResponseSchema = z.object({
   message: z.string(),
 });
 
-/** POST /auth/verify-otp and successful session responses. */
+/** POST /auth/login — JWT is set as an HttpOnly cookie, not returned in JSON. */
 export const loginResponseSchema = z.object({
   user: authUserSchema,
-  accessToken: accessTokenSchema,
-  message: z.string(),
-});
-
-/** POST /auth/refresh response. */
-export const refreshTokenResponseSchema = z.object({
-  user: authUserSchema,
-  accessToken: accessTokenSchema,
   message: z.string(),
 });
 

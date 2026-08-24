@@ -16,6 +16,7 @@ import {
   EOrderStatus,
   EResource,
   filtersFromListSchema,
+  hasMeasurementValues,
   orderListQuerySchema,
 } from "@moon-tailors/contracts";
 import { ActivityLogRegistry } from "../../common/activity-logs";
@@ -98,6 +99,18 @@ export class OrdersService implements OnModuleInit {
     });
 
     await this.measurements.attachToOrder(snapshot.id, order.id);
+
+    if (hasMeasurementValues(input.measurement)) {
+      await this.measurements.updateValues(snapshot.id, input.measurement);
+    }
+    if (input.replaceDefault) {
+      const latest = await this.measurements.get(snapshot.id);
+      await this.customers.updateDefaultMeasurements(
+        customer.id,
+        this.measurements.pickValues(latest),
+      );
+    }
+
     return this.get(order.id);
   }
 

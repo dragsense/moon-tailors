@@ -1,44 +1,14 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { EUserLevel } from "@moon-tailors/contracts";
-import { RefreshTokenEntity } from "../entities/refresh-token.entity";
 import { TokenService } from "../services/tokens.service";
-import { hashAuthSecret } from "../utils/auth-crypto";
 
 const authConfig = {
-  accessTtlSeconds: 900,
-  refreshTtlSeconds: 604_800,
+  accessTtlSeconds: 604_800,
 };
 
-function createEntityRouter() {
-  const saved: RefreshTokenEntity[] = [];
-  const repository = {
-    create(value: Partial<RefreshTokenEntity>) {
-      return Object.assign(new RefreshTokenEntity(), value);
-    },
-    async save(value: RefreshTokenEntity) {
-      if (!value.id) value.id = `token-${saved.length + 1}`;
-      saved.push(value);
-      return value;
-    },
-    async findOne() {
-      return saved.at(-1) ?? null;
-    },
-    async update() {
-      return { affected: 1 };
-    },
-  };
-  const entityRouter = {
-    getRepository() {
-      return repository;
-    },
-  };
-  return { entityRouter, saved };
-}
-
-function createService(entityRouter: unknown) {
+function createService() {
   return new TokenService(
-    entityRouter as never,
     { signAsync: async () => "signed-access-token" } as never,
     { resolveForUser: async () => ["tasks:read"] } as never,
     { getOrThrow: () => authConfig } as never,
@@ -46,44 +16,24 @@ function createService(entityRouter: unknown) {
 }
 
 describe("TokenService", () => {
-  it("issues an access token and stores only a refresh-token hash", async () => {
-    const { entityRouter, saved } = createEntityRouter();
-    const service = createService(entityRouter);
+  it("issues a JWT access token without storing a refresh token", async () => {
+    const service = createService();
     const user = {
       id: "user-id",
-      email: "member@example.com",
+      email: "customer@example.com",
       firstName: "Test",
-      lastName: "Member",
-      level: EUserLevel.MEMBER,
+      lastName: "Customer",
+      age: null,
+      gender: null,
+      level: EUserLevel.CUSTOMER,
       isActive: true,
     };
 
     const session = await service.issueSession(user as never);
 
-    assert.equal(session.response.accessToken.token, "signed-access-token");
-    assert.deepEqual(session.response.user.permissions, ["tasks:read"]);
-    assert.equal(
-      saved[0].tokenHash,
-      hashAuthSecret(session.refreshToken),
-    );
-    assert.notEqual(saved[0].tokenHash, session.refreshToken);
-  });
-
-  it("revokes a stored refresh token", async () => {
-    const { entityRouter, saved } = createEntityRouter();
-    const rawToken = "refresh-token";
-    saved.push(
-      Object.assign(new RefreshTokenEntity(), {
-        id: "token-id",
-        tokenHash: hashAuthSecret(rawToken),
-        expiresAt: new Date(Date.now() + 60_000),
-        revokedAt: null,
-      }),
-    );
-    const service = createService(entityRouter);
-
-    await service.revoke(rawToken);
-
-    assert.ok(saved.at(-1)?.revokedAt instanceof Date);
+    assert.equal(session.accessToken, "signed-access-token");
+    assert.equal(session.response.user.email, "customer@example.com");
+    assert.equal(session.response.message, "Authenticated");
+    assert.equal("accessToken" in session.response, false);
   });
 });

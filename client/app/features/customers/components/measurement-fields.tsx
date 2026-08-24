@@ -1,8 +1,20 @@
 import type { IMeasurement } from "@moon-tailors/contracts";
-import { updateMeasurementSchema } from "@moon-tailors/contracts";
-import { SchemaForm } from "~/components/form-ui";
+import {
+  getFormFields,
+  measurementValuesSchema,
+  updateMeasurementSchema,
+} from "@moon-tailors/contracts";
+import type {
+  Control,
+  FieldErrors,
+  FieldValues,
+  Path,
+  UseFormRegister,
+} from "react-hook-form";
+import { FieldControl, SchemaForm } from "~/components/form-ui";
 import { useI18n } from "~/hooks/use-i18n";
 import type { TranslationKey } from "~/locales";
+import { cn } from "~/lib/utils";
 
 const MEASURE_FIELDS = [
   "length",
@@ -18,6 +30,57 @@ const MEASURE_FIELDS = [
   "thigh",
   "bottom",
 ] as const;
+
+function nestedError(errors: FieldErrors, path: string): string | undefined {
+  const parts = path.split(".");
+  let current: unknown = errors;
+  for (const part of parts) {
+    if (!current || typeof current !== "object") return undefined;
+    current = (current as Record<string, unknown>)[part];
+  }
+  if (current && typeof current === "object" && "message" in current) {
+    const message = (current as { message?: unknown }).message;
+    return typeof message === "string" ? message : undefined;
+  }
+  return undefined;
+}
+
+export function MeasurementFields<TFieldValues extends FieldValues>({
+  register,
+  control,
+  errors,
+  namePrefix,
+  className,
+}: {
+  register: UseFormRegister<TFieldValues>;
+  control: Control<TFieldValues>;
+  errors: FieldErrors<TFieldValues>;
+  namePrefix: string;
+  className?: string;
+}) {
+  const fields = getFormFields(measurementValuesSchema);
+
+  return (
+    <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2", className)}>
+      {fields.map((field) => {
+        const name = `${namePrefix}.${field.name}` as Path<TFieldValues>;
+        const wide =
+          field.meta.type === "select" || field.meta.type === "textarea";
+        return (
+          <div key={field.name} className={wide ? "sm:col-span-2" : undefined}>
+            <FieldControl
+              name={name}
+              meta={field.meta}
+              register={register}
+              control={control}
+              error={nestedError(errors, `${namePrefix}.${field.name}`)}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function MeasurementReadout({
   measurement,

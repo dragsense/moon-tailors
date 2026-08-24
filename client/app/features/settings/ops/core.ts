@@ -3,7 +3,7 @@ import { AUTH_SESSION_QUERY_KEY } from "~/features/auth/session/session-store";
 import type { OpConfig, OpsBag } from "~/ops";
 import { refetchOp } from "~/ops";
 import { queryClient } from "~/lib/query";
-import { entitySettingsService } from "../api";
+import { userSettingsService } from "../api";
 import {
   mergePreferences,
   parsePreferences,
@@ -16,13 +16,13 @@ export const settingsKeys = {
 };
 
 async function fetchMyPreferences(): Promise<TUserPreferences> {
-  // Session query holds IAuthUser | null — guests must not hit /entity-settings/me.
+  // Session query holds IAuthUser | null — guests must not hit /user-settings/me.
   const sessionUser = queryClient.getQueryData<{ id?: string } | null>(
     AUTH_SESSION_QUERY_KEY,
   );
   if (!sessionUser?.id) return readCachedPreferences();
 
-  const res = await entitySettingsService.getMine();
+  const res = await userSettingsService.getMine();
   const prefs = parsePreferences(res.settings);
   writeCachedPreferences(prefs);
   return prefs;
@@ -49,7 +49,7 @@ export const settingsOpsCore = {
       const current = readCachedPreferences();
       const next = mergePreferences(current, patch);
       writeCachedPreferences(next);
-      const res = await entitySettingsService.saveMine(next);
+      const res = await userSettingsService.saveMine(next);
       const saved = parsePreferences(res.settings);
       writeCachedPreferences(saved);
       return saved;

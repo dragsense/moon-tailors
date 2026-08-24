@@ -45,8 +45,6 @@ const TONE: Record<
 const GATEWAY_LINKS: { href: string; label: TranslationKey }[] = [
   { href: "/hub/", label: "env.links.hub" },
   { href: "/", label: "env.links.website" },
-  { href: "/server/api/queues", label: "env.links.bullBoard" },
-  { href: "/mailpit/", label: "env.links.mailpit" },
   { href: "/server/api/docs", label: "env.links.scalar" },
   { href: "/server/api/", label: "env.links.api" },
 ];

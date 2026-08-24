@@ -12,7 +12,6 @@ import {
 } from "~/components/ui/sidebar";
 import { getRouteTitle } from "~/config";
 import { useSession } from "~/features/auth/hooks";
-import { useBusinessTheme } from "~/features/business-theme";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
 
@@ -33,11 +32,9 @@ export function AppShell({
 }: AppShellProps) {
   const location = useLocation();
   const { t } = useI18n();
-  const businessTheme = useBusinessTheme();
   const title = getRouteTitle(location.pathname);
-  const appName = businessTheme.title ?? t("app.name");
+  const appName = t("app.name");
   const year = new Date().getFullYear();
-  const compact = businessTheme.density === "compact";
 
   return (
     <SidebarProvider className="min-h-0 flex-1 overflow-hidden">
@@ -64,12 +61,7 @@ export function AppShell({
             </>
           }
         />
-        <main
-          className={cn(
-            "min-h-0 flex-1 overflow-auto",
-            compact ? "p-3" : "p-6",
-          )}
-        >
+        <main className="min-h-0 flex-1 overflow-auto p-6">
           {children}
         </main>
         <footer className="shrink-0 border-t px-6 py-4">

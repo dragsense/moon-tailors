@@ -10,7 +10,7 @@
         "nodeEnv": "development",
         "restart": "no",
         "env": "env/server.env",
-        "needs": ["postgres", "redis", "mailpit"]
+        "needs": ["postgres", "redis"]
       },
       "client": {
         "buildTarget": "dev",
@@ -42,7 +42,7 @@
         "nodeEnv": "staging",
         "restart": "unless-stopped",
         "env": "env/staging/server.env",
-        "needs": ["postgres", "redis", "mailpit"]
+        "needs": ["postgres", "redis"]
       },
       "client": {
         "clientMode": "nginx",

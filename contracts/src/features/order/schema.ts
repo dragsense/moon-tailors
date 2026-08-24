@@ -7,6 +7,7 @@ import { field } from "../../lib/field-meta.js";
 import {
   customerSchema,
   measurementSchema,
+  measurementValuesSchema,
   updateMeasurementSchema,
 } from "../customer/schema.js";
 import { EOrderStatus } from "./enum.js";
@@ -66,10 +67,16 @@ export const createOrderSchema = z.object({
     label: "Notes",
     order: 7,
   }),
+  measurement: measurementValuesSchema.optional(),
+  replaceDefault: field(z.boolean().optional().default(false), {
+    type: "switch",
+    label: "Replace usual measurements",
+    order: 8,
+  }),
 });
 
 export const updateOrderSchema = createOrderSchema
-  .omit({ customerId: true })
+  .omit({ customerId: true, measurement: true, replaceDefault: true })
   .partial()
   .extend({
     forceEdit: z.boolean().optional(),
@@ -82,18 +89,20 @@ const orderCustomerSchema = customerSchema.pick({
   whatsapp: true,
 });
 
-export const orderSchema = createOrderSchema.extend({
-  id: z.string().uuid(),
-  orderNumber: z.string(),
-  measurementId: z.string().uuid(),
-  customer: orderCustomerSchema.optional(),
-  measurement: measurementSchema.nullish(),
-  remainingAmount: z.number(),
-  isDelayed: z.boolean(),
-  isLocked: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
+export const orderSchema = createOrderSchema
+  .omit({ replaceDefault: true })
+  .extend({
+    id: z.string().uuid(),
+    orderNumber: z.string(),
+    measurementId: z.string().uuid(),
+    customer: orderCustomerSchema.optional(),
+    measurement: measurementSchema.nullish(),
+    remainingAmount: z.number(),
+    isDelayed: z.boolean(),
+    isLocked: z.boolean(),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  });
 
 export const updateOrderMeasurementSchema = updateMeasurementSchema.extend({
   forceEdit: z.boolean().optional(),

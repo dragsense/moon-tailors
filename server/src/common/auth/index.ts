@@ -1,5 +1,4 @@
 export {
-  ApiKeyOnly,
   AuthModes,
   CurrentAuthMethod,
   CurrentUser,

@@ -11,7 +11,7 @@ export type AppConfig = {
   port: number;
   corsOrigins: string[];
   cookieSecret?: string;
-  /** Cookie↔header CSRF on /auth/refresh + /auth/logout. */
+  /** Cookie↔header CSRF on cookie-authenticated mutating API routes. */
   csrfEnabled: boolean;
   apiDocsEnabled: boolean;
   clientStaticDir?: string;

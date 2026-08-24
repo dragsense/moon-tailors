@@ -1108,7 +1108,7 @@ function servicesForPortCheck(cfg, target) {
   if (t === "client" && !clientUsesDockerService(cfg.clientMode)) {
     if (cfg.clientMode === "nest") {
       const out = cfg.services.filter(
-        (s) => s === "server" || s === "gateway" || ["postgres", "redis", "mailpit"].includes(s),
+        (s) => s === "server" || s === "gateway" || ["postgres", "redis"].includes(s),
       );
       return out.length ? out : cfg.services.includes("gateway") ? ["gateway"] : [];
     }
@@ -1119,7 +1119,7 @@ function servicesForPortCheck(cfg, target) {
   }
   const out = cfg.services.filter((s) => {
     if (s === t) return true;
-    if (t === "server" && ["postgres", "redis", "mailpit"].includes(s)) {
+    if (t === "server" && ["postgres", "redis"].includes(s)) {
       return true;
     }
     return false;

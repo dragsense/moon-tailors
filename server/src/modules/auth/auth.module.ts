@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
 import { ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
-import { TypeOrmModule } from "@nestjs/typeorm";
 import { BaseUsersModule, PermissionsModule } from "../../common/base";
 import {
   AccessGuard,
@@ -13,7 +12,6 @@ import type { AuthConfig } from "../../config";
 import { UsersModule } from "../users/users.module";
 import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
-import { RefreshTokenEntity } from "./entities/refresh-token.entity";
 import { TokenService } from "./services/tokens.service";
 
 @Module({
@@ -21,9 +19,6 @@ import { TokenService } from "./services/tokens.service";
     UsersModule,
     BaseUsersModule,
     PermissionsModule,
-    TypeOrmModule.forFeature([
-      RefreshTokenEntity,
-    ]),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],

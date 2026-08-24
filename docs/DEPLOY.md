@@ -76,7 +76,7 @@ The Docker **gateway** is the only published HTTP port. Paths do not change by m
 | `/app/` | Product UI (React) |
 | `/server/` | Nest API (`/api`, `/uploads`, Scalar at `/api/docs`) |
 | `/api/` `/uploads/` | Same as `/server/api/` and `/server/uploads/` (shorter aliases) |
-| `/mcp/` `/mailpit/` | Other services |
+| `/mcp/` | MCP |
 
 **Local** (`pnpm tpl start`) ignores `clientMode`. Gateway uses `nginx-gateway.conf.template`. **Client** and **website** containers run (Vite + Astro `dev`).
 
@@ -97,7 +97,7 @@ This repo uses **local** (`development` banner) and **staging**. Aliases: `dev`/
 
 Examples already in git: `env/staging/client.env.example` (`VITE_APP_ENV=staging`), `env/staging/website.env.example` (`PUBLIC_ENV=staging`). Local files default to `development`.
 
-Banner height is `32px` (`--env-banner-height`). Links on the bar: Hub `/hub/`, website `/`, Mailpit `/mailpit/`, Scalar `/server/api/docs`, Bull Board `/server/api/queues`, API `/server/api/` (client); website bar also links to `/app/`.
+Banner height is `32px` (`--env-banner-height`). Links on the bar: Hub `/hub/`, website `/`, Scalar `/server/api/docs`, API `/server/api/` (client); website bar also links to `/app/`.
 
 This is **not** `clientMode`. `clientMode` chooses who serves `/app/`; the banner only labels which **host/env** you are on.
 
@@ -229,7 +229,7 @@ Add a new environment as `environments.<name>` matching `hosts.json`, with **`en
     "nodeEnv": "staging",
     "restart": "unless-stopped",
     "env": "env/staging/server.env",
-    "needs": ["postgres", "redis", "mailpit"]
+    "needs": ["postgres", "redis"]
   },
   "client": {
     "clientMode": "nginx",

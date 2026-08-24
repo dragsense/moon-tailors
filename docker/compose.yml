@@ -42,17 +42,6 @@ services:
     networks:
       - app
 
-  mailpit:
-    image: axllent/mailpit:latest
-    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-mailpit
-    expose:
-      - "${MAILPIT_SMTP_INTERNAL:-1025}"
-      - "${MAILPIT_UI_INTERNAL:-8025}"
-    command: ["--webroot", "/mailpit"]
-    restart: ${RESTART_POLICY:-no}
-    networks:
-      - app
-
   server:
     build:
       context: ..
@@ -218,7 +207,6 @@ services:
       CLIENT_INTERNAL: ${CLIENT_INTERNAL:-5173}
       MCP_INTERNAL: ${MCP_INTERNAL:-4000}
       WEBSITE_INTERNAL: ${WEBSITE_INTERNAL:-4321}
-      MAILPIT_UI_INTERNAL: ${MAILPIT_UI_INTERNAL:-8025}
       GATEWAY_APP_UPSTREAM: ${GATEWAY_APP_UPSTREAM:-client:5173}
     volumes:
       - ${GATEWAY_NGINX_TEMPLATE:-./nginx-gateway.conf.template}:/etc/nginx/templates/default.conf.template:ro

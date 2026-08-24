@@ -35,14 +35,6 @@ export class PlatformOwnerSeed implements OnModuleInit {
 
     
     if (existing) {
-
-      await this.users.updatePlatformOwner(existing.id, {
-        email: cfg.email,
-        password: cfg.password,
-        firstName: cfg.firstName || "Platform Owner",
-        lastName: cfg.lastName || "User",
-      });
-
       await this.permissions.assignToUser(
         existing.id,
         defaultPermissionsForLevel(EUserLevel.PLATFORM_OWNER),
@@ -55,18 +47,12 @@ export class PlatformOwnerSeed implements OnModuleInit {
     }
 
   
-    const user = await this.users.createPlatformOwner({
+   await this.users.createPlatformOwner({
       email: cfg.email,
       password: cfg.password,
       firstName: cfg.firstName || "Platform Owner",
       lastName: cfg.lastName || "User",
     });
 
-    await this.permissions.assignToUser(
-      user.id,
-      defaultPermissionsForLevel(EUserLevel.PLATFORM_OWNER),
-    );
-
-    this.logger.log(`Platform owner seeded: ${user.email} (${user.id})`);
   }
 }

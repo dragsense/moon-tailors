@@ -21,8 +21,8 @@ describe("security skip path matching", () => {
 
   it("strips query from originalUrl", () => {
     assert.equal(
-      requestPathFromUrl("/api/auth/refresh?foo=1", "/api/auth/refresh"),
-      "/api/auth/refresh",
+      requestPathFromUrl("/api/auth/logout?foo=1", "/api/auth/logout"),
+      "/api/auth/logout",
     );
   });
 });

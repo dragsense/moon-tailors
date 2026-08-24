@@ -10,6 +10,7 @@ import {
   type OpConfig,
   type OpsBag,
 } from "~/ops";
+import { customersService } from "~/features/customers/api";
 import { customerKeys } from "~/features/customers/query-keys";
 import { ordersService } from "../api";
 import { OrderList } from "../list/order-list";
@@ -73,10 +74,14 @@ export const orderOpsCore = {
       resource: EResource.ORDERS,
       action: EPermissionAction.CREATE,
     },
-    initialParams: {},
-    queryKey: () => [...orderKeys.all, "new"] as const,
-    invalidateKey: orderKeys.lists(),
-    fetch: async () => null,
+    initialParams: { id: "" },
+    queryKey: customerKeys.detail,
+    invalidateKey: customerKeys.details(),
+    fetch: (params: Record<string, unknown>) => {
+      const id = typeof params.id === "string" ? params.id : "";
+      if (!id) return Promise.resolve(null);
+      return customersService.getOne(id);
+    },
     component: CreateOrderView,
     auto: false,
   },

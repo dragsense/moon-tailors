@@ -1,13 +1,12 @@
 import { ConfigService } from "@nestjs/config";
 import { NestFactory } from "@nestjs/core";
-import { Transport } from "@nestjs/microservices";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { AppModule } from "./app.module";
 import { setupMiddleware, setupStaticAssets } from "./common/app-setup";
 import { setupApiDocumentation } from "./common/docs";
 import { setupCors, setupSecurity } from "./common/security";
 import { AppLoggerService } from "./common/logging";
-import type { AppConfig, MqttConfig } from "./config";
+import type { AppConfig } from "./config";
 
 export async function startApplication(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -33,12 +32,5 @@ export async function startApplication(): Promise<void> {
     "AppSetup",
   );
 
-  const board = config.get<{ enabled: boolean; route: string }>("bullBoard");
-  if (board?.enabled) {
-    const path = board.route.replace(/^\//, "");
-    logger.log(
-      `Bull Board http://${appConfig.host}:${appConfig.port}/api/${path}`,
-      "AppSetup",
-    );
-  }
+
 }

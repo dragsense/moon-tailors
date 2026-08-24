@@ -40,7 +40,7 @@ Three layout groups in `app/routes.ts`. Guards (middleware-style) wrap shells â€
 
 Marketing landing lives on the **website** package (`http://localhost:8088/`), not here.
 
-The access token stays in memory. The server stores only the rotating refresh token in an HttpOnly cookie. `/auth/me` restores the user after refresh; guards run in `routes/guards/`.
+Sign-in sets an HttpOnly `access_token` cookie (Axios `withCredentials`). The JWT is never kept in JS memory or localStorage. `GET /auth/me` restores the user; guards run in `routes/guards/`.
 
 ```tsx
 import { Page, AppShell } from "~/layouts";

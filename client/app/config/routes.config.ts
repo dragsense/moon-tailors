@@ -32,6 +32,7 @@ export const APP_ROUTES = {
   DASHBOARD: "/dashboard",
   CUSTOMERS: "/customers",
   ORDERS: "/orders",
+  PROFILE: "/profile",
   SETTINGS: "/settings",
 } as const;
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];
@@ -59,6 +60,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   [APP_ROUTES.DASHBOARD]: "Home",
   [APP_ROUTES.CUSTOMERS]: "Customers",
   [APP_ROUTES.ORDERS]: "Orders",
+  [APP_ROUTES.PROFILE]: "Profile",
   [APP_ROUTES.SETTINGS]: "Settings",
   [COMMON_ROUTES.UNAUTHORIZED]: "Unauthorized",
 };
@@ -89,10 +91,8 @@ export const ROUTE_PERMISSIONS: Partial<
 /** Where each level lands after login. */
 export const LEVEL_HOME: Record<EUserLevel, string> = {
   [EUserLevel.PLATFORM_OWNER]: APP_ROUTES.DASHBOARD,
-  [EUserLevel.SUPER_ADMIN]: APP_ROUTES.DASHBOARD,
-  [EUserLevel.ADMIN]: APP_ROUTES.DASHBOARD,
   [EUserLevel.STAFF]: APP_ROUTES.DASHBOARD,
-  [EUserLevel.MEMBER]: APP_ROUTES.DASHBOARD,
+  [EUserLevel.CUSTOMER]: APP_ROUTES.DASHBOARD,
 };
 
 export function getRouteTitle(pathname: string): string | undefined {

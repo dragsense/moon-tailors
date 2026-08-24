@@ -9,4 +9,3 @@ export {
   BUSINESS_THEME_QUERY,
 } from "./base-business-theme.service";
 export { BusinessEntity, BusinessThemeEntity } from "./entities";
-export { PlatformBusinessSeed } from "./seeder/platform-business.seed";

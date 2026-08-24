@@ -1,9 +1,14 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
 } from "@nestjs/common";
 import {
+  EGender,
   EUserLevel,
+  type TChangePasswordData,
+  type TUpdateMeData,
 } from "@moon-tailors/contracts";
 import * as bcrypt from "bcrypt";
 import {
@@ -136,6 +141,67 @@ export class BaseUsersService {
 
   async verifyPassword(user: UserEntity, password: string): Promise<boolean> {
     return bcrypt.compare(password, user.passwordHash);
+  }
+
+  findByIdWithPassword(id: string): Promise<UserEntity | null> {
+    return this.entity
+      .getRepository()
+      .createQueryBuilder("user")
+      .addSelect("user.passwordHash")
+      .where("user.id = :id", { id })
+      .andWhere("user.deletedAt IS NULL")
+      .getOne();
+  }
+
+  async updateMe(id: string, input: TUpdateMeData): Promise<UserEntity> {
+    const email = input.email.toLowerCase().trim();
+    return this.entity.update(
+      id,
+      {
+        firstName: input.firstName.trim(),
+        lastName: input.lastName.trim(),
+        email,
+        age: input.age ?? null,
+        gender: (input.gender as EGender | null) ?? null,
+      },
+      this.mergeUpdateCallbacks(async (data, existing) => {
+        if (data.email && data.email !== existing.email) {
+          const taken = await this.findByEmail(String(data.email));
+          if (taken && taken.id !== existing.id) {
+            throw new ConflictException("Email already registered");
+          }
+        }
+        return data;
+      }),
+    );
+  }
+
+  async changePassword(
+    id: string,
+    input: TChangePasswordData,
+  ): Promise<void> {
+    if (input.newPassword !== input.confirmPassword) {
+      throw new BadRequestException("New password and confirmation do not match");
+    }
+    if (input.newPassword === input.currentPassword) {
+      throw new BadRequestException(
+        "New password must be different from the current password",
+      );
+    }
+
+    const user = await this.findByIdWithPassword(id);
+    if (!user) throw new NotFoundException("User not found");
+
+    const matches = await bcrypt.compare(
+      input.currentPassword,
+      user.passwordHash,
+    );
+    if (!matches) {
+      throw new BadRequestException("Current password is incorrect");
+    }
+
+    const passwordHash = await bcrypt.hash(input.newPassword, 10);
+    await this.entity.update(id, { passwordHash });
   }
 
 

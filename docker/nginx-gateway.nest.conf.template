@@ -3,7 +3,7 @@
 #   /          /var/www/website
 #   /app/      Nest (SPA from client build, mounted) or SSR Node
 #   /server/   Nest (/api, /uploads, /docs)
-#   /mcp/ /mailpit/
+#   /mcp/
 
 map $http_upgrade $connection_upgrade {
     default upgrade;
@@ -55,14 +55,13 @@ server {
     location = /uploads { return 302 /uploads/; }
     location = /mcp { return 302 /mcp/; }
     location = /app { return 302 /app/; }
-    location = /mailpit { return 302 /mailpit/; }
 
     location /server/ {
         if ($request_method = OPTIONS) {
             add_header Access-Control-Allow-Origin $http_origin always;
             add_header Access-Control-Allow-Credentials true always;
             add_header Access-Control-Allow-Methods "GET,POST,PUT,PATCH,DELETE,OPTIONS" always;
-            add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-Request-Id,X-Timezone,X-CSRF-Token,X-Sender,X-Api-Key,X-Tenant-Id" always;
+            add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-Request-Id,X-Timezone,X-CSRF-Token,X-Sender,X-Tenant-Id" always;
             add_header Access-Control-Max-Age 3600 always;
             add_header Content-Length 0;
             add_header Content-Type text/plain;
@@ -90,7 +89,7 @@ server {
             add_header Access-Control-Allow-Origin $http_origin always;
             add_header Access-Control-Allow-Credentials true always;
             add_header Access-Control-Allow-Methods "GET,POST,PUT,PATCH,DELETE,OPTIONS" always;
-            add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-Request-Id,X-Timezone,X-CSRF-Token,X-Sender,X-Api-Key,X-Tenant-Id" always;
+            add_header Access-Control-Allow-Headers "Authorization,Content-Type,X-Request-Id,X-Timezone,X-CSRF-Token,X-Sender,X-Tenant-Id" always;
             add_header Access-Control-Max-Age 3600 always;
             add_header Content-Length 0;
             add_header Content-Type text/plain;
@@ -133,20 +132,6 @@ server {
         proxy_read_timeout 60s;
         proxy_intercept_errors on;
         error_page 502 503 504 =502 @gw_mcp_down;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-    }
-
-    location /mailpit/ {
-        set $gw_mailpit mailpit:${MAILPIT_UI_INTERNAL};
-        proxy_pass http://$gw_mailpit;
-        proxy_http_version 1.1;
-        proxy_connect_timeout 3s;
-        proxy_read_timeout 60s;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;

@@ -1,14 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import type {
-  IMessageResponse,
-  IPaginatedResponse,
-  TUpdateUserData,
-  TUserListQuery,
-} from "@moon-tailors/contracts";
+
 import {
   DEFAULT_USER_PREFERENCES,
   EResource,
   EUserLevel,
+  type IMeUser,
+  type IMessageResponse,
+  type TChangePasswordData,
+  type TUpdateMeData,
 } from "@moon-tailors/contracts";
 import {
   BaseSettingsService,
@@ -71,34 +70,41 @@ export class UsersService implements OnModuleInit {
     return this.baseUsers.verifyPassword(user, password);
   }
 
+  async getMe(user: UserEntity): Promise<IMeUser> {
+    const fresh = (await this.baseUsers.findById(user.id)) ?? user;
+    return this.toMeUser(fresh);
+  }
 
+  async updateMe(user: UserEntity, input: TUpdateMeData): Promise<IMeUser> {
+    const updated = await this.baseUsers.updateMe(user.id, input);
+    return this.toMeUser(updated);
+  }
+
+  async changePassword(
+    user: UserEntity,
+    input: TChangePasswordData,
+  ): Promise<IMessageResponse> {
+    await this.baseUsers.changePassword(user.id, input);
+    return { message: "Password updated" };
+  }
 
   /** Platform-owner seed — permissions + default preference settings. */
-  createPlatformOwner(input: {
+  async createPlatformOwner(input: {
     email: string;
     password: string;
     firstName: string;
     lastName: string;
-  }): Promise<UserEntity> {
-    return this.baseUsers.createPlatformOwner(input, {
+  }): Promise<IMessageResponse> {
+    const user = await this.baseUsers.createPlatformOwner(input, {
       afterCreate: (user) => this.afterCreateUser(user),
     });
+
+    this.logger.log(`Platform owner created: ${user.email}`);
+
+    return { message: `Platform owner created: ${user.email}` };
   }
 
-  /** Update platform owner user */
-  async updatePlatformOwner(id: string, input: {
-    email: string;
-    password: string;
-    firstName: string;
-    lastName: string;
-  }): Promise<UserEntity> {
-    const user = await this.baseUsers.updatePlatformOwner(id, input);
-    await this.permissions.assignToUser(
-      user.id,
-      defaultPermissionsForLevel(user.level),
-    );
-    return user;
-  }
+
 
   /** afterCreate: level permissions + default preference settings. */
   private async afterCreateUser(user: UserEntity): Promise<void> {
@@ -110,4 +116,24 @@ export class UsersService implements OnModuleInit {
       ...DEFAULT_USER_PREFERENCES,
     });
   }
+
+  private toMeUser(user: UserEntity): IMeUser {
+    user.hydrateDisplayName();
+    return {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      name: user.name,
+      email: user.email,
+      age: user.age ?? null,
+      gender: user.gender ?? null,
+      level: user.level,
+      createdAt: toIso(user.createdAt),
+      updatedAt: toIso(user.updatedAt),
+    };
+  }
+}
+
+function toIso(value: Date | string): string {
+  return value instanceof Date ? value.toISOString() : String(value);
 }

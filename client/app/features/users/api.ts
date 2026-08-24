@@ -1,7 +1,10 @@
 import type {
+  IMeUser,
   IMessageResponse,
   IPaginatedResponse,
+  TChangePasswordData,
   TCreateUserData,
+  TUpdateMeData,
   TUpdateUserData,
   TUserListQuery,
   TUserResponse,
@@ -36,6 +39,26 @@ class UsersService extends BaseService<
 > {
   constructor() {
     super("/users");
+  }
+
+  getMe() {
+    return this.getSingle<IMeUser>(undefined, undefined, "/me");
+  }
+
+  updateMe(body: TUpdateMeData) {
+    return this.patch<IMeUser>(undefined)(
+      body as unknown as TUpdateUserData,
+      undefined,
+      "/me",
+    );
+  }
+
+  changePassword(body: TChangePasswordData) {
+    return this.patch<IMessageResponse>(undefined)(
+      body as unknown as TUpdateUserData,
+      undefined,
+      "/me/password",
+    );
   }
 
   list(query: Partial<TUserListQuery> = {}) {

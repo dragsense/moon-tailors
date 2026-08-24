@@ -1,6 +1,5 @@
 import { io, type Socket } from "socket.io-client";
 import { API_BASE_URL } from "~/lib/api";
-import { getApiAccessToken } from "~/lib/api/token";
 import type {
   ClientToServerEvents,
   ServerToClientEvents,
@@ -18,9 +17,7 @@ export function getSocket() {
       autoConnect: false,
       reconnection: true,
       reconnectionAttempts: 5,
-      auth: () => ({
-        token: getApiAccessToken(),
-      }),
+      withCredentials: true,
     });
   }
   return socket;

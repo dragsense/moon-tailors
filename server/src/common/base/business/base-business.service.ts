@@ -67,6 +67,8 @@ export class BaseBusinessService {
     });
   }
 
+
+
   findById(id: string): Promise<BusinessEntity | null> {
     return this.entity.getRepository().findOne({
       where: { id, deletedAt: IsNull() },

@@ -1,13 +1,13 @@
 # Backend
 
-NestJS API validated by Zod schemas from `@moon-tailors/contracts`. Postgres + TypeORM, `EntityService` CRUD, tenant/owner ACL, password auth.
+NestJS API validated by Zod schemas from `@moon-tailors/contracts`. Postgres + TypeORM, `EntityService` CRUD, tenant/owner ACL, JWT cookie auth.
 
 ## Layout
 
 ```txt
 src/
   common/           Shared platform (query, EntityService, base users/business/chat/…)
-  modules/          Feature modules (auth, users, tasks, chat, billing, …)
+  modules/          Feature modules (auth, users, customers, orders, …)
   config/           Env validation + Nest config
 ```
 
@@ -16,7 +16,7 @@ See root [README.md](../README.md) for the full `common/` and `modules/` invento
 ## Query model
 
 - Clients may pass `_select` / `_relations` for any real path (nested OK).
-- Secrets: `restrictedFields` denylist (e.g. `passwordHash`, `keyHash`).
+- Secrets: `restrictedFields` denylist (e.g. `passwordHash`).
 - `searchable` / filters / `sortable` support nested paths (`sender.firstName`).
 - Tenant scope always; default owner ACL for STAFF/MEMBER.
 

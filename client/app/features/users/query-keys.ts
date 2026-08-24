@@ -7,4 +7,5 @@ export const userKeys = {
   dropdowns: () => [...userKeys.all, "dropdown"] as const,
   dropdown: (params: Record<string, unknown>) =>
     [...userKeys.dropdowns(), params] as const,
+  me: () => [...userKeys.all, "me"] as const,
 };

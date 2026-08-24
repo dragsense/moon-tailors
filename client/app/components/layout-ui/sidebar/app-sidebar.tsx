@@ -16,17 +16,8 @@ import {
 } from "~/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu";
 import { getNavItems, ROOT_ROUTE } from "~/config";
 import { useLogout } from "~/features/auth/hooks";
-import { useBusinessTheme } from "~/features/business-theme";
 import { useI18n } from "~/hooks/use-i18n";
 
 export type AppSidebarProps = {
@@ -38,36 +29,25 @@ export type AppSidebarProps = {
  */
 export function AppSidebar({ user }: AppSidebarProps) {
   const location = useLocation();
-  const { t, dir, sidebarSide, alignStart } = useI18n();
-  const businessTheme = useBusinessTheme();
+  const { t, dir, sidebarSide } = useI18n();
   const { logout, isLoading } = useLogout();
   const navGroups = getNavItems(user);
   const initials =
     `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-  const brandTitle = businessTheme.title ?? t("app.name");
-  const brandTagline = businessTheme.loginTagline ?? t("app.tagline");
-  const collapsible =
-    businessTheme.sidebarStyle === "default" ? "none" : "icon";
+  const brandTitle = t("app.name");
+  const brandTagline = t("app.tagline");
 
   return (
-    <Sidebar collapsible={collapsible} side={sidebarSide} dir={dir}>
+    <Sidebar collapsible="icon" side={sidebarSide} dir={dir}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link to={ROOT_ROUTE}>
                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  {businessTheme.logoUrl ? (
-                    <img
-                      src={businessTheme.logoUrl}
-                      alt=""
-                      className="size-full object-contain"
-                    />
-                  ) : (
-                    <span className="text-sm font-semibold">
-                      {(brandTitle.charAt(0) || t("app.initial")).toUpperCase()}
-                    </span>
-                  )}
+                  <span className="text-sm font-semibold">
+                    {(brandTitle.charAt(0) || t("app.initial")).toUpperCase()}
+                  </span>
                 </div>
                 <div className="grid flex-1 text-start text-sm leading-tight">
                   <span className="truncate font-semibold">{brandTitle}</span>
@@ -137,36 +117,17 @@ export function AppSidebar({ user }: AppSidebarProps) {
             </p>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoading}
-                  className="w-full justify-start gap-2"
-                >
-                  <LogOutIcon className="size-4" />
-                  {isLoading ? t("auth.loggingOut") : t("auth.logOut")}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align={alignStart} className="w-56">
-                <DropdownMenuLabel>{t("auth.logoutOptions")}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={isLoading}
-                  onClick={() => void logout(false)}
-                >
-                  {t("auth.logOutThisDevice")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={isLoading}
-                  onClick={() => void logout(true)}
-                >
-                  {t("auth.logOutFromAllDevices")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isLoading}
+              className="w-full justify-start gap-2"
+              onClick={() => void logout()}
+            >
+              <LogOutIcon className="size-4" />
+              {isLoading ? t("auth.loggingOut") : t("auth.logOut")}
+            </Button>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

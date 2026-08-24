@@ -58,6 +58,46 @@ export const measurementValuesSchema = z.object({
 
 export const updateMeasurementSchema = measurementValuesSchema;
 
+export const MEASUREMENT_VALUE_KEYS = [
+  "garmentType",
+  "length",
+  "chest",
+  "waist",
+  "hip",
+  "shoulder",
+  "sleeve",
+  "neck",
+  "armhole",
+  "cuff",
+  "trouserLength",
+  "thigh",
+  "bottom",
+  "extraNotes",
+] as const;
+
+export function pickMeasurementValues(
+  input?: Partial<z.infer<typeof measurementValuesSchema>> | null,
+): z.infer<typeof measurementValuesSchema> {
+  const values: z.infer<typeof measurementValuesSchema> = {};
+  if (!input) return values;
+  for (const key of MEASUREMENT_VALUE_KEYS) {
+    if (input[key] !== undefined) {
+      (values as Record<string, unknown>)[key] = input[key];
+    }
+  }
+  return values;
+}
+
+export function hasMeasurementValues(
+  input?: Partial<z.infer<typeof measurementValuesSchema>> | null,
+): input is z.infer<typeof measurementValuesSchema> {
+  if (!input) return false;
+  return MEASUREMENT_VALUE_KEYS.some((key) => {
+    const value = input[key];
+    return value !== undefined && value !== null && value !== "";
+  });
+}
+
 export const measurementSchema = measurementValuesSchema.extend({
   id: z.string().uuid(),
   customerId: z.string().uuid(),
@@ -89,9 +129,12 @@ export const createCustomerSchema = z.object({
     label: "Notes",
     order: 6,
   }),
+  defaultMeasurement: measurementValuesSchema.optional(),
 });
 
-export const updateCustomerSchema = createCustomerSchema.partial();
+export const updateCustomerSchema = createCustomerSchema
+  .omit({ defaultMeasurement: true })
+  .partial();
 
 export const customerSchema = createCustomerSchema.extend({
   id: z.string().uuid(),

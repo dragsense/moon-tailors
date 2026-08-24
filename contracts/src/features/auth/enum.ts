@@ -1,3 +1,8 @@
+/** How a request is authenticated. */
+export enum EAuthMethod {
+  JWT = "jwt",
+}
+
 /** OTP challenge reason issued by auth flows. */
 export enum EOtpPurpose {
   SIGNUP = "signup",

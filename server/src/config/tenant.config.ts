@@ -4,8 +4,6 @@ import { EAppMode, EDbMode } from "@moon-tailors/contracts";
 export type TenantConfig = {
   appMode: EAppMode;
   dbMode: EDbMode;
-  /** Host labels that are not business subdomains. */
-  reservedSubdomains: string[];
 };
 
 function parseAppMode(raw?: string): EAppMode {
@@ -28,12 +26,6 @@ export default registerAs(
   "tenant",
   (): TenantConfig => ({
     appMode: parseAppMode(process.env.APP_MODE),
-    dbMode: parseDbMode(process.env.DB_MODE),
-    reservedSubdomains: (
-      process.env.RESERVED_SUBDOMAINS ?? "www,api,app,staging,testing,admin"
-    )
-      .split(",")
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
+    dbMode: parseDbMode(process.env.DB_MODE)
   }),
 );

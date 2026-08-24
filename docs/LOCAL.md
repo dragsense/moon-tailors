@@ -22,7 +22,7 @@ pnpm bootstrap --fresh
 
 > **Do not** use `pnpm setup`, `pnpm restart`, `pnpm pkg`, or `pnpm deploy` — those are reserved by pnpm/npm. Use `pnpm bootstrap`, `pnpm reload`, `pnpm add-pkg`, and `pnpm remote`.
 
-Local Docker uses the **local** block in `docker/environments.json` and `docker/compose.yml` (mailpit via `server.needs`; bind mounts + `dev` build target).
+Local Docker uses the **local** block in `docker/environments.json` and `docker/compose.yml` (postgres + redis via `server.needs`; bind mounts + `dev` build target).
 
 **Watch (server / client / mcp / website):** compose sets `WATCHPACK_POLLING` + `CHOKIDAR_USEPOLLING` so create/edit/**delete** on the host rebuild under Docker Desktop / WSL (inotify is often dropped). Each app’s `dev` script clears package caches (`.cache` / `.vite` / `.astro` / Nest `dist`) so stale deleted modules cannot linger.
 
@@ -32,7 +32,7 @@ Local Docker uses the **local** block in `docker/environments.json` and `docker/
 |---|---|
 | **Start** | `docker compose up -d`, print URLs, **exit**. Containers keep running if you close the terminal. |
 | **Logs** | Multi-select services, follow with `logs -f`. **Ctrl+C only detaches** — never stops containers. |
-| **Stop** | Multi-select which apps to **stop** (containers kept). `all` stops every running service including postgres/redis/mailpit. Does **not** remove containers — use **Clean** for that. |
+| **Stop** | Multi-select which apps to **stop** (containers kept). `all` stops every running service including postgres/redis. Does **not** remove containers — use **Clean** for that. |
 
 ```bash
 pnpm start              # ask / use profile, then detach
@@ -73,7 +73,6 @@ One `gateway` container is the **only** published HTTP port (local **`:8088`**, 
 | http://localhost:8088/server/uploads/ | Nest public files |
 | http://localhost:8088/server/api/docs | Scalar |
 | http://localhost:8088/mcp/ | mcp |
-| http://localhost:8088/mailpit/ | Mailpit UI |
 | http://localhost:8088/hub/ | service index |
 
 Nginx templates (picked from `clientMode`; local always uses the first):
@@ -157,7 +156,6 @@ Docker envs (local laptop + staging): [`docker/environments.json`](../docker/env
 | http://localhost:8088/server/api | Server |
 | http://localhost:8088/server/api/docs | Scalar |
 | http://localhost:8088/mcp | MCP |
-| http://localhost:8088/mailpit/ | Mailpit |
 
 ## Contracts live reload
 

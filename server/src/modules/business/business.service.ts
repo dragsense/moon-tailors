@@ -1,23 +1,20 @@
 import {
-  BadRequestException,
   Injectable,
   Logger,
   OnApplicationBootstrap,
   OnModuleInit,
 } from "@nestjs/common";
 import {
-  EDbMode,
   EResource,
-  type IPaginatedResponse,
-  type TBusinessListQuery,
+  IMessageResponse,
   type TCreateBusinessData,
 } from "@moon-tailors/contracts";
 import {
   BaseBusinessService,
   BusinessEntity,
   PermissionsService,
+  type CreateBusinessOptions,
 } from "../../common/base";
-import { EntityRouterService } from "../../common/database";
 import { ActivityLogRegistry } from "../../common/activity-logs";
 import { DomainEventRegistry } from "../../common/events";
 
@@ -47,27 +44,28 @@ export class BusinessService implements OnModuleInit, OnApplicationBootstrap {
 
   /**
    * After processor catalogs seed, attach env DEFAULT_* to the platform business.
-   * Platform owner + platform business themselves are seeded in common/base.
+   * Platform owner is seeded in UsersModule; platform business in BusinessModule.
    */
   async onApplicationBootstrap() {
-    await this.syncPlatformProcessorsFromEnv();
   }
 
-  /**
-   * Platform business always mirrors DEFAULT_PAYMENT_PROCESSOR / DEFAULT_AI_PROCESSOR.
-   * Secrets (STRIPE_*, OPENAI_*, …) remain in env — only catalog FKs are stored.
-   */
-  private async syncPlatformProcessorsFromEnv(): Promise<void> {
-    const platform = await this.businesses.findPlatform();
-    if (!platform) {
-      this.logger.warn("No platform business — skip env processor sync");
-      return;
-    }
-
-  }
 
   get(id: string): Promise<BusinessEntity> {
     return this.businesses.get(id);
   }
+
+  findPlatform(): Promise<BusinessEntity | null> {
+    return this.businesses.findPlatform();
+  }
+
+  async create(
+    input: TCreateBusinessData,
+    options: CreateBusinessOptions = {},
+  ): Promise<IMessageResponse> {
+    const business = await this.businesses.create(input, options);
+    this.logger.log(`Business created: ${business.id}`);
+    return { message: `Business created: ${business.id}` };
+  }
+
 
 }

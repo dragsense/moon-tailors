@@ -38,9 +38,6 @@ export const en = {
   auth: {
     logOut: "Log out",
     loggingOut: "Logging out…",
-    logoutOptions: "Logout options",
-    logOutThisDevice: "Log out this device",
-    logOutFromAllDevices: "Log out from all devices",
     signInContinue: "Sign in to open the shop",
     loginTitle: "Welcome",
     loginHint: "Type your email and password.",
@@ -56,8 +53,6 @@ export const en = {
     links: {
       hub: "Hub",
       website: "Website",
-      bullBoard: "Bull Board",
-      mailpit: "Mailpit",
       scalar: "Scalar",
       docs: "Docs",
       api: "API",
@@ -73,7 +68,7 @@ export const en = {
       customers: "Customers",
       orders: "Orders",
       users: "Users",
-   
+      profile: "Profile",
       settings: "Settings",
     },
   },
@@ -108,6 +103,9 @@ export const en = {
     defaultMeasurements: "2. Usual measurements",
     orderHistory: "3. Their orders",
     startOrder: "Start a new order",
+    create: "Create customer",
+    createHint: "Name, phone, and usual measurements.",
+    measurementsHint: "Saved as usual measurements for new orders.",
     phone: "Phone",
     whatsapp: "WhatsApp",
     email: "Email",
@@ -118,8 +116,12 @@ export const en = {
     title: "Orders",
     description: "Jobs in the shop.",
     new: "New order",
-    newHint: "Fill the dates and money, then tap Create order. Measurements are copied for you.",
+    newHint:
+      "Fill the dates and money. Measurements start from the customer’s usual ones — change them for this order if you need to.",
     create: "Create order",
+    measurementsHint:
+      "Copied from the customer. Change them for this order only, or save them as usual.",
+    replaceDefault: "Also save as usual measurements",
     empty: "No orders yet.",
     loadFailed: "Couldn’t load orders",
     searchPlaceholder: "Order number or notes",
@@ -152,6 +154,7 @@ export const en = {
     },
   },
   measurements: {
+    title: "Measurements",
     empty: "No measurements yet.",
     garment: "Garment",
     notes: "Notes",
@@ -203,6 +206,22 @@ export const en = {
     },
     saved: "Settings saved",
     saveFailed: "Could not save settings",
+  },
+
+  profile: {
+    title: "Profile",
+    description: "Your name, email, age, gender, and password.",
+    detailsTitle: "Your details",
+    detailsDescription: "Only you can change this information.",
+    passwordTitle: "Change password",
+    passwordDescription: "Type your current password, then a new one.",
+    saveDetails: "Save details",
+    savePassword: "Change password",
+    saved: "Profile saved",
+    saveFailed: "Could not save profile",
+    passwordSaved: "Password changed",
+    passwordFailed: "Could not change password",
+    mismatch: "New password and confirmation do not match",
   },
 
 } as const;

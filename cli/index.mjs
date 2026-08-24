@@ -35,7 +35,7 @@ const APPS = ["server", "client", "mcp", "website"];
 const CLEAN_META = {
   server: {
     compose: ["server"],
-    infra: ["postgres", "redis", "mailpit"],
+    infra: ["postgres", "redis"],
     imageSuffix: "server-dev",
     volumes: [
       "server_nm",
@@ -118,7 +118,6 @@ const logColor = {
   gateway: c.cyan,
   postgres: c.green,
   redis: c.red,
-  mailpit: c.yellow,
 };
 
 /**
@@ -495,7 +494,7 @@ const serviceUrls = {
   client: "  Client  → http://localhost:8088/app/",
   mcp: "  MCP     → http://localhost:8088/mcp/",
   website: "  Website → http://localhost:8088/",
-  gateway: "  Gateway → http://localhost:8088  (/ · /app/ · /server/ · /mailpit/)",
+  gateway: "  Gateway → http://localhost:8088  (/ · /app/ · /server/ · /mcp/)",
 };
 
 /** Services listed after --add (can repeat: --add server --add mcp) */
@@ -1173,7 +1172,7 @@ async function setupCmd(argv) {
   }
   if (services.includes("server")) {
     console.log(
-      `${c.dim}Note: postgres/redis/mailpit pull only when you start the server${c.reset}`,
+      `${c.dim}Note: postgres/redis pull only when you start the server${c.reset}`,
     );
   } else {
     console.log(
@@ -1379,7 +1378,7 @@ async function startServices(services, { build = false } = {}) {
         `None of [${dockerStart.join(", ")}] are enabled in docker/environments.json (local)`,
       );
     }
-    const infra = ["postgres", "redis", "mailpit"].filter((s) =>
+    const infra = ["postgres", "redis"].filter((s) =>
       allowed.has(s),
     );
     let upServices =
@@ -2255,7 +2254,7 @@ async function runRestart(services) {
 
   // up -d works for stopped or running; restart alone fails if the container was stopped
   const apps = docker.filter((s) => allowed.has(s));
-  const infra = ["postgres", "redis", "mailpit"].filter((s) => allowed.has(s));
+  const infra = ["postgres", "redis"].filter((s) => allowed.has(s));
   const targets =
     apps.includes("server") ? [...new Set([...infra, ...apps])] : apps;
   console.log(`${c.green}▸ Reloading:${c.reset} ${apps.join(", ")}`);
@@ -2296,7 +2295,7 @@ async function stopCmd(argv) {
     DOCKER_APPS.forEach((name, i) => {
       console.log(`  ${c.cyan}${i + 1}${c.reset}) ${name}`);
     });
-    console.log(`  ${c.cyan}all${c.reset}) everything running (incl. postgres/redis/mailpit)`);
+    console.log(`  ${c.cyan}all${c.reset}) everything running (incl. postgres/redis)`);
     console.log(
       `\n${c.dim}Examples: 1  ·  1,3  ·  server,client  ·  all${c.reset}\n`,
     );

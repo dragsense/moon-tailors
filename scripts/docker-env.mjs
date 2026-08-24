@@ -24,7 +24,6 @@ export const ENV_APPS = ["server", "client", "mcp", "website"];
 const SERVICE_ORDER = [
   "postgres",
   "redis",
-  "mailpit",
   "server",
   "client",
   "mcp",

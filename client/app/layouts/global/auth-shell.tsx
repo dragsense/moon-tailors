@@ -2,7 +2,6 @@ import type { ReactNode } from "react";
 import { Link, Outlet } from "react-router";
 import { ThemeToggle } from "~/components/layout-ui/theme-toggle";
 import { ROOT_ROUTE } from "~/config";
-import { useBusinessTheme } from "~/features/business-theme";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
 
@@ -16,9 +15,8 @@ export type AuthShellProps = {
  */
 export function AuthShell({ children, className }: AuthShellProps) {
   const { t } = useI18n();
-  const businessTheme = useBusinessTheme();
-  const title = businessTheme.title ?? t("app.name");
-  const tagline = businessTheme.loginTagline ?? t("auth.signInContinue");
+  const title = t("app.name");
+  const tagline = t("auth.signInContinue");
 
   const year = new Date().getFullYear();
 
@@ -38,13 +36,6 @@ export function AuthShell({ children, className }: AuthShellProps) {
             to={ROOT_ROUTE}
             className="inline-flex flex-col items-center gap-2 text-xl font-semibold tracking-tight"
           >
-            {businessTheme.logoUrl ? (
-              <img
-                src={businessTheme.logoUrl}
-                alt=""
-                className="h-10 w-auto object-contain"
-              />
-            ) : null}
             <span>{title}</span>
           </Link>
           <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>

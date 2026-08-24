@@ -32,21 +32,11 @@ export function setupApiDocumentation(
       {
         type: "http",
         scheme: "bearer",
-        bearerFormat: "JWT or API key",
-        description:
-          "Session JWT, or user API key (`tk_…`). Prefer X-Api-Key for machine clients.",
+        bearerFormat: "JWT",
+        description: "Session JWT (cookie or Authorization: Bearer).",
         in: "header",
       },
       "access-token",
-    )
-    .addApiKey(
-      {
-        type: "apiKey",
-        name: "X-Api-Key",
-        in: "header",
-        description: "User API key (alternative to Bearer)",
-      },
-      "api-key",
     )
     .addServer("/api", "API")
     .build();

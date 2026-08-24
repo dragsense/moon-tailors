@@ -21,14 +21,14 @@ export const settingRowSchema = z.object({
   updatedAt: z.string().datetime(),
 });
 
-/** PUT /entity-settings/:entityId — nested object saved as dot-keys. */
-export const saveEntitySettingsSchema = z.record(z.string(), z.unknown());
+/** PUT /user-settings/:userId — nested object saved as dot-keys. */
+export const saveUserSettingsSchema = z.record(z.string(), z.unknown());
 
-export const entitySettingsParamsSchema = z.object({
-  entityId: z.string().min(1),
+export const userSettingsParamsSchema = z.object({
+  userId: z.string().min(1),
 });
 
-export const entitySettingKeyParamsSchema = entitySettingsParamsSchema.extend({
+export const userSettingKeyParamsSchema = userSettingsParamsSchema.extend({
   key: z.string().min(1).max(100),
 });
 
@@ -74,7 +74,7 @@ export const notificationSettingsSchema = z.object({
   }),
 });
 
-/** User preferences persisted via entity-settings/me. */
+/** User preferences persisted via user-settings/me. */
 export const userPreferencesSchema = z.object({
   language: field(
     z.preprocess(

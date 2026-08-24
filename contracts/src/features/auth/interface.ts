@@ -6,7 +6,6 @@ import {
   authUserSchema,
   csrfTokenResponseSchema,
   loginResponseSchema,
-  refreshTokenResponseSchema,
 } from "./schema.js";
 
 /** Response / entity interfaces. */
@@ -20,9 +19,6 @@ export interface IAuthOptions extends z.infer<typeof authOptionsSchema> {}
 export interface ILoginResponse extends z.infer<typeof loginResponseSchema> {}
 
 export interface ISignupResponse extends IAuthChallengeResponse {}
-
-export interface IRefreshTokenResponse
-  extends z.infer<typeof refreshTokenResponseSchema> {}
 
 export interface ICsrfTokenResponse
   extends z.infer<typeof csrfTokenResponseSchema> {}

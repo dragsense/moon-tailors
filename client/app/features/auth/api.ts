@@ -1,7 +1,6 @@
 import type {
   ICsrfTokenResponse,
   ILoginResponse,
-  IRefreshTokenResponse,
   IAuthUser,
   TLoginData,
 } from "@moon-tailors/contracts";
@@ -24,14 +23,6 @@ class AuthService extends BaseService<
     );
   }
 
-  refreshSession() {
-    return this.post<IRefreshTokenResponse & ICsrfTokenResponse>(
-      {},
-      undefined,
-      "/refresh",
-    );
-  }
-
   me() {
     return this.getSingle<IAuthUser>(undefined, undefined, "/me");
   }
@@ -39,11 +30,6 @@ class AuthService extends BaseService<
   async logout() {
     await ensureCsrfToken();
     return this.post<{ message: string }>({}, undefined, "/logout");
-  }
-
-  async logoutAll() {
-    await ensureCsrfToken();
-    return this.post<{ message: string }>({}, undefined, "/logout-all");
   }
 
   fetchCsrfToken() {
@@ -55,10 +41,8 @@ export const authService = new AuthService();
 
 /** @deprecated Prefer `authService` — thin aliases for existing call sites. */
 export const login = (body: TLoginData) => authService.login(body);
-export const refreshSession = () => authService.refreshSession();
 export const getMe = () => authService.me();
 export const logout = () => authService.logout();
-export const logoutAll = () => authService.logoutAll();
 export const fetchCsrfToken = () => authService.fetchCsrfToken();
 
 export function isLoginResponse(value: unknown): value is ILoginResponse {
@@ -66,6 +50,6 @@ export function isLoginResponse(value: unknown): value is ILoginResponse {
     typeof value === "object" &&
     value !== null &&
     "user" in value &&
-    "accessToken" in value
+    "message" in value
   );
 }

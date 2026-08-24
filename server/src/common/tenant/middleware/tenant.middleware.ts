@@ -14,10 +14,7 @@ export class TenantMiddleware implements NestMiddleware {
 
   use(req: Request, _res: Response, next: NextFunction): void {
     const tenant = this.config.getOrThrow<TenantConfig>("tenant");
-    if (
-      tenant.appMode !== EAppMode.SINGLE_DOMAIN_TENANT &&
-      tenant.appMode !== EAppMode.MULTI_DOMAIN_TENANT
-    ) {
+    if (tenant.appMode !== EAppMode.SINGLE_DOMAIN_TENANT) {
       return next();
     }
 

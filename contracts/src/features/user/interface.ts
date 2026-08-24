@@ -3,12 +3,15 @@ import type { IMessageResponse } from "../../common/interface.js";
 import {
   createdUserSchema,
   createUserResponseSchema,
+  meUserSchema,
   paginatedUsersSchema,
   userSchema,
 } from "./schema.js";
 
 /** Response / entity interfaces. */
 export interface IUser extends z.infer<typeof userSchema> {}
+
+export interface IMeUser extends z.infer<typeof meUserSchema> {}
 
 export interface ICreatedUser extends z.infer<typeof createdUserSchema> {}
 

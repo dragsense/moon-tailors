@@ -1,6 +1,6 @@
 /**
- * In-memory CSRF token (pairs with HttpOnly `csrf_token` cookie).
- * Same pattern as the access token — never stored in localStorage.
+ * In-memory CSRF header token (pairs with HttpOnly `csrf_token` cookie).
+ * Never stored in localStorage. The JWT access token is HttpOnly only.
  */
 let csrfToken: string | null = null;
 

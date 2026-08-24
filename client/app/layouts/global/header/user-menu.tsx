@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
@@ -21,7 +20,7 @@ export type UserMenuProps = {
   className?: string;
 };
 
-/** Top-right account menu — name + dual logout (this device / all devices). */
+/** Top-right account menu — profile, settings, and logout. */
 export function UserMenu({ user, className }: UserMenuProps) {
   const { t, alignEnd } = useI18n();
   const { logout, isLoading } = useLogout();
@@ -73,25 +72,18 @@ export function UserMenu({ user, className }: UserMenuProps) {
         </div>
         <DropdownMenuSeparator className="md:hidden" />
         <DropdownMenuItem asChild>
+          <Link to={APP_ROUTES.PROFILE}>{t("nav.items.profile")}</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to={APP_ROUTES.SETTINGS}>{t("nav.items.settings")}</Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-          {t("auth.logoutOptions")}
-        </DropdownMenuLabel>
         <DropdownMenuItem
           disabled={isLoading}
-          onClick={() => void logout(false)}
+          onClick={() => void logout()}
         >
           <LogOutIcon className="size-4" />
-          {t("auth.logOutThisDevice")}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          disabled={isLoading}
-          onClick={() => void logout(true)}
-        >
-          <LogOutIcon className="size-4" />
-          {t("auth.logOutFromAllDevices")}
+          {t("auth.logOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
