@@ -1,5 +1,5 @@
 import { Column, Entity } from "typeorm";
-import { EActivityStatus, EActivityType } from "@template/contracts";
+import { EActivityStatus, EActivityType } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../entities";
 
 @Entity("activity_logs")

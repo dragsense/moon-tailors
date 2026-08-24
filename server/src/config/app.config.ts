@@ -31,8 +31,8 @@ export default registerAs(
 
     return {
       environment,
-      name: process.env.APP_NAME ?? "Template",
-      serviceName: process.env.SERVICE_NAME ?? "template-server",
+      name: process.env.APP_NAME ?? "Moon Tailors",
+      serviceName: process.env.SERVICE_NAME ?? "moon-tailors-server",
       appUrl: process.env.APP_URL ?? corsOrigins[0] ?? "http://localhost:8088/app",
       host: process.env.HOST ?? "0.0.0.0",
       port: Number(process.env.PORT ?? 3000),

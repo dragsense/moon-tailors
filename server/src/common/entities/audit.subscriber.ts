@@ -17,15 +17,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     const entity = event.entity;
     if (!(entity instanceof GeneralBaseEntity)) return;
 
-    const hasTenantColumn = event.metadata.columns.some(
-      (column) => column.propertyName === "tenantId",
-    );
-    if (hasTenantColumn) {
-      const row = entity as { tenantId?: string | null };
-      if (row.tenantId == null) {
-        const tenantId = RequestContext.get("tenantId");
-        if (tenantId) row.tenantId = tenantId;
-      }
+    if (entity.tenantId == null) {
+      const tenantId = RequestContext.get("tenantId");
+      if (tenantId) entity.tenantId = tenantId;
     }
 
     const userId = RequestContext.get("userId");

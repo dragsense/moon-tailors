@@ -7,7 +7,7 @@ export type CacheConfig = {
   redis: RedisConnection;
   /** Default TTL in seconds. */
   defaultTtl: number;
-  /** Key namespace prefix, e.g. template:users:… */
+  /** Key namespace prefix, e.g. moon-tailors:users:… */
   prefix: string;
 };
 
@@ -26,7 +26,7 @@ export default registerAs(
       enabled: process.env.CACHE_ENABLED === "true",
       redis,
       defaultTtl: Number(process.env.CACHE_DEFAULT_TTL || 300),
-      prefix: process.env.CACHE_PREFIX || "template",
+      prefix: process.env.CACHE_PREFIX || "moon-tailors",
     };
   },
 );

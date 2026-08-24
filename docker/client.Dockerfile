@@ -9,8 +9,8 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
 COPY contracts/package.json ./contracts/
 COPY client/package.json ./client/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @template/client... --frozen-lockfile || \
-    pnpm install --filter @template/client...
+    pnpm install --filter @moon-tailors/client... --frozen-lockfile || \
+    pnpm install --filter @moon-tailors/client...
 
 # Local development — Vite (gateway reverse-proxies here)
 FROM deps AS dev
@@ -21,7 +21,7 @@ COPY contracts ./contracts
 COPY client ./client
 COPY env ./env
 EXPOSE 5173
-CMD ["pnpm", "--filter", "@template/client", "dev"]
+CMD ["pnpm", "--filter", "@moon-tailors/client", "dev"]
 
 # SPA build — nginx (gateway files) and nest (mount into server). Not a long-running service.
 FROM deps AS build
@@ -34,8 +34,8 @@ ARG VITE_API_URL=http://localhost:8088/server/api
 ENV VITE_API_URL=$VITE_API_URL
 ARG CLIENT_SSR=false
 ENV CLIENT_SSR=$CLIENT_SSR
-RUN pnpm --filter @template/contracts build
-RUN pnpm --filter @template/client build
+RUN pnpm --filter @moon-tailors/contracts build
+RUN pnpm --filter @moon-tailors/client build
 
 
 # Production: React Router SSR (clientMode=ssr) — gateway reverse-proxies

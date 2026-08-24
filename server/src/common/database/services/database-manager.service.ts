@@ -12,7 +12,7 @@ import {
   type ObjectLiteral,
   type Repository,
 } from "typeorm";
-import { EDbMode } from "@template/contracts";
+import { EDbMode } from "@moon-tailors/contracts";
 import type { DatabaseConfig, TenantConfig } from "../../../config";
 import { RequestContext } from "../../context";
 import type { TenantContext } from "../types";
@@ -98,7 +98,7 @@ export class DatabaseManager implements OnModuleInit, OnModuleDestroy {
 
     const mainUrl = this.config.getOrThrow<DatabaseConfig>("database").url;
     const parsed = new URL(mainUrl);
-    const mainDb = parsed.pathname.replace(/^\//, "") || "template_db";
+    const mainDb = parsed.pathname.replace(/^\//, "") || "moon_tailors_db";
     const tenantDb = `${mainDb}_tenant_${tenantId.replace(/-/g, "")}`;
 
     await this.main

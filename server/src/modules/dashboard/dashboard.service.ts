@@ -3,70 +3,75 @@ import {
   EResource,
   toIsoDate,
   type IDashboardSummary,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { PermissionsService } from "../../common/base";
+import { CustomersService } from "../customers/customers.service";
+import { OrdersService } from "../orders/orders.service";
 
-/**
- * Example dashboard — sample numbers only.
- * Replace `getSummary()` with real aggregates when you wire feature modules.
- */
 @Injectable()
 export class DashboardService implements OnModuleInit {
-  constructor(private readonly permissions: PermissionsService) {}
+  constructor(
+    private readonly permissions: PermissionsService,
+    private readonly customers: CustomersService,
+    private readonly orders: OrdersService,
+  ) {}
 
   async onModuleInit() {
     await this.permissions.ensureResource(EResource.DASHBOARD);
   }
 
-  getSummary(): IDashboardSummary {
-    const now = Date.now();
+  async getSummary(): Promise<IDashboardSummary> {
+    const [customerCount, orderCounts] = await Promise.all([
+      this.customers.count(),
+      this.orders.counts(),
+    ]);
+    const activity =
+      orderCounts.delayed > 0
+        ? [
+            {
+              id: "delayed",
+              title: `${orderCounts.delayed} delayed order${orderCounts.delayed === 1 ? "" : "s"}`,
+              detail: "Expected completion date has passed and the order is not delivered.",
+              at: toIsoDate(),
+            },
+          ]
+        : [
+            {
+              id: "ok",
+              title: "No delayed orders",
+              detail: "Active orders are on schedule.",
+              at: toIsoDate(),
+            },
+          ];
+
     return {
       stats: [
         {
-          key: "tasks",
-          label: "Open tasks",
-          value: 12,
-          hint: "Example count",
+          key: "customers",
+          label: "Customers",
+          value: customerCount,
+          hint: "In the book",
         },
         {
-          key: "users",
-          label: "Active users",
-          value: 8,
-          hint: "Example count",
+          key: "orders",
+          label: "Orders",
+          value: orderCounts.total,
+          hint: "All time",
         },
         {
-          key: "files",
-          label: "Files",
-          value: 34,
-          hint: "Example count",
+          key: "active",
+          label: "Active orders",
+          value: orderCounts.active,
+          hint: "Not yet delivered",
         },
         {
-          key: "cameras",
-          label: "Live cameras",
-          value: 3,
-          hint: "Example count",
+          key: "delayed",
+          label: "Delayed",
+          value: orderCounts.delayed,
+          hint: "Past expected date",
         },
       ],
-      activity: [
-        {
-          id: "1",
-          title: "Welcome to the dashboard",
-          detail: "This feed is sample data for the template example.",
-          at: toIsoDate(new Date(now - 5 * 60_000)),
-        },
-        {
-          id: "2",
-          title: "Task created",
-          detail: "“Review onboarding checklist”",
-          at: toIsoDate(new Date(now - 45 * 60_000)),
-        },
-        {
-          id: "3",
-          title: "File uploaded",
-          detail: "brand-guidelines.pdf",
-          at: toIsoDate(new Date(now - 3 * 3600_000)),
-        },
-      ],
+      activity,
       generatedAt: toIsoDate(),
     };
   }

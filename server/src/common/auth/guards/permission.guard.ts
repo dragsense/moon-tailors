@@ -5,7 +5,7 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { EPermissionAction } from "@template/contracts";
+import { EPermissionAction } from "@moon-tailors/contracts";
 import { PermissionsService, UserEntity } from "../../base";
 import {
   REQUIRED_PERMISSIONS_KEY,

@@ -3,7 +3,7 @@ import { loginPageOps } from "~/features/auth/ops/login";
 import type { Route } from "./+types/login";
 
 export function meta(_args: Route.MetaArgs) {
-  return [{ title: "Login · Template" }];
+  return [{ title: "Login · Moon Tailors" }];
 }
 
 export default function LoginPage() {

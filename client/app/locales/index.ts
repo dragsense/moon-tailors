@@ -1,6 +1,6 @@
-import { ELanguage } from "@template/contracts";
-import { ar } from "./ar";
+import { ELanguage } from "@moon-tailors/contracts";
 import { en, type EnDict } from "./en";
+import { ur } from "./ur";
 
 export type LocaleDict = EnDict;
 
@@ -10,7 +10,7 @@ export const LOCALE_CATALOG: Record<
     dict: LocaleDict;
     intl: string;
     dir: "ltr" | "rtl";
-    /** Native endonym — never translate (English, العربية, …). */
+    /** Native endonym — never translate (English, اردو, …). */
     nativeLabel: string;
   }
 > = {
@@ -20,11 +20,11 @@ export const LOCALE_CATALOG: Record<
     dir: "ltr",
     nativeLabel: "English",
   },
-  [ELanguage.AR]: {
-    dict: ar,
-    intl: "ar-AE",
+  [ELanguage.UR]: {
+    dict: ur,
+    intl: "ur-PK",
     dir: "rtl",
-    nativeLabel: "العربية",
+    nativeLabel: "اردو",
   },
 };
 

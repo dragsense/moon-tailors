@@ -10,7 +10,6 @@ import { BaseBusinessService } from "../../base/business";
 import { SKIP_TENANT_KEY } from "../decorators/skip-tenant.decorator";
 
 type TenantRequest = {
-  subdomain?: string;
   tenantId?: string;
   businessId?: string;
 };
@@ -36,20 +35,17 @@ export class TenantGuard implements CanActivate {
     if (skip) return true;
 
     const request = context.switchToHttp().getRequest<TenantRequest>();
-    const subdomain =
-      request.subdomain ?? RequestContext.get("subdomain");
+    
     const tenantId = request.tenantId ?? RequestContext.get("tenantId");
 
     let business =
       typeof tenantId === "string" && tenantId
         ? await this.businesses.findByTenantId(tenantId)
-        : typeof subdomain === "string" && subdomain
-          ? await this.businesses.findBySubdomain(subdomain)
           : null;
 
-    if ((tenantId || subdomain) && !business) {
+    if ((tenantId) && !business) {
       throw new BadRequestException(
-        `Business not found for ${subdomain ?? tenantId}`,
+        `Business not found for ${tenantId}`,
       );
     }
 
@@ -73,9 +69,6 @@ export class TenantGuard implements CanActivate {
     RequestContext.set("businessId", business.id);
     RequestContext.set("tenantId", business.tenantId);
     RequestContext.set("isPlatformBusiness", Boolean(business.isPlatform));
-    if (business.subdomain) {
-      RequestContext.set("subdomain", business.subdomain);
-    }
 
     return true;
   }

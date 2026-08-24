@@ -44,7 +44,7 @@ export type SchemaFormProps<TSchema extends AnyZodObject> =
  *     // Remote list → select (validation still string/id from schema)
  *     title: {
  *       type: "select",
- *       label: "Template",
+ *       label: "Title",
  *       options: users.map((u) => ({ label: u.name, value: u.name })),
  *     },
  *     // Conditions from other fields

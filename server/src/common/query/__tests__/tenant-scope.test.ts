@@ -1,6 +1,6 @@
 const assert = require("node:assert/strict");
 const { describe, it } = require("node:test");
-const { EUserLevel } = require("@template/contracts");
+const { EUserLevel } = require("@moon-tailors/contracts");
 const { RequestContext } = require("../../context");
 const {
   applyTenantScope,

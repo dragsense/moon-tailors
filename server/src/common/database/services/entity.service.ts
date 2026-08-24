@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { buildPaginatedResponse } from "@template/contracts";
+import { buildPaginatedResponse } from "@moon-tailors/contracts";
 import type {
   DeepPartial,
   EntityManager,

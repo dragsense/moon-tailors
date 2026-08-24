@@ -4,7 +4,7 @@ export function handleStartupError(error: unknown): void {
     `${JSON.stringify({
       timestamp: new Date().toISOString(),
       level: "fatal",
-      service: process.env.SERVICE_NAME ?? "template-server",
+      service: process.env.SERVICE_NAME ?? "moon-tailors-server",
       message: "startup_failed",
       errorMessage: exception.message,
       stack: exception.stack,

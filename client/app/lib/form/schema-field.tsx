@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { IFieldMeta } from "@template/contracts";
+import type { IFieldMeta } from "@moon-tailors/contracts";
 import {
   Controller,
   useWatch,

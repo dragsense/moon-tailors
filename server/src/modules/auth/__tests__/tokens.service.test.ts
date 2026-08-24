@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { EUserLevel } from "@template/contracts";
+import { EUserLevel } from "@moon-tailors/contracts";
 import { RefreshTokenEntity } from "../entities/refresh-token.entity";
 import { TokenService } from "../services/tokens.service";
 import { hashAuthSecret } from "../utils/auth-crypto";

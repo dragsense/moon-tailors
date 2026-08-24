@@ -1,4 +1,4 @@
-import type { IPaginatedResponse } from "@template/contracts";
+import type { IPaginatedResponse } from "@moon-tailors/contracts";
 import { Alert, CardRow, List, ListPagination } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/hooks/use-i18n";
@@ -11,7 +11,7 @@ import { useOp, type QueryOpComponentProps } from "~/ops";
 import { userDisplayName, type TUserRow } from "../api";
 
 /**
- * Users page list — page chrome via `Page`; CRUD + task ops from store.
+ * Users page list — page chrome via `Page`; CRUD from store.
  */
 export function UserList({
   data,
@@ -27,11 +27,9 @@ export function UserList({
   const prefsData = mySettings.kind === "query" ? mySettings.data : undefined;
   const createUser = useOp(store, "createUser");
   const deleteUser = useOp(store, "deleteUser");
-  const createTask = useOp(store, "createTask");
 
   if (createUser.kind !== "mutation") return null;
   if (deleteUser.kind !== "mutation") return null;
-  if (createTask.kind !== "mutation") return null;
 
   const page = data as IPaginatedResponse<TUserRow> | undefined;
   const users = page?.data ?? [];
@@ -46,20 +44,13 @@ export function UserList({
   return (
     <Page
       title="Users"
-      description="Example feature pack with task create from taskOpsCore — no tasksListOps on this page."
+      description="Staff accounts for Moon Tailors."
       actions={
-        <>
-          {createTask.allowed ? (
-            <Button type="button" variant="outline" onClick={() => createTask.open()}>
-              New task
-            </Button>
-          ) : null}
-          {createUser.allowed ? (
-            <Button type="button" onClick={() => createUser.open()}>
-              New user
-            </Button>
-          ) : null}
-        </>
+        createUser.allowed ? (
+          <Button type="button" onClick={() => createUser.open()}>
+            New user
+          </Button>
+        ) : null
       }
     >
       {isPending ? (
@@ -84,32 +75,20 @@ export function UserList({
           <CardRow
             title={userDisplayName(user)}
             actions={
-              <>
-                {createTask.allowed ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => createTask.open()}
-                  >
-                    New task
-                  </Button>
-                ) : null}
-                {deleteUser.allowed ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      void deleteUser
-                        .run({ id: user.id, name: userDisplayName(user) })
-                        .catch(() => {});
-                    }}
-                  >
-                    Delete
-                  </Button>
-                ) : null}
-              </>
+              deleteUser.allowed ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    void deleteUser
+                      .run({ id: user.id, name: userDisplayName(user) })
+                      .catch(() => {});
+                  }}
+                >
+                  Delete
+                </Button>
+              ) : null
             }
           >
             <p className="text-sm text-muted-foreground">{user.email}</p>

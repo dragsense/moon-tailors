@@ -1,5 +1,5 @@
 import { useId, useMemo, useTransition } from "react";
-import type { IPaginationMeta } from "@template/contracts";
+import type { IPaginationMeta } from "@moon-tailors/contracts";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,

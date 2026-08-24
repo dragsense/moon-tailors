@@ -1,38 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --font-display: "Bricolage Grotesque", Georgia, serif;
+  --font-display: "Playfair Display", Georgia, serif;
   --font-body: "Figtree", system-ui, sans-serif;
-  --color-accent: #2a9d8f;
+  --color-accent: #c4a35a;
+  --color-burgundy: #6b2d3c;
 }
 
-/* Dark (default landing look) */
+/* Dark (wine shop) */
 html.dark,
 html:not(.light):not(.dark) {
-  --color-ink: #071512;
-  --color-foam: #f3faf7;
-  --color-mist: #c5d8d0;
-  --color-panel: rgba(7, 21, 18, 0.72);
-  --color-border: rgba(232, 240, 236, 0.28);
+  --color-ink: #1c1214;
+  --color-foam: #f6efe4;
+  --color-mist: #d4c4b0;
+  --color-panel: rgba(28, 18, 20, 0.78);
+  --color-border: rgba(246, 239, 228, 0.22);
   --hero-gradient:
-    radial-gradient(120% 80% at 10% 0%, rgba(42, 157, 143, 0.28), transparent 55%),
-    radial-gradient(90% 70% at 90% 20%, rgba(233, 196, 106, 0.18), transparent 50%),
-    linear-gradient(160deg, #071512 0%, #0f2a24 45%, #12352c 100%);
-  --btn-primary-fg: #06201a;
+    radial-gradient(120% 80% at 10% 0%, rgba(107, 45, 60, 0.45), transparent 55%),
+    radial-gradient(90% 70% at 90% 20%, rgba(196, 163, 90, 0.22), transparent 50%),
+    linear-gradient(160deg, #1c1214 0%, #2a181c 45%, #3a2228 100%);
+  --btn-primary-fg: #1c1214;
   color-scheme: dark;
 }
 
 html.light {
-  --color-ink: #f4faf7;
-  --color-foam: #0b1f1a;
-  --color-mist: #3d5c52;
-  --color-panel: rgba(244, 250, 247, 0.86);
-  --color-border: rgba(11, 31, 26, 0.16);
+  --color-ink: #f6efe4;
+  --color-foam: #2a211c;
+  --color-mist: #6b5348;
+  --color-panel: rgba(246, 239, 228, 0.9);
+  --color-border: rgba(42, 33, 28, 0.16);
   --hero-gradient:
-    radial-gradient(120% 80% at 12% 0%, rgba(42, 157, 143, 0.22), transparent 55%),
-    radial-gradient(90% 70% at 88% 18%, rgba(201, 162, 39, 0.14), transparent 50%),
-    linear-gradient(160deg, #eef7f3 0%, #dceee7 48%, #cfe6de 100%);
-  --btn-primary-fg: #06201a;
+    radial-gradient(120% 80% at 12% 0%, rgba(107, 45, 60, 0.16), transparent 55%),
+    radial-gradient(90% 70% at 88% 18%, rgba(196, 163, 90, 0.18), transparent 50%),
+    linear-gradient(160deg, #faf6ef 0%, #f0e4d4 48%, #e8d5c4 100%);
+  --btn-primary-fg: #1c1214;
   color-scheme: light;
 }
 
@@ -132,7 +133,10 @@ body {
   position: relative;
   z-index: 1;
   width: min(40rem, 100%);
-  text-align: start;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .hero__brand {
@@ -197,7 +201,7 @@ body {
 }
 
 .btn--primary:hover {
-  background: #3cb5a4;
+  background: #d4b56e;
 }
 
 .btn--ghost {
@@ -397,6 +401,96 @@ body {
 .mono-list__detail {
   font-size: 0.95rem;
   color: var(--color-mist);
+}
+
+.landing {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.landing .hero {
+  flex: 1;
+}
+
+.hero__cloth {
+  position: absolute;
+  inset: 0;
+  opacity: 0.28;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 18px,
+      color-mix(in srgb, var(--color-foam) 7%, transparent) 18px,
+      color-mix(in srgb, var(--color-foam) 7%, transparent) 19px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 18px,
+      color-mix(in srgb, var(--color-foam) 7%, transparent) 18px,
+      color-mix(in srgb, var(--color-foam) 7%, transparent) 19px
+    );
+  pointer-events: none;
+}
+
+.hero__garment {
+  width: min(12rem, 42vw);
+  margin-bottom: 1rem;
+  color: var(--color-accent);
+}
+
+.hero__title {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.hero__title-main {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 8vw, 4.35rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  color: var(--color-foam);
+}
+
+.hero__title-sub {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3.4vw, 2rem);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+}
+
+.hero__stitch {
+  width: min(18rem, 70%);
+  height: 12px;
+  margin: 0.85rem 0 1.1rem;
+  color: var(--color-accent);
+}
+
+.site-footer,
+.site-footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 1.15rem 1.5rem 1.5rem;
+  border-top: 1px dashed color-mix(in srgb, var(--color-accent) 55%, var(--color-border));
+  color: var(--color-mist);
+  font-size: 0.82rem;
+}
+
+.site-footer p,
+.site-footer p {
+  margin: 0;
+}
+
+.btn[aria-disabled="true"] {
+  pointer-events: none;
+  opacity: 0.7;
 }
 
 @media (prefers-reduced-motion: reduce) {

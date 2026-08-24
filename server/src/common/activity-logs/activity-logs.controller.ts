@@ -7,7 +7,7 @@ import {
   listQuerySchema,
   type IPaginatedResponse,
   type TListQuery,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { RequirePermissions, RequireUserLevels } from "../auth";
 import { ZodValidationPipe } from "../validation";
 import { ActivityLogsService } from "./activity-logs.service";

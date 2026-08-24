@@ -12,7 +12,7 @@ export type SecuritySkipConfig = {
   /** Always bypass CSRF even when the path is CSRF-protected. */
   csrfSkipPaths: RegExp[];
   /**
- * Cookie-auth mutators that require CSRF (template allowlist model).
+ * Cookie-auth mutators that require CSRF (project allowlist model).
  * Bearer APIs are not covered — only these paths.
  */
   csrfProtectedPaths: RegExp[];
@@ -66,13 +66,7 @@ export const DEFAULT_ENCRYPTION_SKIP_PATHS = [
   "^/api/swagger-docs",
   "^/docs",
   "^/api/auth/csrf/?$",
-  "^/api/auth/options/?$",
   "^/api/auth/login/?$",
-  "^/api/auth/signup/?$",
-  "^/api/auth/email-login/?$",
-  "^/api/auth/forgot-password/?$",
-  "^/api/auth/reset-password/?$",
-  "^/api/auth/verify-otp/?$",
   "^/api/auth/refresh/?$",
   "^/api/auth/logout/?$",
   "^/api/auth/me/?$",

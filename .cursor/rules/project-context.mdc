@@ -18,7 +18,7 @@ When editing a package, also check its package README if present (`server/`, `cl
 ## Monorepo layout
 
 ```txt
-template/
+moon-tailors/
   contracts/   Shared Zod schemas, types (I*/E*/T*), helpers
   server/      NestJS API + TypeORM migrations (nest mode: serve separately built SPA)
   client/      React Router v7 (Vite SPA in dev; deploy: nginx | ssr | nest | cdn)

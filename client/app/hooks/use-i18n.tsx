@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { ELanguage } from "@template/contracts";
+import { ELanguage } from "@moon-tailors/contracts";
 import {
   resolveDirectionLayout,
   type DirectionLayout,
@@ -33,7 +33,11 @@ const I18nContext = createContext<I18nContextValue | undefined>(undefined);
 function readStoredLanguage(): ELanguage {
   if (typeof window === "undefined") return DEFAULT_LANGUAGE;
   const raw = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (raw === ELanguage.EN || raw === ELanguage.AR) return raw;
+  if (raw === "ar") {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, ELanguage.UR);
+    return ELanguage.UR;
+  }
+  if (raw === ELanguage.EN || raw === ELanguage.UR) return raw;
   return DEFAULT_LANGUAGE;
 }
 

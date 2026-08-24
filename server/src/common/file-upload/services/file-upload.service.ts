@@ -18,7 +18,7 @@ import {
   type TCreateFileUpload,
   type TFileListQuery,
   type TUpdateFileUpload,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import type { Readable } from "node:stream";
 import { PermissionsService } from "../../base";
 import {

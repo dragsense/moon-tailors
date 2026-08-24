@@ -3,7 +3,7 @@ import type {
   TDeleteEntitySettingResponse,
   TSaveEntitySettingsData,
   TSaveEntitySettingsResponse,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
 
 class EntitySettingsService extends BaseService<

@@ -14,10 +14,10 @@ export default registerAs(
   "mqtt",
   (): MqttConfig => ({
     url: process.env.MQTT_URL || "mqtt://mqtt:1883",
-    clientId: process.env.MQTT_CLIENT_ID || "template-mqtt-server",
+    clientId: process.env.MQTT_CLIENT_ID || "moon-tailors-mqtt-server",
     publisherClientId:
-      process.env.MQTT_PUBLISHER_CLIENT_ID || "template-mqtt-publisher",
-    topics: (process.env.MQTT_TOPICS || "template/#")
+      process.env.MQTT_PUBLISHER_CLIENT_ID || "moon-tailors-mqtt-publisher",
+    topics: (process.env.MQTT_TOPICS || "moon-tailors/#")
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean),

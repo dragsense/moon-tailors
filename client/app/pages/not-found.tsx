@@ -13,9 +13,6 @@ export default function NotFoundPage() {
         <Button asChild variant="default">
           <Link to={PUBLIC_ROUTES.LOGIN}>Go to login</Link>
         </Button>
-        <Button asChild variant="outline">
-          <Link to={PUBLIC_ROUTES.SIGNUP}>Sign up</Link>
-        </Button>
       </div>
     </Page>
   );

@@ -9,8 +9,8 @@ import type {
   TDeleteEntitySettingResponse,
   TSaveEntitySettingsData,
   TSaveEntitySettingsResponse,
-} from "@template/contracts";
-import { EPermissionAction, EResource, EUserLevel } from "@template/contracts";
+} from "@moon-tailors/contracts";
+import { EPermissionAction, EResource, EUserLevel } from "@moon-tailors/contracts";
 import {
   BaseSettingsService,
   PermissionsService,

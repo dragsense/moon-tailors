@@ -10,7 +10,7 @@ Not only types — also runtime schemas and shared functions.
 src/
   common/       pagination, message response, list-query base
   features/
-    auth/       login / signup (schema + types + interfaces)
+    auth/       login (schema + types + interfaces)
     user/       create / update / get / list / paginated
     task/       enum + create / update / get / list / paginated
   lib/          field(), format, dates, pagination helpers
@@ -58,7 +58,7 @@ paginatedTasksSchema → IPaginatedTasks  (flat: data + total/page/limit/…)
 ## Form generation
 
 ```ts
-import { createTaskSchema, getFormFields } from "@template/contracts";
+import { createTaskSchema, getFormFields } from "@moon-tailors/contracts";
 
 const fields = getFormFields(createTaskSchema);
 ```
@@ -71,5 +71,5 @@ import {
   buildPaginationMeta,
   createPaginatedSchema,
   listQuerySchema,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 ```

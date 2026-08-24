@@ -14,10 +14,10 @@ export default registerAs(
   "scalar",
   (): ScalarConfig => ({
     theme: process.env.SCALAR_THEME || "purple",
-    title: process.env.SCALAR_TITLE || "Template API",
+    title: process.env.SCALAR_TITLE || "Moon Tailors API",
     description:
       process.env.SCALAR_DESCRIPTION ||
-      "Backend template with shared Zod contracts",
+      "Moon Tailors API with shared Zod contracts",
     showSidebar: process.env.SCALAR_SHOW_SIDEBAR !== "false",
     hideDownloadButton: process.env.SCALAR_HIDE_DOWNLOAD === "true",
     hideTryItPanel: process.env.SCALAR_HIDE_TRY_IT === "true",

@@ -1,4 +1,4 @@
-import type { IChat, IChatMessage, INotification } from "@template/contracts";
+import type { IChat, IChatMessage, INotification } from "@moon-tailors/contracts";
 
 /** Server → client events. Extend per feature (notifications, …). */
 export type ServerToClientEvents = {

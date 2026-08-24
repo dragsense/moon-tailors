@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import {
   EPermissionAction,
   EResource,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { In } from "typeorm";
 import {
   EntityService,

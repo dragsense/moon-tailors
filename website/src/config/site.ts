@@ -3,8 +3,9 @@ export type SiteConfig = {
   tagline: string;
   description: string;
   appUrl: string;
+  apiUrl: string;
   loginPath: string;
-  signupPath: string;
+  dashboardPath: string;
 };
 
 /**
@@ -15,18 +16,23 @@ export function getSiteConfig(): SiteConfig {
   const appUrl = (
     import.meta.env.PUBLIC_APP_URL ?? "http://localhost:8088/app"
   ).replace(/\/$/, "");
+  const apiUrl = (
+    import.meta.env.PUBLIC_API_URL ?? "http://localhost:8088/server/api"
+  ).replace(/\/$/, "");
 
   return {
-    name: import.meta.env.PUBLIC_SITE_NAME ?? "Template",
+    name:
+      import.meta.env.PUBLIC_SITE_NAME ?? "Moon Tailors & Matching Center",
     tagline:
-      import.meta.env.PUBLIC_SITE_TAGLINE ?? "Ship the product, not the plumbing.",
+      import.meta.env.PUBLIC_SITE_TAGLINE ??
+      "Bespoke stitching and matching, made simple.",
     description:
       import.meta.env.PUBLIC_SITE_DESCRIPTION ??
-      "Contracts-first monorepo: NestJS, React Router, Zod schemas, ops packs, RBAC, and deploy tooling.",
+      "Find a customer, take measurements, and follow each order from cutting to delivery.",
     appUrl,
-    /** Client `/` and `/login` both render login. */
+    apiUrl,
     loginPath: import.meta.env.PUBLIC_APP_LOGIN_PATH ?? "/",
-    signupPath: import.meta.env.PUBLIC_APP_SIGNUP_PATH ?? "/signup",
+    dashboardPath: import.meta.env.PUBLIC_APP_DASHBOARD_PATH ?? "/dashboard",
   };
 }
 

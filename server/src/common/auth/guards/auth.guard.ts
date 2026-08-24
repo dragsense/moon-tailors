@@ -7,7 +7,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
-import { EAuthMethod } from "@template/contracts";
+import { EAuthMethod } from "@moon-tailors/contracts";
 import type { AuthConfig } from "../../../config";
 import { RequestContext } from "../../context";
 import { BaseUsersService, UserEntity } from "../../base";

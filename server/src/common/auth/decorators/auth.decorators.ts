@@ -3,7 +3,7 @@ import {
   EAuthMethod,
   type EPermissionAction,
   type EResource,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import type { UserEntity } from "../../base";
 
 export const IS_PUBLIC_KEY = "isPublic";

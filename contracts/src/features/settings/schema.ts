@@ -57,14 +57,6 @@ export const timeSettingsSchema = z.object({
       value,
     })),
   }),
-  /**
-   * IANA timezone. `null` = use the device/browser timezone
-   * (same behavior as apps that omit a timezone picker).
-   */
-  timezone: field(z.string().min(1).nullable().default(null), {
-    type: "select",
-    label: "Timezone",
-  }),
 });
 
 export const notificationSettingsSchema = z.object({
@@ -84,19 +76,24 @@ export const notificationSettingsSchema = z.object({
 
 /** User preferences persisted via entity-settings/me. */
 export const userPreferencesSchema = z.object({
-  language: field(z.nativeEnum(ELanguage).default(ELanguage.EN), {
-    type: "select",
-    label: "Language",
-    options: Object.values(ELanguage).map((value) => ({
-      label: value,
-      value,
-    })),
-  }),
+  language: field(
+    z.preprocess(
+      (value) => (value === "ar" ? ELanguage.UR : value),
+      z.nativeEnum(ELanguage).default(ELanguage.EN),
+    ),
+    {
+      type: "select",
+      label: "Language",
+      options: Object.values(ELanguage).map((value) => ({
+        label: value,
+        value,
+      })),
+    },
+  ),
   theme: themeSettingsSchema.default({ theme: ETheme.SYSTEM }),
   time: timeSettingsSchema.default({
     dateFormat: EDateFormat.MMM_DD_YYYY,
     timeFormat: ETimeFormat.TWELVE_HOUR,
-    timezone: null,
   }),
   notifications: notificationSettingsSchema.default({
     pushEnabled: true,
@@ -111,7 +108,6 @@ export const DEFAULT_USER_PREFERENCES: z.infer<typeof userPreferencesSchema> = {
   time: {
     dateFormat: EDateFormat.MMM_DD_YYYY,
     timeFormat: ETimeFormat.TWELVE_HOUR,
-    timezone: null,
   },
   notifications: {
     pushEnabled: true,

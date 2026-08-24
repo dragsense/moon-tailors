@@ -9,8 +9,8 @@ export class PlatformTools implements McpRegistrar {
   register(server: McpServer) {
     server.registerTool(
       "hello",
-      { description: "Say hello to the template MCP server" },
-      async () => textResult("Hello from template MCP server!"),
+      { description: "Say hello to the Moon Tailors MCP server" },
+      async () => textResult("Hello from Moon Tailors MCP server!"),
     );
 
     // `as any` on config: MCP SDK + Zod can OOM TypeScript in nest --watch (TS2589).
@@ -30,7 +30,7 @@ export class PlatformTools implements McpRegistrar {
       { description: "Return MCP server metadata as JSON" },
       async () =>
         jsonResult({
-          name: "template-mcp",
+          name: "moon-tailors-mcp",
           role: "Agent surface over the Nest API",
           structure: "modules/{platform,health,tasks} + common/api",
         }),

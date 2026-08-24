@@ -1,7 +1,7 @@
 /**
  * Load docker/environments.json and build docker compose args.
  *
- * Each environment (development, staging, …) nests:
+ * Environments: local (laptop) and staging. Each nests
  *   server / client / mcp / website  — with env paths (+ server.needs for infra)
  *
  * Deploy picks one or more apps (multi-select or all) from that environment.
@@ -25,8 +25,6 @@ const SERVICE_ORDER = [
   "postgres",
   "redis",
   "mailpit",
-  "mqtt",
-  "mediamtx",
   "server",
   "client",
   "mcp",
@@ -373,7 +371,7 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
         );
 
   const merged = {
-    projectName: envBlock.projectName || "template",
+    projectName: envBlock.projectName || "moon-tailors",
     compose: envBlock.compose || raw.compose || "docker/compose.yml",
     envDir: envBlock.envDir || raw.envDir || "env",
     dockerEnv,
@@ -456,7 +454,7 @@ export function composeProcessEnv(cfg, extra = {}) {
   }
 
   const env = {
-    COMPOSE_PROJECT_NAME: cfg.projectName || "template",
+    COMPOSE_PROJECT_NAME: cfg.projectName || "moon-tailors",
     BUILD_TARGET: cfg.buildTarget || "runtime",
     CLIENT_BUILD_TARGET: clientBuildTarget,
     SERVER_BUILD_TARGET: serverBuildTarget,

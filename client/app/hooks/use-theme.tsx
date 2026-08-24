@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -84,14 +85,20 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const setTheme = (next: Theme) => {
-    setThemeState(next);
-    localStorage.setItem(storageKey, next);
-  };
+  const setTheme = useCallback(
+    (next: Theme) => {
+      setThemeState(next);
+      localStorage.setItem(storageKey, next);
+      const resolved = resolveTheme(next);
+      applyTheme(resolved);
+      setResolvedTheme(resolved);
+    },
+    [storageKey],
+  );
 
   const value = useMemo(
     () => ({ theme, setTheme, resolvedTheme }),
-    [theme, resolvedTheme],
+    [theme, setTheme, resolvedTheme],
   );
 
   return (

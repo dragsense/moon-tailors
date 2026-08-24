@@ -1,4 +1,4 @@
-import type { IAuthUser, ILoginResponse } from "@template/contracts";
+import type { IAuthUser, ILoginResponse } from "@moon-tailors/contracts";
 import { setApiAccessToken, setCsrfToken } from "~/lib/api";
 import { queryClient } from "~/lib/query";
 import { getMe } from "../api";

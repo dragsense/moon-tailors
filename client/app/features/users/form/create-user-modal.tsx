@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createUserSchema, type TUserResponse } from "@template/contracts";
+import { createUserSchema, type TUserResponse } from "@moon-tailors/contracts";
 import { Modal } from "~/components/layout-ui";
 import { SchemaForm } from "~/components/form-ui";
 import type { MutationOpComponentProps } from "~/ops";

@@ -1,6 +1,6 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import { EUserLevel } from "@template/contracts";
+import { EUserLevel } from "@moon-tailors/contracts";
 import { RequireUserLevels } from "../auth";
 import { DomainEventRegistry } from "./domain-event.registry";
 import { EventService } from "./event.service";

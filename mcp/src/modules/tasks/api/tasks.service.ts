@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { IPaginatedTasks, ITask } from "@template/contracts";
+import type { IPaginatedTasks, ITask } from "@moon-tailors/contracts";
 import { ApiClient, BaseApiService } from "../../../common/api";
 
 /**

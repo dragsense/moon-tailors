@@ -1,4 +1,4 @@
-import { EFileType } from "@template/contracts";
+import { EFileType } from "@moon-tailors/contracts";
 
 export function detectFileType(mimeType: string): EFileType {
   const mime = mimeType.toLowerCase();

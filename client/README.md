@@ -35,8 +35,8 @@ Three layout groups in `app/routes.ts`. Guards (middleware-style) wrap shells �
 
 | Group | Guard | Shell | Routes |
 |---|---|---|---|
-| Auth | `GuestGuard` | `AuthShell` | `/` (login), `/signup`, `/verify-otp`, … (`/login` → `/`) |
-| App | `AuthGuard` → `AccessGuard` | `AppShell` | `/dashboard`, `/tasks`, `/users`, … |
+| Auth | `GuestGuard` | `AuthShell` | `/` (login) (`/login` → `/`) |
+| App | `AuthGuard` → `AccessGuard` | `AppShell` | `/dashboard`, `/customers`, `/orders`, … |
 
 Marketing landing lives on the **website** package (`http://localhost:8088/`), not here.
 
@@ -60,7 +60,7 @@ config/
   nav.config.ts      grouped NavItems + navItemsByLevel / getNavItems
 ```
 
-`app/routes.ts` registers paths from these constants, `AppShell` renders the sidebar from `getNavItems(user)`, and `access-guard` denies a page via `canAccessRoute()`. Individual buttons/actions use op-level `permission` + `useOp().allowed`. Broad account categories use `EUserLevel`; fine-grained access comes from server-assigned permissions. Public signup creates a **super admin** (explicit product perms — not the full resource catalog).
+`app/routes.ts` registers paths from these constants, `AppShell` renders the sidebar from `getNavItems(user)`, and `access-guard` denies a page via `canAccessRoute()`. Individual buttons/actions use op-level `permission` + `useOp().allowed`. Broad account categories use `EUserLevel`; fine-grained access comes from server-assigned permissions. The shop has a single **platform owner** seeded from env.
 
 Adding a page:
 

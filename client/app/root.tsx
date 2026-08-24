@@ -7,7 +7,7 @@ import {
 } from "react-router";
 import { useEffect, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
-import type { ILoginResponse } from "@template/contracts";
+import type { ILoginResponse } from "@moon-tailors/contracts";
 import type { Route } from "./+types/root";
 import { AppErrorScreen, AppLoader } from "~/components/layout-ui";
 import { TooltipProvider } from "~/components/ui/tooltip";
@@ -34,9 +34,20 @@ import "./app.css";
 
 const themeInitScript = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var t=localStorage.getItem(k)||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.classList.remove('light','dark');document.documentElement.classList.add(r);}catch(e){}})();`;
 
-const localeInitScript = `(function(){try{var k=${JSON.stringify(LANGUAGE_STORAGE_KEY)};var lang=localStorage.getItem(k)||'en';var dir=lang==='ar'?'rtl':'ltr';document.documentElement.lang=lang;document.documentElement.dir=dir;document.documentElement.setAttribute('dir',dir);}catch(e){}})();`;
+const localeInitScript = `(function(){try{var k=${JSON.stringify(LANGUAGE_STORAGE_KEY)};var lang=localStorage.getItem(k)||'en';if(lang==='ar'){lang='ur';localStorage.setItem(k,'ur');}var dir=lang==='ur'?'rtl':'ltr';document.documentElement.lang=lang;document.documentElement.dir=dir;document.documentElement.setAttribute('dir',dir);}catch(e){}})();`;
 
-export const links: Route.LinksFunction = () => [];
+export const links: Route.LinksFunction = () => [
+  { rel: "preconnect", href: "https://fonts.googleapis.com" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
+  },
+  {
+    rel: "stylesheet",
+    href: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap",
+  },
+];
 
 export function HydrateFallback() {
   return <AppLoader />;
@@ -75,13 +86,10 @@ function isLoginResponse(payload: unknown): payload is ILoginResponse {
 
 const PUBLIC_AUTH_PATHS = new Set([
   "/",
-  "/",
   "/login",
-  "/signup",
   "/verify-otp",
   "/forgot-password",
   "/reset-password",
-  "/email-login",
 ]);
 
 export default function App() {

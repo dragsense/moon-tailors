@@ -1,5 +1,5 @@
 import { registerAs } from "@nestjs/config";
-import { EAppMode, EDbMode } from "@template/contracts";
+import { EAppMode, EDbMode } from "@moon-tailors/contracts";
 
 export type TenantConfig = {
   appMode: EAppMode;

@@ -20,26 +20,23 @@ const LABEL_KEY: Record<NonProd, TranslationKey> = {
 
 const TONE: Record<
   NonProd,
-  { bar: string; chip: string; ring: string; wash: string; mark: string }
+  { bar: string; chip: string; wash: string; mark: string }
 > = {
   development: {
     bar: "bg-gradient-to-r from-amber-500/95 via-amber-400/95 to-orange-400/95 text-amber-950",
     chip: "bg-amber-950/15 text-amber-950",
-    ring: "shadow-[inset_0_0_0_3px_rgb(245_158_11/0.55)]",
     wash: "bg-amber-500/[0.04]",
     mark: "text-amber-700/20",
   },
   testing: {
     bar: "bg-gradient-to-r from-sky-600/95 via-sky-500/95 to-cyan-500/95 text-white",
     chip: "bg-white/20 text-white",
-    ring: "shadow-[inset_0_0_0_3px_rgb(14_165_233/0.5)]",
     wash: "bg-sky-500/[0.04]",
     mark: "text-sky-700/20",
   },
   staging: {
     bar: "bg-gradient-to-r from-teal-800/95 via-teal-700/95 to-emerald-700/95 text-white",
     chip: "bg-white/15 text-white",
-    ring: "shadow-[inset_0_0_0_3px_rgb(15_118_110/0.55)]",
     wash: "bg-teal-600/[0.05]",
     mark: "text-teal-800/20",
   },
@@ -69,13 +66,11 @@ export function EnvironmentBanner({ className }: { className?: string }) {
         className={cn(
           "pointer-events-none fixed inset-0 z-[90]",
           tone.wash,
-          tone.ring,
         )}
       >
         <div
           className={cn(
-            "absolute end-4 bottom-10 select-none text-[clamp(2.5rem,8vw,5.5rem)] font-black tracking-[0.12em] uppercase",
-            "rotate-[-8deg]",
+            "absolute end-1 bottom-1 select-none text-[clamp(0.5rem,8vw,1.5rem)] font-black tracking-[0.12em] uppercase",
             tone.mark,
           )}
         >
@@ -104,7 +99,7 @@ export function EnvironmentBanner({ className }: { className?: string }) {
         </span>
         <nav className="pointer-events-auto flex items-center gap-2">
           {GATEWAY_LINKS.map((item) => (
-            <a key={item.href} href={item.href} className="underline-offset-2 hover:underline">
+            <a key={item.href} href={item.href} target="_blank" className="underline-offset-2 hover:underline">
               {t(item.label)}
             </a>
           ))}

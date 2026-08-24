@@ -2,6 +2,7 @@ import {
   BaseEntity,
   Column,
   CreateDateColumn,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -13,6 +14,10 @@ import {
 export abstract class GeneralBaseEntity extends BaseEntity {
   @PrimaryGeneratedColumn("uuid")
   id!: string;
+
+  @Index()
+  @Column({ type: "uuid", nullable: true })
+  tenantId!: string | null;
 
   @CreateDateColumn({ type: "timestamptz" })
   createdAt!: Date;

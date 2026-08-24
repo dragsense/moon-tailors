@@ -13,10 +13,10 @@ export class PlatformResources implements McpRegistrar {
   register(server: McpServer) {
     const mcp = this.config.getOrThrow<McpConfig>("mcp");
 
-    server.resource("info", "template://info", async () => ({
+    server.resource("info", "moon-tailors://info", async () => ({
       contents: [
         {
-          uri: "template://info",
+          uri: "moon-tailors://info",
           mimeType: "application/json",
           text: JSON.stringify(
             {
@@ -24,7 +24,7 @@ export class PlatformResources implements McpRegistrar {
               version: mcp.version,
               apiBaseUrl: mcp.apiBaseUrl,
               description:
-                "Template MCP — tools call Nest via common/api BaseApiService",
+                "Moon Tailors MCP — tools call Nest via common/api BaseApiService",
             },
             null,
             2,
@@ -33,12 +33,12 @@ export class PlatformResources implements McpRegistrar {
       ],
     }));
 
-    server.resource("status", "template://status", async () => {
+    server.resource("status", "moon-tailors://status", async () => {
       const uptimeSec = Math.floor((Date.now() - this.startedAt) / 1000);
       return {
         contents: [
           {
-            uri: "template://status",
+            uri: "moon-tailors://status",
             mimeType: "application/json",
             text: JSON.stringify(
               {

@@ -4,7 +4,7 @@
  * ```txt
  * pages/
  *   public/
- *     auth/          / (login), signup, verify-otp, forgot/reset, email-login
+ *     auth/          / (login)
  *   protected/
  *     dashboard, tasks/, users/, chat/, billings/, …
  *     unauthorized.tsx

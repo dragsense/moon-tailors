@@ -12,12 +12,12 @@ import type {
   TDeleteEntitySettingResponse,
   TSaveEntitySettingsData,
   TSaveEntitySettingsResponse,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import {
   EPermissionAction,
   EResource,
   saveEntitySettingsSchema,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import type { UserEntity } from "../../common/base";
 import { CurrentUser, RequirePermissions } from "../../common/auth";
 import { ZodValidationPipe } from "../../common/validation";

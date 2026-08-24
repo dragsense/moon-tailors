@@ -7,7 +7,6 @@ import {
 import { UsersController } from "./users.controller";
 import { UsersService } from "./users.service";
 import { PlatformOwnerSeed } from "./seeder/platform-owner.seed";
-import { UserEmailService } from "./services/user-email.service";
 import { UserEventListener } from "./services/user-event-listener.service";
 
 @Module({
@@ -15,7 +14,6 @@ import { UserEventListener } from "./services/user-event-listener.service";
   controllers: [UsersController],
   providers: [
     UsersService,
-    UserEmailService,
     UserEventListener,
     PlatformOwnerSeed,
   ],

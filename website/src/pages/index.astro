@@ -6,7 +6,7 @@ import { en } from "../locales/en";
 
 const site = getSiteConfig();
 const loginUrl = appHref(site.loginPath, site);
-const signupUrl = appHref(site.signupPath, site);
+const dashboardUrl = appHref(site.dashboardPath, site);
 
 const taglineOverride =
   site.tagline !== en.hero.tagline ? site.tagline : undefined;
@@ -19,7 +19,8 @@ const descriptionOverride =
     client:load
     brand={site.name}
     loginUrl={loginUrl}
-    signupUrl={signupUrl}
+    dashboardUrl={dashboardUrl}
+    apiUrl={site.apiUrl}
     taglineOverride={taglineOverride}
     descriptionOverride={descriptionOverride}
   />

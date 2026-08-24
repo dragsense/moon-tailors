@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import { LogOutIcon } from "lucide-react";
-import { EUserLevel, type IAuthUser } from "@template/contracts";
+import { EUserLevel, type IAuthUser } from "@moon-tailors/contracts";
 import {
   Sidebar,
   SidebarContent,

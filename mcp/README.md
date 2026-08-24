@@ -50,6 +50,6 @@ See `env/mcp.env.example`.
 ## Transports
 
 ```bash
-pnpm --filter @template/mcp dev          # http://localhost:4000/mcp
-pnpm --filter @template/mcp start:stdio  # Cursor / Claude stdio
+pnpm --filter @moon-tailors/mcp dev          # http://localhost:4000/mcp
+pnpm --filter @moon-tailors/mcp start:stdio  # Cursor / Claude stdio
 ```

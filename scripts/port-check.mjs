@@ -45,13 +45,6 @@ const PUBLISH = {
       internalDefault: "5432",
     },
   ],
-  redis: [
-    {
-      exposeKey: "REDIS_EXPOSE",
-      internalKey: "REDIS_INTERNAL",
-      internalDefault: "6379",
-    },
-  ],
   mailpit: [
     {
       exposeKey: "MAILPIT_UI_EXPOSE",
@@ -62,18 +55,6 @@ const PUBLISH = {
       exposeKey: "MAILPIT_SMTP_EXPOSE",
       internalKey: "MAILPIT_SMTP_INTERNAL",
       internalDefault: "1025",
-    },
-  ],
-  mqtt: [
-    {
-      exposeKey: "MQTT_EXPOSE",
-      internalKey: "MQTT_INTERNAL",
-      internalDefault: "1883",
-    },
-    {
-      exposeKey: "MQTT_WS_EXPOSE",
-      internalKey: "MQTT_WS_INTERNAL",
-      internalDefault: "9001",
     },
   ],
   gateway: [

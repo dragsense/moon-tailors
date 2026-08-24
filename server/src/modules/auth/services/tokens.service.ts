@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
-import type { IAuthUser } from "@template/contracts";
+import type { IAuthUser } from "@moon-tailors/contracts";
 import { IsNull } from "typeorm";
 import type { AuthConfig } from "../../../config";
 import { PermissionsService, UserEntity } from "../../../common/base";

@@ -26,7 +26,7 @@ import {
   type TCreateFileUpload,
   type TFileListQuery,
   type TUpdateFileUpload,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import type { Response } from "express";
 import { memoryStorage } from "multer";
 import { RequirePermissions } from "../../auth";

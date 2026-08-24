@@ -1,4 +1,4 @@
-import type { IPaginationMeta } from "@template/contracts";
+import type { IPaginationMeta } from "@moon-tailors/contracts";
 import { Loader2Icon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import { PaginationBar, type PaginationBarProps } from "./pagination-bar";

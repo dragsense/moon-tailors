@@ -1,4 +1,4 @@
-import type { IDashboardSummary } from "@template/contracts";
+import type { IDashboardSummary } from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
 
 class DashboardService extends BaseService<IDashboardSummary> {

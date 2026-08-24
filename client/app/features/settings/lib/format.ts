@@ -4,10 +4,10 @@ import {
   formatTime as formatTimeBase,
   type FormatDateOptions,
   type TUserPreferences,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
+import { getBrowserTimezone } from "~/lib/api";
 import { LOCALE_CATALOG } from "~/locales";
 import { resolvePreferences } from "./preferences";
-import { resolveTimezone } from "./timezone";
 
 export function toFormatOptions(
   prefs: TUserPreferences,
@@ -17,7 +17,7 @@ export function toFormatOptions(
     locale: intlLocale ?? LOCALE_CATALOG[prefs.language].intl,
     dateFormat: prefs.time.dateFormat,
     timeFormat: prefs.time.timeFormat,
-    timeZone: resolveTimezone(prefs),
+    timeZone: getBrowserTimezone(),
   };
 }
 

@@ -2,10 +2,9 @@ import { useSitePrefs } from "../../../components/site-prefs-provider";
 
 type LandingCtaProps = {
   loginUrl: string;
-  signupUrl: string;
 };
 
-export function LandingCta({ loginUrl, signupUrl }: LandingCtaProps) {
+export function LandingCta({ loginUrl }: LandingCtaProps) {
   const { t } = useSitePrefs();
 
   return (
@@ -16,9 +15,6 @@ export function LandingCta({ loginUrl, signupUrl }: LandingCtaProps) {
         <div className="hero__cta">
           <a className="btn btn--primary" href={loginUrl}>
             {t("cta.login")}
-          </a>
-          <a className="btn btn--ghost" href={signupUrl}>
-            {t("cta.signup")}
           </a>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { EUserLevel } from "@template/contracts";
+import { EUserLevel } from "@moon-tailors/contracts";
 import type {
   ObjectLiteral,
   Repository,

@@ -5,7 +5,7 @@ import { LEVEL_HOME, ROOT_ROUTE } from "~/config";
 import { useSession } from "~/features/auth/hooks";
 
 export function meta() {
-  return [{ title: "Unauthorized · Template" }];
+  return [{ title: "Unauthorized · Moon Tailors" }];
 }
 
 export default function UnauthorizedPage() {

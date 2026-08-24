@@ -1,8 +1,7 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { EUserLevel } from "@template/contracts";
+import { EUserLevel } from "@moon-tailors/contracts";
 import { BaseUsersService } from "../../users/base-users.service";
 import { BaseBusinessService } from "../base-business.service";
-import { BaseBusinessThemeService } from "../base-business-theme.service";
 
 /**
  * Seeds the platform / default business + theme (main DB only — never a tenant DB).
@@ -14,7 +13,6 @@ export class PlatformBusinessSeed implements OnModuleInit {
 
   constructor(
     private readonly businesses: BaseBusinessService,
-    private readonly themes: BaseBusinessThemeService,
     private readonly users: BaseUsersService,
   ) {}
 
@@ -25,7 +23,6 @@ export class PlatformBusinessSeed implements OnModuleInit {
   async run(): Promise<void> {
     const existing = await this.businesses.findPlatform();
     if (existing) {
-      await this.themes.ensureDefault(existing.id);
       this.logger.log(
         `Platform business already exists: ${existing.name} (${existing.id})`,
       );
@@ -40,7 +37,6 @@ export class PlatformBusinessSeed implements OnModuleInit {
         isPlatform: true,
       },
     );
-    await this.themes.ensureDefault(business.id);
 
     this.logger.log(
       `Platform business seeded: ${business.name} (${business.id}) tenant=${business.tenantId} (main DB)`,

@@ -10,11 +10,7 @@ import { TenantDatabaseModule } from "./common/database";
 import { ActivityLogsModule } from "./common/activity-logs";
 import { EventsModule } from "./common/events";
 import { BrowserHtmlModule } from "./common/http";
-import { PaymentProcessorsModule } from "./common/payment-processors";
-import { AiProcessorsModule } from "./common/ai-processors";
-import { MqttModule } from "./common/mqtt";
 import { ActionModule } from "./common/actions";
-import { ScheduleModule } from "./common/schedule";
 import { CacheModule } from "./common/cache";
 import { FileUploadModule } from "./common/file-upload";
 import { EmailModule } from "./common/email";
@@ -29,20 +25,12 @@ import { DatabaseModule } from "./database/database.module";
 import { HealthController } from "./health.controller";
 import { AuthModule } from "./modules/auth/auth.module";
 import { BusinessModule } from "./modules/business";
-import { ChatModule } from "./modules/chat/chat.module";
 import { EntitySettingsModule } from "./modules/entity-settings/entity-settings.module";
-import { NotificationsModule } from "./modules/notifications/notifications.module";
-import { TasksModule } from "./modules/tasks/tasks.module";
 import { UsersModule } from "./modules/users/users.module";
-import { UserAvailabilityModule } from "./modules/user-availability/user-availability.module";
-import { BillingModule } from "./modules/billing/billing.module";
-import { PaymentAdapterModule } from "./modules/payment-adapter/payment-adapter.module";
-import { AiAdapterModule } from "./modules/ai-adapter";
-import { CamerasModule } from "./modules/cameras";
 import { DashboardModule } from "./modules/dashboard";
-import { SmsInboxModule } from "./modules/sms";
-import { EmailInboxModule } from "./modules/email";
-import { SmsModule } from "./common/communications";
+import { CustomersModule } from "./modules/customers/customers.module";
+import { MeasurementsModule } from "./modules/measurements/measurements.module";
+import { OrdersModule } from "./modules/orders/orders.module";
 import { ServerGatewayModule } from "./common/gateways";
 
 @Module({
@@ -70,27 +58,15 @@ import { ServerGatewayModule } from "./common/gateways";
     ActionModule,
     ActivityLogsModule,
     EventsModule,
-    ScheduleModule,
-    PaymentProcessorsModule,
-    AiProcessorsModule,
-    SmsModule,
-    MqttModule,
     ServerGatewayModule,
     AuthModule,
     BusinessModule,
-    TasksModule,
     UsersModule,
-    UserAvailabilityModule,
-    BillingModule,
-    PaymentAdapterModule,
-    AiAdapterModule,
-    ChatModule,
     EntitySettingsModule,
-    NotificationsModule,
-    CamerasModule,
+    MeasurementsModule,
+    CustomersModule,
+    OrdersModule,
     DashboardModule,
-    SmsInboxModule,
-    EmailInboxModule,
   ],
   controllers: [HealthController],
 })

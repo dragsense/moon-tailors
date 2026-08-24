@@ -1,4 +1,4 @@
-import { buildPaginatedResponse, pageOffset } from "@template/contracts";
+import { buildPaginatedResponse, pageOffset } from "@moon-tailors/contracts";
 import type {
   ObjectLiteral,
   Repository,

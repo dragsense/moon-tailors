@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from "react";
-import type { IFormFieldConfig } from "@template/contracts";
-import { getFormFields } from "@template/contracts";
+import type { IFormFieldConfig } from "@moon-tailors/contracts";
+import { getFormFields } from "@moon-tailors/contracts";
 import type {
   Control,
   FieldErrors,

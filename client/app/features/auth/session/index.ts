@@ -7,9 +7,3 @@ export {
   writeSession,
   type AppSession,
 } from "./session-store";
-export {
-  clearOtpChallenge,
-  readOtpChallenge,
-  saveOtpChallenge,
-  type OtpChallengeState,
-} from "./otp-challenge";

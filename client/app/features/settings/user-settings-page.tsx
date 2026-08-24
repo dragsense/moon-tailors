@@ -5,7 +5,7 @@ import {
   ETheme,
   ETimeFormat,
   type TUserPreferences,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import {
@@ -15,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { Switch } from "~/components/ui/switch";
 import {
   Tabs,
   TabsContent,
@@ -28,9 +27,7 @@ import { LOCALE_CATALOG } from "~/locales";
 import { useOp } from "~/ops";
 import { formatDateTimeWithSettings } from "./lib/format";
 import { resolvePreferences } from "./lib/preferences";
-import { resolveTimezone } from "./lib/timezone";
 import { settingsOps } from "./ops";
-import { TimezoneSelect } from "./components/timezone-select";
 
 export function UserSettingsPage() {
   const { t, intlLocale } = useI18n();
@@ -77,9 +74,6 @@ export function UserSettingsPage() {
             {t("settings.tabs.appearance")}
           </TabsTrigger>
           <TabsTrigger value="time">{t("settings.tabs.time")}</TabsTrigger>
-          <TabsTrigger value="notifications">
-            {t("settings.tabs.notifications")}
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="appearance" className="mt-6 space-y-6">
@@ -124,7 +118,7 @@ export function UserSettingsPage() {
             <Select
               value={preferences.language}
               onValueChange={(value) => {
-                if (value === ELanguage.EN || value === ELanguage.AR) {
+                if (value === ELanguage.EN || value === ELanguage.UR) {
                   void save({ language: value });
                 }
               }}
@@ -137,8 +131,8 @@ export function UserSettingsPage() {
                 <SelectItem value={ELanguage.EN}>
                   {LOCALE_CATALOG[ELanguage.EN].nativeLabel}
                 </SelectItem>
-                <SelectItem value={ELanguage.AR}>
-                  {LOCALE_CATALOG[ELanguage.AR].nativeLabel}
+                <SelectItem value={ELanguage.UR}>
+                  {LOCALE_CATALOG[ELanguage.UR].nativeLabel}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -203,8 +197,6 @@ export function UserSettingsPage() {
             </Select>
           </Field>
 
-          <TimezoneSelect disabled={saveSettings.isPending} />
-
           <div className="rounded-md border border-border bg-muted/30 px-3 py-2 text-sm">
             <p className="text-xs text-muted-foreground">
               {t("settings.time.preview")}
@@ -216,57 +208,7 @@ export function UserSettingsPage() {
                 intlLocale,
               )}
             </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {t("settings.time.timezoneUsing", {
-                tz: resolveTimezone(preferences),
-              })}
-            </p>
           </div>
-        </TabsContent>
-
-        <TabsContent value="notifications" className="mt-6 space-y-4">
-          <ToggleRow
-            label={t("settings.notifications.pushEnabled")}
-            hint={t("settings.notifications.pushHint")}
-            checked={preferences.notifications.pushEnabled}
-            disabled={saveSettings.isPending}
-            onCheckedChange={(checked) =>
-              void save({
-                notifications: {
-                  ...preferences.notifications,
-                  pushEnabled: checked,
-                },
-              })
-            }
-          />
-          <ToggleRow
-            label={t("settings.notifications.inAppEnabled")}
-            hint={t("settings.notifications.inAppHint")}
-            checked={preferences.notifications.inAppEnabled}
-            disabled={saveSettings.isPending}
-            onCheckedChange={(checked) =>
-              void save({
-                notifications: {
-                  ...preferences.notifications,
-                  inAppEnabled: checked,
-                },
-              })
-            }
-          />
-          <ToggleRow
-            label={t("settings.notifications.bellEnabled")}
-            hint={t("settings.notifications.bellHint")}
-            checked={preferences.notifications.bellEnabled}
-            disabled={saveSettings.isPending}
-            onCheckedChange={(checked) =>
-              void save({
-                notifications: {
-                  ...preferences.notifications,
-                  bellEnabled: checked,
-                },
-              })
-            }
-          />
         </TabsContent>
       </Tabs>
 
@@ -300,34 +242,6 @@ function Field({
       <Label>{label}</Label>
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       {children}
-    </div>
-  );
-}
-
-function ToggleRow({
-  label,
-  hint,
-  checked,
-  disabled,
-  onCheckedChange,
-}: {
-  label: string;
-  hint: string;
-  checked: boolean;
-  disabled?: boolean;
-  onCheckedChange: (checked: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 rounded-md border border-border px-3 py-3">
-      <div className="space-y-1">
-        <p className="text-sm font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      </div>
-      <Switch
-        checked={checked}
-        disabled={disabled}
-        onCheckedChange={onCheckedChange}
-      />
     </div>
   );
 }

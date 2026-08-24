@@ -1,17 +1,14 @@
 import { EnvironmentShell } from "../../components/environment-banner";
 import { SiteChrome } from "../../components/site-chrome";
+import { SiteFooter } from "../../components/site-footer";
 import { SitePrefsProvider } from "../../components/site-prefs-provider";
-import { LandingCta } from "./components/cta";
-import { LandingFeatures } from "./components/features";
 import { LandingHero } from "./components/hero";
-import { LandingModules } from "./components/modules";
-import { LandingMonorepo } from "./components/monorepo";
-import { LandingStack } from "./components/stack";
 
 export type LandingPageProps = {
   brand: string;
   loginUrl: string;
-  signupUrl: string;
+  dashboardUrl: string;
+  apiUrl: string;
   taglineOverride?: string;
   descriptionOverride?: string;
 };
@@ -22,17 +19,17 @@ export function LandingPage(props: LandingPageProps) {
     <SitePrefsProvider>
       <EnvironmentShell>
         <SiteChrome />
-        <main>
-          <LandingHero {...props} />
-          <LandingStack />
-          <LandingFeatures />
-          <LandingModules />
-          <LandingMonorepo />
-          <LandingCta
+        <div className="landing">
+          <LandingHero
+            brand={props.brand}
             loginUrl={props.loginUrl}
-            signupUrl={props.signupUrl}
+            dashboardUrl={props.dashboardUrl}
+            apiUrl={props.apiUrl}
+            taglineOverride={props.taglineOverride}
+            descriptionOverride={props.descriptionOverride}
           />
-        </main>
+          <SiteFooter name={props.brand} />
+        </div>
       </EnvironmentShell>
     </SitePrefsProvider>
   );

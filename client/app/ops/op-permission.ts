@@ -1,7 +1,7 @@
 import type { OpConfig } from "./create-ops";
 import { canRunOpConfig } from "~/lib/permissions";
 import { AUTH_SESSION_QUERY_KEY } from "~/features/auth/session";
-import type { IAuthUser } from "@template/contracts";
+import type { IAuthUser } from "@moon-tailors/contracts";
 import type { QueryClient } from "@tanstack/react-query";
 
 export function readSessionUser(qc: QueryClient): IAuthUser | null {

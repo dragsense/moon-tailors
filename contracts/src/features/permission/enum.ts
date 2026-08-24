@@ -25,6 +25,9 @@ export enum EResource {
   SMS = "sms",
   /** SMTP/IMAP email inbox (send / receive / threads). */
   EMAIL = "email",
+  CUSTOMERS = "customers",
+  MEASUREMENTS = "measurements",
+  ORDERS = "orders",
 }
 
 export enum EPermissionAction {

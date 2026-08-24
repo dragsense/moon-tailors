@@ -2,7 +2,7 @@ const nodeExternals = require("webpack-node-externals");
 
 /**
  * Nest passes its default webpack options; we merge so that in development
- * `@template/contracts` resolves via the package `development` export
+ * `@moon-tailors/contracts` resolves via the package `development` export
  * condition (TypeScript source) and is bundled so edits trigger rebuilds.
  * Production keeps contracts external and resolves to dist.
  *
@@ -26,7 +26,7 @@ module.exports = (options) => {
     return {
       ...rule,
       // Transpile workspace contracts source when it is bundled (not external).
-      exclude: /node_modules\/(?!@template\/contracts)/,
+      exclude: /node_modules\/(?!@moon-tailors\/contracts)/,
     };
   });
 
@@ -38,7 +38,7 @@ module.exports = (options) => {
     },
     externals: [
       nodeExternals({
-        allowlist: isProd ? [] : [/^@template\/contracts($|\/)/],
+        allowlist: isProd ? [] : [/^@moon-tailors\/contracts($|\/)/],
       }),
     ],
     resolve: {

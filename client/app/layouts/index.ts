@@ -24,7 +24,6 @@ export {
   FocusShell,
   BlankShell,
   GlobalShell,
-  NotificationBell,
   AppHeader,
   GlobalHeader,
   AppFooter,

@@ -7,7 +7,7 @@ export const dataSourceOptions: DataSourceOptions = {
   type: "postgres",
   url:
     process.env.DATABASE_URL ??
-    "postgres://postgres:postgres@localhost:5433/template_db",
+    "postgres://postgres:postgres@localhost:5433/moon_tailors_db",
   entities: [join(__dirname, "../**/*.entity{.ts,.js}")],
   subscribers: [AuditSubscriber],
   migrations: [join(__dirname, "../migrations/*{.ts,.js}")],

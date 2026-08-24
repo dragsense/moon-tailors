@@ -3,8 +3,8 @@
  * Not a store. Compose into packs with pickOps / spread.
  * Schemas live on SchemaForm / contracts — not here.
  */
-import type { TCreateUserData } from "@template/contracts";
-import { EPermissionAction, EResource } from "@template/contracts";
+import type { TCreateUserData } from "@moon-tailors/contracts";
+import { EPermissionAction, EResource } from "@moon-tailors/contracts";
 import {
   invalidateQueriesKey,
   refetchOp,

@@ -4,7 +4,7 @@ import {
   Index,
   OneToMany,
 } from "typeorm";
-import { EPermissionAction, EResource } from "@template/contracts";
+import { EPermissionAction, EResource } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../entities";
 import { UserPermissionEntity } from "./user-permission.entity";
 

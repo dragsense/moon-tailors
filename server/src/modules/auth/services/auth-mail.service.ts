@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { EOtpPurpose } from "@template/contracts";
+import { EOtpPurpose } from "@moon-tailors/contracts";
 import {
   EmailService,
   EmailTemplateService,

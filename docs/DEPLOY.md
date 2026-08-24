@@ -76,7 +76,7 @@ The Docker **gateway** is the only published HTTP port. Paths do not change by m
 | `/app/` | Product UI (React) |
 | `/server/` | Nest API (`/api`, `/uploads`, Scalar at `/api/docs`) |
 | `/api/` `/uploads/` | Same as `/server/api/` and `/server/uploads/` (shorter aliases) |
-| `/mcp/` `/mailpit/` `/hls/` `/webrtc/` | Other services |
+| `/mcp/` `/mailpit/` | Other services |
 
 **Local** (`pnpm tpl start`) ignores `clientMode`. Gateway uses `nginx-gateway.conf.template`. **Client** and **website** containers run (Vite + Astro `dev`).
 
@@ -84,7 +84,7 @@ The Docker **gateway** is the only published HTTP port. Paths do not change by m
 
 ## Environment banner (Docker / deploy)
 
-Non-production stacks show a **top bar** + `[env]` document title so people know they are not on production. **production** shows nothing.
+Staging (and local) stacks show a **top bar** + `[env]` document title.
 
 Baked in at **image build** (Vite `define` / Astro `PUBLIC_*`). After changing these, redeploy **client** and/or **website**.
 
@@ -93,7 +93,7 @@ Baked in at **image build** (Vite `define` / Astro `PUBLIC_*`). After changing t
 | Client (`/app/`) | `env/<host>/client.env` | `VITE_APP_ENV` | `EnvironmentBanner` in the app shells |
 | Website (`/`) | `env/<host>/website.env` | `PUBLIC_ENV` (alias `PUBLIC_APP_ENV`) | Same bar on the Astro landing |
 
-Values: `development` \| `testing` \| `staging` \| `production`. Aliases: `dev`/`local` → development, `stage` → staging, `prod` → production.
+This repo uses **local** (`development` banner) and **staging**. Aliases: `dev`/`local` → development, `stage` → staging.
 
 Examples already in git: `env/staging/client.env.example` (`VITE_APP_ENV=staging`), `env/staging/website.env.example` (`PUBLIC_ENV=staging`). Local files default to `development`.
 
@@ -222,7 +222,7 @@ Add a new environment as `environments.<name>` matching `hosts.json`, with **`en
 
 ```json
 "staging": {
-  "projectName": "template-staging",
+  "projectName": "moon-tailors-staging",
   "dockerEnv": "env/staging/docker.env",
   "server": {
     "buildTarget": "runtime",

@@ -1,5 +1,5 @@
 import { ChevronDownIcon, LogOutIcon } from "lucide-react";
-import type { IAuthUser } from "@template/contracts";
+import type { IAuthUser } from "@moon-tailors/contracts";
 import { Avatar, AvatarFallback } from "~/components/ui/avatar";
 import { Button } from "~/components/ui/button";
 import {

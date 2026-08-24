@@ -11,7 +11,7 @@ function logCluster(
   const output = `${JSON.stringify({
     timestamp: new Date().toISOString(),
     level,
-    service: process.env.SERVICE_NAME ?? "template-server",
+    service: process.env.SERVICE_NAME ?? "moon-tailors-server",
     context: "Cluster",
     message,
     pid: process.pid,

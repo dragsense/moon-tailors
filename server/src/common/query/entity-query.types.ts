@@ -2,7 +2,7 @@ import type { ObjectLiteral, SelectQueryBuilder } from "typeorm";
 import type {
   IPaginatedResponse,
   TListFilterSpec,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 
 /** Shared list-query fields (from contracts `listQuerySchema`). */
 export type ListQueryInput = {

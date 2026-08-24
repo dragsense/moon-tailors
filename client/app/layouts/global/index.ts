@@ -2,7 +2,6 @@ export { AppShell, type AppShellProps } from "./app-shell";
 export { AuthShell, type AuthShellProps } from "./auth-shell";
 export { FocusShell, type FocusShellProps } from "./focus-shell";
 export { BlankShell, type BlankShellProps } from "./blank-shell";
-export { NotificationBell } from "./notification-bell";
 
 export {
   AppHeader,

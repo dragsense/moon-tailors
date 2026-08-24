@@ -10,7 +10,7 @@ export default registerAs(
   (): DatabaseConfig => ({
     url:
       process.env.DATABASE_URL ??
-      "postgres://postgres:postgres@localhost:5433/template_db",
+      "postgres://postgres:postgres@localhost:5433/moon_tailors_db",
     synchronize:
       process.env.TYPEORM_SYNC === "true" ||
       process.env.NODE_ENV !== "production",

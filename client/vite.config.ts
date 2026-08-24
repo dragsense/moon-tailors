@@ -114,7 +114,7 @@ export default defineConfig(({ command }) => {
         "axios",
         "socket.io-client",
       ],
-      exclude: ["@template/contracts"],
+      exclude: ["@moon-tailors/contracts"],
     },
     server: {
       host: "0.0.0.0",

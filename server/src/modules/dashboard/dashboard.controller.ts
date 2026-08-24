@@ -4,7 +4,7 @@ import {
   EPermissionAction,
   EResource,
   type IDashboardSummary,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { RequirePermissions } from "../../common/auth";
 import { DashboardService } from "./dashboard.service";
 
@@ -19,7 +19,7 @@ export class DashboardController {
     resource: EResource.DASHBOARD,
     action: EPermissionAction.READ,
   })
-  summary(): IDashboardSummary {
+  summary(): Promise<IDashboardSummary> {
     return this.dashboardService.getSummary();
   }
 }

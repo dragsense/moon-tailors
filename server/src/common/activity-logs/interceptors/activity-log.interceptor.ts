@@ -6,7 +6,7 @@ import {
 } from "@nestjs/common";
 import { Observable, catchError, tap, throwError } from "rxjs";
 import type { Request, Response } from "express";
-import { EActivityStatus, EActivityType } from "@template/contracts";
+import { EActivityStatus, EActivityType } from "@moon-tailors/contracts";
 import { ActivityLogsService } from "../activity-logs.service";
 import { ActivityLogRegistry } from "../activity-log.registry";
 

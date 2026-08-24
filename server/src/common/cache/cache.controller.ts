@@ -1,7 +1,7 @@
 import { Controller, Get } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { ConfigService } from "@nestjs/config";
-import { EUserLevel } from "@template/contracts";
+import { EUserLevel } from "@moon-tailors/contracts";
 import { Public, RequireUserLevels } from "../auth";
 import type { CacheConfig } from "../../config";
 import { CacheService } from "./services";

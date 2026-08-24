@@ -5,7 +5,7 @@ import type {
   TUpdateUserData,
   TUserListQuery,
   TUserResponse,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
 
 /** List/get row shape from Users API (entity fields, not IUser.name DTO). */

@@ -8,17 +8,13 @@ import { IsNull } from "typeorm";
 import {
   businessListQuerySchema,
   filtersFromListSchema,
-  type IPaginatedResponse,
-  type TBusinessListQuery,
   type TCreateBusinessData,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import {
   EntityService,
   type IBoundEntityService,
 } from "../../database";
 import {
-  applyQueryOptions,
-  paginateQuery,
   type EntityQueryConfig,
 } from "../../query";
 import { BusinessEntity } from "./entities";
@@ -31,8 +27,8 @@ export type CreateBusinessOptions = {
 export const BUSINESS_QUERY: EntityQueryConfig = {
   alias: "business",
   restrictedFields: ["passwordHash"],
-  searchable: ["name", "subdomain"],
-  sortable: ["createdAt", "updatedAt", "name", "subdomain"],
+  searchable: ["name"],
+  sortable: ["createdAt", "updatedAt", "name"],
   defaultSort: { field: "createdAt", order: "DESC" },
   filters: filtersFromListSchema(businessListQuerySchema),
 };
@@ -54,15 +50,6 @@ export class BaseBusinessService {
     input: TCreateBusinessData,
     options: CreateBusinessOptions = {},
   ): Promise<BusinessEntity> {
-    const subdomain = input.subdomain?.toLowerCase().trim() || null;
-    if (subdomain) {
-      const taken = await this.entity.getRepository().findOne({
-        where: { subdomain, deletedAt: IsNull() },
-      });
-      if (taken) {
-        throw new ConflictException(`Subdomain "${subdomain}" is taken`);
-      }
-    }
 
     if (options.isPlatform) {
       const existingPlatform = await this.findPlatform();
@@ -73,7 +60,6 @@ export class BaseBusinessService {
 
     return this.entity.create({
       name: input.name.trim(),
-      subdomain,
       tenantId: randomUUID(),
       ownerUserId: options.ownerUserId ?? null,
       isPlatform: options.isPlatform ?? false,
@@ -93,15 +79,7 @@ export class BaseBusinessService {
     });
   }
 
-  findBySubdomain(subdomain: string): Promise<BusinessEntity | null> {
-    return this.entity.getRepository().findOne({
-      where: {
-        subdomain: subdomain.toLowerCase(),
-        isActive: true,
-        deletedAt: IsNull(),
-      },
-    });
-  }
+
 
   findPlatform(): Promise<BusinessEntity | null> {
     return this.entity.getRepository().findOne({
@@ -122,36 +100,6 @@ export class BaseBusinessService {
     return row;
   }
 
-  /**
-   * Unscoped catalog list — `tenantId` on this entity is not a parent FK
-   * (see class note). Uses BUSINESS_QUERY + pagination (`passwordHash` restricted).
-   */
-  async list(
-    query: TBusinessListQuery,
-  ): Promise<IPaginatedResponse<BusinessEntity>> {
-    const qb = this.entity
-      .getRepository()
-      .createQueryBuilder(BUSINESS_QUERY.alias);
-    applyQueryOptions(qb, BUSINESS_QUERY, query, this.entity.getRepository());
-    return paginateQuery(qb, query.page, query.limit);
-  }
 
-  async setPaymentProcessor(
-    id: string,
-    paymentProcessorId: string | null,
-  ): Promise<BusinessEntity> {
-    // Unscoped — Business.tenantId is not a parent FK (see class note).
-    const row = await this.get(id);
-    row.paymentProcessorId = paymentProcessorId;
-    return this.entity.getRepository().save(row);
-  }
 
-  async setAiProcessor(
-    id: string,
-    aiProcessorId: string | null,
-  ): Promise<BusinessEntity> {
-    const row = await this.get(id);
-    row.aiProcessorId = aiProcessorId;
-    return this.entity.getRepository().save(row);
-  }
 }

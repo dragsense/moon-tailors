@@ -2,8 +2,7 @@ import {
   DEFAULT_USER_PREFERENCES,
   userPreferencesSchema,
   type TUserPreferences,
-} from "@template/contracts";
-import { setPreferredTimezone } from "~/lib/api";
+} from "@moon-tailors/contracts";
 
 export const USER_PREFS_STORAGE_KEY = "app.userPreferences";
 
@@ -28,7 +27,6 @@ export function readCachedPreferences(): TUserPreferences {
 
 export function writeCachedPreferences(prefs: TUserPreferences): void {
   localStorage.setItem(USER_PREFS_STORAGE_KEY, JSON.stringify(prefs));
-  setPreferredTimezone(prefs.time.timezone);
 }
 
 export function resolvePreferences(data: unknown): TUserPreferences {
@@ -47,9 +45,4 @@ export function mergePreferences(
     time: { ...current.time, ...patch.time },
     notifications: { ...current.notifications, ...patch.notifications },
   });
-}
-
-/** Hydrate API X-Timezone from local cache before settings query resolves. */
-if (typeof window !== "undefined") {
-  setPreferredTimezone(readCachedPreferences().time.timezone);
 }

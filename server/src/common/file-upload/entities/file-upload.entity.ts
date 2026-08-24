@@ -1,5 +1,5 @@
 import { Column, Entity, Index } from "typeorm";
-import { EFileType } from "@template/contracts";
+import { EFileType } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../entities";
 
 @Entity("uploaded_files")

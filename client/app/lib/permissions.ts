@@ -2,7 +2,7 @@ import {
   EPermissionAction,
   type EResource,
   type IAuthUser,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 
 /** Fine-grained gate for a single op or action (UX only — server enforces too). */
 export type OpPermission = {

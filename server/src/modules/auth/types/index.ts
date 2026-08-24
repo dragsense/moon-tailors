@@ -1,5 +1,5 @@
-import type { ILoginResponse } from "@template/contracts";
-import type { EOtpPurpose } from "@template/contracts";
+import type { ILoginResponse } from "@moon-tailors/contracts";
+import type { EOtpPurpose } from "@moon-tailors/contracts";
 import type { UserEntity } from "../../../common/base";
 
 /** Issued session from TokenService (access response + refresh cookie value). */

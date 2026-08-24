@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { ESettingType } from "@template/contracts";
+import { ESettingType } from "@moon-tailors/contracts";
 import {
   EntityService,
   type IBoundEntityService,

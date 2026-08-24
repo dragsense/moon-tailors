@@ -1,4 +1,4 @@
-import type { TUserPreferences } from "@template/contracts";
+import type { TUserPreferences } from "@moon-tailors/contracts";
 import { AUTH_SESSION_QUERY_KEY } from "~/features/auth/session/session-store";
 import type { OpConfig, OpsBag } from "~/ops";
 import { refetchOp } from "~/ops";

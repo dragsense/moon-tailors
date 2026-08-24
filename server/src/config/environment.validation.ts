@@ -13,8 +13,8 @@ function buildDefaults(
 ): Record<string, unknown> {
   return {
     NODE_ENV: nodeEnv,
-    SERVICE_NAME: "template-server",
-    APP_NAME: "Template",
+    SERVICE_NAME: "moon-tailors-server",
+    APP_NAME: "Moon Tailors",
     APP_URL: "http://localhost:8088/app",
     HOST: "0.0.0.0",
     PORT: 3000,
@@ -22,7 +22,7 @@ function buildDefaults(
     COOKIE_SECRET: "dev-cookie-secret-change-me",
     API_DOCS_ENABLED: !isProduction,
     CSRF_ENABLED: isProduction,
-    DATABASE_URL: "postgres://postgres:postgres@localhost:5433/template_db",
+    DATABASE_URL: "postgres://postgres:postgres@localhost:5433/moon_tailors_db",
     REDIS_URL: "redis://localhost:6379",
     TYPEORM_SYNC: !isProduction,
     APP_MODE: "single_user",
@@ -51,7 +51,7 @@ function buildDefaults(
     ACTIVITY_LOGS_ENABLED: false,
     EVENTS_ENABLED: false,
     CACHE_ENABLED: false,
-    CACHE_PREFIX: "template",
+    CACHE_PREFIX: "moon-tailors",
     CACHE_DEFAULT_TTL: 300,
     BULL_BOARD_ENABLED: !isProduction,
     BULL_BOARD_ROUTE: "queues",

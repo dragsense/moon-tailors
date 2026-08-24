@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { IFieldMeta, IFieldOption, TFieldUiType } from "@template/contracts";
+import type { IFieldMeta, IFieldOption, TFieldUiType } from "@moon-tailors/contracts";
 import type {
   Control,
   ControllerRenderProps,

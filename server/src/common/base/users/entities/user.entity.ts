@@ -5,7 +5,7 @@ import {
   Index,
   OneToMany,
 } from "typeorm";
-import { EUserLevel } from "@template/contracts";
+import { EUserLevel } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../entities";
 import { UserPermissionEntity } from "../../permissions/entities/user-permission.entity";
 

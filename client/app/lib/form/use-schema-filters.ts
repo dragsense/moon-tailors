@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   LIST_QUERY_INTERNAL_KEYS,
   getFilterFormFields,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import {
   useForm,
   type DefaultValues,

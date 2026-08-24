@@ -1,4 +1,4 @@
-import { EPermissionAction, EResource } from "@template/contracts";
+import { EPermissionAction, EResource } from "@moon-tailors/contracts";
 import { dashboardService } from "../api";
 import { dashboardKeys } from "../query-keys";
 import { DashboardView } from "../view/dashboard-view";

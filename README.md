@@ -1,16 +1,16 @@
-# Full-stack template (monorepo)
+# Moon Tailors (monorepo)
 
 Contracts-first starter: NestJS API, React Router app (**login at `/`**), Astro marketing site, shared Zod contracts, MCP tools, and Docker/SSH deploy.
 
 ## Package map
 
 ```txt
-template/
+moon-tailors/
   contracts/          Shared Zod schemas, enums, I*/E*/T* types, list helpers
   server/             NestJS API + TypeORM + EntityService / query / ACL
     src/
       common/         Shared platform (see below)
-      modules/        Feature modules (auth, users, tasks, …)
+      modules/        Feature modules (auth, users, customers, orders, …)
       config/         Nest config + env validation
   client/             React Router v7 SPA — product UI (login at `/`)
     app/
@@ -26,13 +26,13 @@ template/
       pages/          File routes (index → landing)
       features/landing/  Hero, stack, features, modules, monorepo, CTA
       config/         PUBLIC_* site + app URLs
-      locales/        en / ar (RTL)
+      locales/        en / ur (RTL)
       components/     SiteChrome, theme/language prefs
   mcp/                MCP server (NestJS, HTTP + stdio) over Nest APIs
     src/
       common/api/     ApiClient + BaseApiService
       common/mcp/     McpRegistrar helpers
-      modules/        transport, platform, health, tasks, …
+      modules/        transport, platform, health, …
   cli/                `pnpm tpl` / bootstrap / remote menus
   docker/             compose.yml + environments.json
   deploy/             hosts.json (SSH targets)
@@ -53,8 +53,6 @@ Only the **gateway** is published on the host (default `:8088`). Everything else
 | http://localhost:8088/server/api/docs | Scalar API docs |
 | http://localhost:8088/mcp | MCP |
 | http://localhost:8088/mailpit/ | Mailpit |
-| http://localhost:8088/hls/ | MediaMTX HLS |
-| http://localhost:8088/webrtc/ | MediaMTX WebRTC |
 
 ```bash
 pnpm tpl                   # menu: bootstrap / start / stop / remote / …
@@ -68,9 +66,9 @@ pnpm remote                # deploy + SSH host control
 
 | Package | Role |
 |---|---|
-| **website** | Public landing — brand, platform features, monorepo story; CTAs → client `/` login + signup (super admin) |
-| **client** | Product app — `/` is always login; signed-in modules under `/dashboard`, `/tasks`, … |
-| **server** | REST + WebSocket — tenant/owner ACL, permissions, OTP auth, EntityService |
+| **website** | Public landing — shop hero + Login / Open shop; CTAs → client `/` or `/dashboard` |
+| **client** | Product app — `/` is always login; signed-in modules under `/dashboard`, `/customers`, `/orders`, … |
+| **server** | REST + WebSocket — tenant/owner ACL, permissions, password auth, EntityService |
 | **contracts** | Single source of truth for request/response shapes (`I*` / `E*` / `T*`) |
 | **mcp** | Agent tools wrapping Nest endpoints (HTTP `/mcp` + stdio) |
 
@@ -82,7 +80,7 @@ pnpm remote                # deploy + SSH host control
 |---|---|
 | **database** | `EntityService` bind / list / get / create / update / soft+hard delete |
 | **query** | `_relations` / `_select`, nested paths, `restrictedFields`, searchable + filters + sort, tenant + owner ACL |
-| **base/users** | Users, password hashing, signup/admin create hooks |
+| **base/users** | Users, password hashing, platform-owner seed |
 | **base/business** | Businesses, themes (logo/favicon files) |
 | **base/chat** | Chats, messages, participants (realtime-ready) |
 | **base/permissions** | Resource permissions + user grants |
@@ -110,17 +108,10 @@ Query model: clients may request any real `_select` / `_relations` path; secrets
 
 | Feature | Notes |
 |---|---|
-| **auth** | Login at `/`, signup, OTP, forgot/reset password |
+| **auth** | Login at `/` (email + password) |
 | **dashboard** | Level home after login |
-| **tasks** / **users** / **chat** | Core product surfaces |
-| **sms** / **email** | Inbox UIs |
-| **billing** / **payments** | Billings + Stripe-style payments |
-| **cameras** | Cameras + stream hooks |
-| **file-upload** | Files browser |
-| **ai** / **api-keys** | AI adapter + API key management |
-| **user-availability** | Weekly schedules |
-| **settings** / **business-theme** | Prefs + theme customize |
-| **notifications** | Client notification ops |
+| **customers** / **orders** | Shop surfaces |
+| **settings** / **business-theme** | Prefs + applied business theme |
 
 Routing: `client/app/config/routes.config.ts` · tree: `client/app/routes.ts`  
 Guards: guest → auth shell (`/`); session → access → app shell.  
@@ -131,7 +122,7 @@ UI: ops packs (`createOps`), SchemaForm from contracts, shadcn + Tailwind.
 ## Website — marketing (`website/`)
 
 Astro SSG + React islands (`output: "static"`). Landing HTML is built at deploy; the **gateway** serves `/` (no website container). Local still runs Astro `dev` in Docker.  
-Theme + language (`en` / `ar` RTL) share localStorage keys with the client. CTAs open the client at `/` (login) and `/signup`.
+Theme + language (`en` / `ur` RTL) share localStorage keys with the client. CTAs open the client at `/` (login).
 
 ---
 

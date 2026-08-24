@@ -5,7 +5,7 @@ import {
   EResource,
   type IPaginatedResponse,
   type TListQuery,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import type { ActivityLogsConfig } from "../../config";
 import { PermissionsService } from "../base/permissions";
 import { RequestContext } from "../context";

@@ -25,26 +25,6 @@ export async function startApplication(): Promise<void> {
   setupApiDocumentation(app, config, logger);
   setupStaticAssets(app, config, logger);
 
-  // MQTT microservice (hybrid app) — grizco pattern
-  const mqttConfig = config.get<MqttConfig>("mqtt");
-  if (mqttConfig?.enabled) {
-    app.connectMicroservice(
-      {
-        transport: Transport.MQTT,
-        options: {
-          url: mqttConfig.url,
-          clientId: mqttConfig.clientId,
-        },
-      },
-      { inheritAppConfig: true },
-    );
-    await app.startAllMicroservices();
-    logger.log(
-      `MQTT microservice connected to ${mqttConfig.url}`,
-      "AppSetup",
-    );
-  }
-
   const appConfig = config.getOrThrow<AppConfig>("app");
   app.enableShutdownHooks();
   await app.listen(appConfig.port, appConfig.host);

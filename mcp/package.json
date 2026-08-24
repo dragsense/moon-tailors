@@ -1,5 +1,5 @@
 {
-  "name": "@template/mcp",
+  "name": "@moon-tailors/mcp",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,7 +15,7 @@
     "@nestjs/config": "^4.0.4",
     "@nestjs/core": "^11.0.12",
     "@nestjs/platform-express": "^11.0.12",
-    "@template/contracts": "workspace:*",
+    "@moon-tailors/contracts": "workspace:*",
     "dotenv": "^16.4.7",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",

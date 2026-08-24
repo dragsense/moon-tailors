@@ -9,23 +9,23 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
 COPY contracts/package.json ./contracts/
 COPY mcp/package.json ./mcp/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @template/mcp... --frozen-lockfile || \
-    pnpm install --filter @template/mcp...
+    pnpm install --filter @moon-tailors/mcp... --frozen-lockfile || \
+    pnpm install --filter @moon-tailors/mcp...
 
 FROM deps AS dev
 ENV NODE_ENV=development
 ENV NODE_OPTIONS=--max-old-space-size=4096
 COPY contracts ./contracts
 COPY mcp ./mcp
-RUN pnpm --filter @template/contracts build
+RUN pnpm --filter @moon-tailors/contracts build
 EXPOSE 4000
-CMD ["pnpm", "--filter", "@template/mcp", "dev"]
+CMD ["pnpm", "--filter", "@moon-tailors/mcp", "dev"]
 
 FROM deps AS build
 COPY contracts ./contracts
 COPY mcp ./mcp
-RUN pnpm --filter @template/contracts build
-RUN pnpm --filter @template/mcp build
+RUN pnpm --filter @moon-tailors/contracts build
+RUN pnpm --filter @moon-tailors/mcp build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app

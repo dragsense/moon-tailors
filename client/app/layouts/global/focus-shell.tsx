@@ -20,7 +20,7 @@ export function FocusShell({ children, className }: FocusShellProps) {
       <NavTopbar
         brand={
           <Link to={ROOT_ROUTE} className="font-semibold">
-            Template
+            Moon Tailors
           </Link>
         }
         actions={
@@ -28,9 +28,6 @@ export function FocusShell({ children, className }: FocusShellProps) {
             <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link to={PUBLIC_ROUTES.LOGIN}>Login</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link to={PUBLIC_ROUTES.SIGNUP}>Sign up</Link>
             </Button>
           </>
         }

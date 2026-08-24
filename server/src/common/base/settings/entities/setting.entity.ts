@@ -4,7 +4,7 @@ import {
   Index,
   Unique,
 } from "typeorm";
-import { ESettingType } from "@template/contracts";
+import { ESettingType } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../entities";
 
 @Entity("base_settings")

@@ -3,7 +3,7 @@ import {
   EResource,
   EUserLevel,
   type IAuthUser,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 // Relative on purpose: routes.ts is loaded by vite-node, which does not apply
 // the `~` alias, so an aliased import here crashes the dev server at startup.
 import { hasPermission } from "../lib/permissions";
@@ -18,34 +18,35 @@ export const ROOT_ROUTE = "/" as const;
 /** Reachable without a session. Login lives at `/` (`/login` redirects there). */
 export const PUBLIC_ROUTES = {
   LOGIN: ROOT_ROUTE,
-  SIGNUP: "/signup",
+  /** Leftover URL — redirects to login. */
   VERIFY_OTP: "/verify-otp",
+  /** Leftover URL — redirects to login. */
   FORGOT_PASSWORD: "/forgot-password",
+  /** Leftover URL — redirects to login. */
   RESET_PASSWORD: "/reset-password",
-  EMAIL_LOGIN: "/email-login",
 } as const;
 export type PublicRoute = (typeof PUBLIC_ROUTES)[keyof typeof PUBLIC_ROUTES];
 
 /** Behind the app shell (session required). */
 export const APP_ROUTES = {
   DASHBOARD: "/dashboard",
-  TASKS: "/tasks",
-  TASK_CREATE: "/tasks/new",
-  USERS: "/users",
-  CHAT: "/chat",
-  SMS: "/sms",
-  EMAIL: "/email",
-  AVAILABILITY: "/availability",
-  BILLINGS: "/billings",
-  PAYMENTS: "/payments",
-  AI: "/ai",
-  API_KEYS: "/api-keys",
-  FILES: "/files",
-  CAMERAS: "/cameras",
+  CUSTOMERS: "/customers",
+  ORDERS: "/orders",
   SETTINGS: "/settings",
-  CUSTOMIZE: "/customize",
 } as const;
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];
+
+export function customerPath(id: string) {
+  return `${APP_ROUTES.CUSTOMERS}/${id}`;
+}
+
+export function customerNewOrderPath(customerId: string) {
+  return `${APP_ROUTES.CUSTOMERS}/${customerId}/orders/new`;
+}
+
+export function orderPath(id: string) {
+  return `${APP_ROUTES.ORDERS}/${id}`;
+}
 
 export const COMMON_ROUTES = {
   UNAUTHORIZED: "/unauthorized",
@@ -55,27 +56,10 @@ export const COMMON_ROUTES = {
 /** Page titles by path — used for document title and shell header. */
 export const ROUTE_TITLES: Record<string, string> = {
   [PUBLIC_ROUTES.LOGIN]: "Login",
-  [PUBLIC_ROUTES.SIGNUP]: "Sign up",
-  [PUBLIC_ROUTES.VERIFY_OTP]: "Verify OTP",
-  [PUBLIC_ROUTES.FORGOT_PASSWORD]: "Forgot password",
-  [PUBLIC_ROUTES.RESET_PASSWORD]: "Reset password",
-  [PUBLIC_ROUTES.EMAIL_LOGIN]: "Email login",
-  [APP_ROUTES.DASHBOARD]: "Dashboard",
-  [APP_ROUTES.TASKS]: "Tasks",
-  [APP_ROUTES.TASK_CREATE]: "New task",
-  [APP_ROUTES.USERS]: "Users",
-  [APP_ROUTES.CHAT]: "Chat",
-  [APP_ROUTES.SMS]: "SMS",
-  [APP_ROUTES.EMAIL]: "Email",
-  [APP_ROUTES.AVAILABILITY]: "Availability",
-  [APP_ROUTES.BILLINGS]: "Billings",
-  [APP_ROUTES.PAYMENTS]: "Payments",
-  [APP_ROUTES.AI]: "AI",
-  [APP_ROUTES.API_KEYS]: "API keys",
-  [APP_ROUTES.FILES]: "Files",
-  [APP_ROUTES.CAMERAS]: "Cameras",
+  [APP_ROUTES.DASHBOARD]: "Home",
+  [APP_ROUTES.CUSTOMERS]: "Customers",
+  [APP_ROUTES.ORDERS]: "Orders",
   [APP_ROUTES.SETTINGS]: "Settings",
-  [APP_ROUTES.CUSTOMIZE]: "Customize",
   [COMMON_ROUTES.UNAUTHORIZED]: "Unauthorized",
 };
 
@@ -83,38 +67,7 @@ export const ROUTE_TITLES: Record<string, string> = {
  * Route-level access. Omit a path to allow every signed-in level.
  * Checked by the access guard and op-level `permission` on each op.
  */
-export const ROUTE_LEVELS: Partial<Record<string, EUserLevel[]>> = {
-  [APP_ROUTES.USERS]: [
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
-  ],
-  [APP_ROUTES.TASK_CREATE]: [
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
-  ],
-  [APP_ROUTES.CUSTOMIZE]: [
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
-  ],
-  [APP_ROUTES.AI]: [
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
-  ],
-  [APP_ROUTES.SMS]: [
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
-  ],
-  [APP_ROUTES.EMAIL]: [
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
-  ],
-};
+export const ROUTE_LEVELS: Partial<Record<string, EUserLevel[]>> = {};
 
 export const ROUTE_PERMISSIONS: Partial<
   Record<string, { resource: EResource; action: EPermissionAction }>
@@ -123,57 +76,13 @@ export const ROUTE_PERMISSIONS: Partial<
     resource: EResource.DASHBOARD,
     action: EPermissionAction.READ,
   },
-  [APP_ROUTES.USERS]: {
-    resource: EResource.USERS,
+  [APP_ROUTES.CUSTOMERS]: {
+    resource: EResource.CUSTOMERS,
     action: EPermissionAction.READ,
   },
-  [APP_ROUTES.TASK_CREATE]: {
-    resource: EResource.TASKS,
-    action: EPermissionAction.CREATE,
-  },
-  [APP_ROUTES.CHAT]: {
-    resource: EResource.CHAT,
+  [APP_ROUTES.ORDERS]: {
+    resource: EResource.ORDERS,
     action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.SMS]: {
-    resource: EResource.SMS,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.EMAIL]: {
-    resource: EResource.EMAIL,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.AVAILABILITY]: {
-    resource: EResource.USER_AVAILABILITY,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.BILLINGS]: {
-    resource: EResource.BILLINGS,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.PAYMENTS]: {
-    resource: EResource.PAYMENTS,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.AI]: {
-    resource: EResource.AI,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.API_KEYS]: {
-    resource: EResource.API_KEYS,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.FILES]: {
-    resource: EResource.FILES,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.CAMERAS]: {
-    resource: EResource.VIDEO_STREAM,
-    action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.CUSTOMIZE]: {
-    resource: EResource.BUSINESSES,
-    action: EPermissionAction.UPDATE,
   },
 };
 

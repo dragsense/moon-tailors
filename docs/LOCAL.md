@@ -47,17 +47,17 @@ Website is Docker locally (Astro in the `website` container → gateway `/`). Pr
 
 ### Environment banner (non-prod only)
 
-Shown on **client** and **website** (local Docker and remote). Production (`VITE_APP_ENV` / `PUBLIC_ENV` = `production`) has no bar.
+Shown on **client** and **website** (local Docker and remote).
 
 | App | Env file | Variable |
 |---|---|---|
 | Client | `env/client.env` (local) or `env/<host>/client.env` | `VITE_APP_ENV` |
 | Website | `env/website.env` or `env/<host>/website.env` | `PUBLIC_ENV` |
 
-Values: `development` \| `testing` \| `staging` \| `production`. Local Vite/Astro default to **development** if unset. After changing a remote file, redeploy that app so the value is baked into the static build.
+Values: `development` (laptop) or `staging` (VPS). Local Vite/Astro default to **development** if unset. After changing a remote file, redeploy that app so the value is baked into the static build.
 
-- **production** — no banner
-- anything else — sticky top strip + `[ENV]` document title
+- **staging** — sticky top strip + `[STAGING]` document title
+- **development** — sticky top strip + `[DEVELOPMENT]` document title
 
 See [DEPLOY.md](DEPLOY.md#environment-banner-docker--deploy).
 
@@ -74,8 +74,6 @@ One `gateway` container is the **only** published HTTP port (local **`:8088`**, 
 | http://localhost:8088/server/api/docs | Scalar |
 | http://localhost:8088/mcp/ | mcp |
 | http://localhost:8088/mailpit/ | Mailpit UI |
-| http://localhost:8088/hls/ | MediaMTX HLS |
-| http://localhost:8088/webrtc/ | MediaMTX WebRTC (WHEP) |
 | http://localhost:8088/hub/ | service index |
 
 Nginx templates (picked from `clientMode`; local always uses the first):
@@ -93,22 +91,11 @@ Set `GATEWAY_EXPOSE=80` on a VPS if you want standard HTTP. Optional domains: `G
 If a **host / main nginx** sits in front of the Docker gateway and Docker (or the gateway container) is down, only the host can show an error page. Install [`host-nginx/gateway-down.html`](../host-nginx/gateway-down.html) onto the host (never inside a container):
 
 ```bash
-sudo mkdir -p /var/www/template
-sudo cp host-nginx/gateway-down.html /var/www/template/
+sudo mkdir -p /var/www/moon-tailors
+sudo cp host-nginx/gateway-down.html /var/www/moon-tailors/
 ```
 
 Wire it with [`host-nginx/nginx-snippet.conf.example`](../host-nginx/nginx-snippet.conf.example). Per-service downtime *inside* a running gateway still uses `docker/gateway-www/errors/*`.
-
-### Cameras / video streams (MediaMTX)
-
-Starting the **server** also starts **mediamtx**. Playback is exposed by the **Docker gateway** (same edge as `/api` / `/app`), not host nginx:
-
-| Gateway path | Backend |
-|---|---|
-| `/hls/` | MediaMTX HLS |
-| `/webrtc/` | MediaMTX WHEP |
-
-`GET /server/api/streams/:cameraId` (Nest: `/api/streams/:cameraId`) returns URLs under the gateway origin (`MEDIAMTX_PUBLIC_HOST` + `GATEWAY_EXPOSE` locally). HLS and WebRTC are not published as host ports.
 
 ### Add npm package
 
@@ -159,7 +146,7 @@ Asks host + apps. Auto-prepares remote (folder/git/env/Docker if missing).
 
 Remote ops: `pnpm remote` — see [DEPLOY.md](DEPLOY.md#remote-control-status--deploy--start--reload--stop--logs--clean--pull).
 
-Docker envs (staging / production / …): [`docker/environments.json`](../docker/environments.json) — see [DEPLOY.md](DEPLOY.md).
+Docker envs (local laptop + staging): [`docker/environments.json`](../docker/environments.json) — see [DEPLOY.md](DEPLOY.md).
 
 ## URLs (when running)
 
@@ -174,12 +161,12 @@ Docker envs (staging / production / …): [`docker/environments.json`](../docker
 
 ## Contracts live reload
 
-`@template/contracts` uses a package.json **`development` export condition** that points at `contracts/src`. In local/dev:
+`@moon-tailors/contracts` uses a package.json **`development` export condition** that points at `contracts/src`. In local/dev:
 
 - **Client (Vite)** resolves that condition (and TypeScript `customConditions`) so edits HMR-update immediately.
 - **Server (Nest webpack)** uses the same condition and **bundles** contracts from source, so Nest rebuilds when contracts change.
 
-You do **not** need `pnpm --filter @template/contracts build` while developing. Production/CI still builds `contracts/dist`; Nest production builds keep contracts external and load `dist`.
+You do **not** need `pnpm --filter @moon-tailors/contracts build` while developing. Production/CI still builds `contracts/dist`; Nest production builds keep contracts external and load `dist`.
 
 ## Client deploy modes (not used in local start)
 

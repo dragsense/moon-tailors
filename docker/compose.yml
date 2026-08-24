@@ -5,16 +5,16 @@
 # Host publish is added only when *_EXPOSE is set (see scripts/docker-env.mjs
 # → docker/.compose-publish.yml). This file only `expose`s INTERNAL.
 
-name: ${COMPOSE_PROJECT_NAME:-template}
+name: ${COMPOSE_PROJECT_NAME:-moon-tailors}
 
 services:
   postgres:
     image: postgres:17
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-postgres
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-postgres
     expose:
       - "${POSTGRES_INTERNAL:-5432}"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-template_db}
+      POSTGRES_DB: ${POSTGRES_DB:-moon_tailors_db}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
@@ -29,8 +29,8 @@ services:
       - app
 
   redis:
-    image: redis:latest
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-redis
+    image: redis:7-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-redis
     expose:
       - "${REDIS_INTERNAL:-6379}"
     healthcheck:
@@ -44,24 +44,11 @@ services:
 
   mailpit:
     image: axllent/mailpit:latest
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-mailpit
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-mailpit
     expose:
       - "${MAILPIT_SMTP_INTERNAL:-1025}"
       - "${MAILPIT_UI_INTERNAL:-8025}"
     command: ["--webroot", "/mailpit"]
-    restart: ${RESTART_POLICY:-no}
-    networks:
-      - app
-
-  # MQTT broker (Eclipse Mosquitto) — Nest hybrid microservice transport
-  mqtt:
-    image: eclipse-mosquitto:2
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-mqtt
-    expose:
-      - "${MQTT_INTERNAL:-1883}"
-      - "${MQTT_WS_INTERNAL:-9001}"
-    volumes:
-      - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
     restart: ${RESTART_POLICY:-no}
     networks:
       - app
@@ -74,8 +61,8 @@ services:
       args:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
         CLIENT_MODE: ${CLIENT_MODE:-nginx}
-    image: ${COMPOSE_PROJECT_NAME:-template}-server${IMAGE_SUFFIX:-}
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-server
+    image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-server${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-server
     expose:
       - "${SERVER_INTERNAL:-3000}"
     environment:
@@ -92,17 +79,9 @@ services:
       TSC_WATCHFILE: ${TSC_WATCHFILE:-DynamicPriorityPolling}
       TSC_WATCHDIRECTORY: ${TSC_WATCHDIRECTORY:-DynamicPriorityPolling}
       CORS_ORIGIN: http://localhost:${GATEWAY_EXPOSE:-8088}
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_INTERNAL:-5432}/${POSTGRES_DB:-template_db}
+      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_INTERNAL:-5432}/${POSTGRES_DB:-moon_tailors_db}
       REDIS_URL: redis://redis:${REDIS_INTERNAL:-6379}
-      MQTT_URL: mqtt://mqtt:${MQTT_INTERNAL:-1883}
-      MEDIAMTX_HOST: mediamtx
-      MEDIAMTX_API_PORT: ${MEDIAMTX_API_INTERNAL:-9997}
-      MEDIAMTX_HLS_PORT: ${MEDIAMTX_HLS_INTERNAL:-8888}
-      MEDIAMTX_WEBRTC_PORT: ${MEDIAMTX_WEBRTC_INTERNAL:-8889}
-      MEDIAMTX_PUBLIC_HOST: ${MEDIAMTX_PUBLIC_HOST:-localhost}
       GATEWAY_EXPOSE: ${GATEWAY_EXPOSE:-8088}
-      MEDIAMTX_API_USER: ${MEDIAMTX_API_USER:-admin}
-      MEDIAMTX_API_PASS: ${MEDIAMTX_API_PASS:-admin123}
     volumes:
       - ${V_SERVER_1}
       - ${V_SERVER_2}
@@ -120,28 +99,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      mqtt:
-        condition: service_started
-      mediamtx:
-        condition: service_started
     restart: ${SERVER_RESTART:-${RESTART_POLICY:-no}}
-    networks:
-      - app
-
-  # MediaMTX: camera RTSP → HLS / WebRTC (WHEP). Path name = camera UUID.
-  # Browser playback via gateway /hls + /webrtc only (no host publish).
-  mediamtx:
-    image: bluenviron/mediamtx:latest
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-mediamtx
-    expose:
-      - "${MEDIAMTX_HLS_INTERNAL:-8888}"
-      - "${MEDIAMTX_WEBRTC_INTERNAL:-8889}"
-      - "${MEDIAMTX_API_INTERNAL:-9997}"
-      - "${MEDIAMTX_ICE_INTERNAL:-8189}"
-    volumes:
-      - ./mediamtx.yml:/mediamtx.yml:ro
-    command: ["/mediamtx.yml"]
-    restart: ${MEDIAMTX_RESTART:-${RESTART_POLICY:-no}}
     networks:
       - app
 
@@ -154,8 +112,8 @@ services:
         VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
         CLIENT_SSR: ${CLIENT_SSR:-false}
         CLIENT_ENV_FILE: ${CLIENT_ENV_FILE:-env/client.env}
-    image: ${COMPOSE_PROJECT_NAME:-template}-client${IMAGE_SUFFIX:-}
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-client
+    image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-client${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-client
     expose:
       - "${CLIENT_INTERNAL:-5173}"
     environment:
@@ -188,8 +146,8 @@ services:
       context: ..
       dockerfile: docker/mcp.Dockerfile
       target: ${MCP_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
-    image: ${COMPOSE_PROJECT_NAME:-template}-mcp${IMAGE_SUFFIX:-}
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-mcp
+    image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-mcp${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-mcp
     expose:
       - "${MCP_INTERNAL:-4000}"
     environment:
@@ -223,8 +181,8 @@ services:
       target: ${WEBSITE_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
       args:
         WEBSITE_ENV_FILE: ${WEBSITE_ENV_FILE:-env/website.env}
-    image: ${COMPOSE_PROJECT_NAME:-template}-website${IMAGE_SUFFIX:-}
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-website
+    image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-website${IMAGE_SUFFIX:-}
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-website
     expose:
       - "${WEBSITE_INTERNAL:-4321}"
     environment:
@@ -250,7 +208,7 @@ services:
   # Single public HTTP entry (local GATEWAY_EXPOSE=8088). All other services stay internal.
   gateway:
     image: nginx:alpine
-    container_name: ${COMPOSE_PROJECT_NAME:-template}-gateway
+    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-gateway
     expose:
       - "${GATEWAY_INTERNAL:-80}"
     environment:
@@ -261,8 +219,6 @@ services:
       MCP_INTERNAL: ${MCP_INTERNAL:-4000}
       WEBSITE_INTERNAL: ${WEBSITE_INTERNAL:-4321}
       MAILPIT_UI_INTERNAL: ${MAILPIT_UI_INTERNAL:-8025}
-      MEDIAMTX_HLS_INTERNAL: ${MEDIAMTX_HLS_INTERNAL:-8888}
-      MEDIAMTX_WEBRTC_INTERNAL: ${MEDIAMTX_WEBRTC_INTERNAL:-8889}
       GATEWAY_APP_UPSTREAM: ${GATEWAY_APP_UPSTREAM:-client:5173}
     volumes:
       - ${GATEWAY_NGINX_TEMPLATE:-./nginx-gateway.conf.template}:/etc/nginx/templates/default.conf.template:ro
@@ -276,11 +232,11 @@ services:
 
 volumes:
   postgres_data:
-    name: ${POSTGRES_VOLUME_NAME:-template_postgres_data}
+    name: ${POSTGRES_VOLUME_NAME:-moon_tailors_postgres_data}
   uploads:
-    name: ${UPLOADS_VOLUME_NAME:-template_uploads}
+    name: ${UPLOADS_VOLUME_NAME:-moon_tailors_uploads}
   server_logs:
-    name: ${LOGS_VOLUME_NAME:-template_server_logs}
+    name: ${LOGS_VOLUME_NAME:-moon_tailors_server_logs}
   server_nm:
   server_pkg_nm:
   server_contracts_nm:
@@ -294,5 +250,5 @@ volumes:
 
 networks:
   app:
-    name: ${COMPOSE_PROJECT_NAME:-template}-net
+    name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-net
     driver: bridge

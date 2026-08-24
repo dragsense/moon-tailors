@@ -19,4 +19,6 @@ export * from "./camera/index.js";
 export * from "./dashboard/index.js";
 export * from "./sms/index.js";
 export * from "./email/index.js";
+export * from "./customer/index.js";
+export * from "./order/index.js";
 

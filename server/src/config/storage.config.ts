@@ -1,5 +1,5 @@
 import { registerAs } from "@nestjs/config";
-import { EStorageDriver } from "@template/contracts";
+import { EStorageDriver } from "@moon-tailors/contracts";
 
 export type StorageS3Config = {
   accessKeyId: string;

@@ -160,7 +160,7 @@ export const DEFAULT_BUSINESS_THEME = {
   borderRadius: EBorderRadius.MD,
   fontFamily: "Inter" as string | null,
   fontUrl: null as string | null,
-  title: "Template" as string | null,
+  title: "Moon Tailors" as string | null,
   loginTagline: "Sign in to continue" as string | null,
   density: EDensity.COMFORTABLE,
   sidebarStyle: ESidebarStyle.ICON,
@@ -169,7 +169,7 @@ export const DEFAULT_BUSINESS_THEME = {
   faviconId: null as string | null,
 };
 
-/** Fonts available in the customize UI (Google Fonts CSS URLs). */
+/** Fonts available for business theme (Google Fonts CSS URLs). */
 export const BUSINESS_THEME_FONT_OPTIONS = [
   {
     family: "Inter",

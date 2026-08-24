@@ -16,7 +16,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import type { IFileUpload } from "@template/contracts";
+import type { IFileUpload } from "@moon-tailors/contracts";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 

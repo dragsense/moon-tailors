@@ -7,7 +7,6 @@ interface ImportMetaEnv {
   readonly VITE_ENCRYPTION_KEY?: string;
   readonly VITE_ENCRYPTION_AAD?: string;
   readonly VITE_ENCRYPTION_ITERATIONS?: string;
-  readonly VITE_STRIPE_PUBLISHABLE_KEY?: string;
 }
 
 interface ImportMeta {

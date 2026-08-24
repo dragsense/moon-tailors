@@ -17,7 +17,7 @@ export default registerAs(
     apiBaseUrl:
       process.env.MCP_API_BASE_URL ?? "http://localhost:3000/api",
     apiKey: process.env.MCP_API_KEY || undefined,
-    name: process.env.MCP_SERVER_NAME ?? "template-mcp",
+    name: process.env.MCP_SERVER_NAME ?? "moon-tailors-mcp",
     version: process.env.MCP_SERVER_VERSION ?? "0.1.0",
   }),
 );

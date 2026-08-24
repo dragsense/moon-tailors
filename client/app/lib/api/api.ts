@@ -135,8 +135,6 @@ function processQueue(error: unknown, token: string | null = null): void {
 function isAuthRequest(url?: string): boolean {
   return [
     "/auth/login",
-    "/auth/signup",
-    "/auth/verify-otp",
     "/auth/refresh",
     "/auth/logout",
   ].some((path) => url?.includes(path));

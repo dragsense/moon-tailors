@@ -46,7 +46,11 @@ function readTheme(): Theme {
 
 function readLanguage(): Language {
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  if (stored === "en" || stored === "ar") return stored;
+  if (stored === "ar") {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, "ur");
+    return "ur";
+  }
+  if (stored === "en" || stored === "ur") return stored;
   return DEFAULT_LANGUAGE;
 }
 

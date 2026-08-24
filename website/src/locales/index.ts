@@ -1,6 +1,6 @@
-import { ar } from "./ar";
 import { en, type WebsiteDict } from "./en";
 import type { Language } from "../lib/prefs";
+import { ur } from "./ur";
 
 export type { WebsiteDict };
 
@@ -15,14 +15,15 @@ export type TranslationKey =
   | NestedKey<"monorepo">
   | NestedKey<"cta">
   | NestedKey<"prefs">
-  | NestedKey<"a11y">;
+  | NestedKey<"a11y">
+  | NestedKey<"footer">;
 
 export const LOCALE_CATALOG: Record<
   Language,
   { dict: WebsiteDict; dir: "ltr" | "rtl"; nativeLabel: string }
 > = {
   en: { dict: en, dir: "ltr", nativeLabel: "English" },
-  ar: { dict: ar, dir: "rtl", nativeLabel: "العربية" },
+  ur: { dict: ur, dir: "rtl", nativeLabel: "اردو" },
 };
 
 export const DEFAULT_LANGUAGE: Language = "en";

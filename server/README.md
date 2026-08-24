@@ -1,6 +1,6 @@
 # Backend
 
-NestJS API validated by Zod schemas from `@template/contracts`. Postgres + TypeORM, `EntityService` CRUD, tenant/owner ACL, OTP auth.
+NestJS API validated by Zod schemas from `@moon-tailors/contracts`. Postgres + TypeORM, `EntityService` CRUD, tenant/owner ACL, password auth.
 
 ## Layout
 

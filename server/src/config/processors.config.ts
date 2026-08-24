@@ -2,7 +2,7 @@ import { registerAs } from "@nestjs/config";
 import {
   EAiProcessorType,
   EPaymentProcessorType,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 
 export type PaymentProcessorsConfig = {
   enabled: boolean;

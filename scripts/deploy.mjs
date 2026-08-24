@@ -5,11 +5,11 @@
  * Remote deploy auto-prepares the host (folder / git / missing env / Docker)
  * and skips steps that already exist.
  *
- *   node scripts/deploy.mjs --host development --target server
- *   node scripts/deploy.mjs --host production --target all
+ *   node scripts/deploy.mjs --host staging --target server
+ *   node scripts/deploy.mjs --host staging --target all
  *   node scripts/deploy.mjs --target website
  *   node scripts/deploy.mjs --target client   # CDN mode (hosts.json clientMode=cdn)
- *   node scripts/deploy.mjs --target server --env production   # on the server
+ *   node scripts/deploy.mjs --target server --env staging   # on the server
  *
  * clientMode (deploy-only): nginx | ssr | nest | cdn
  * Website / client CDN: provider "manual" | "pages" | "rsync"
@@ -178,7 +178,7 @@ function resolveCdnMeta(kind) {
   if (kind === "website") {
     return {
       dist: process.env.WEBSITE_CDN_DIST || "website/dist",
-      project: process.env.WEBSITE_CDN_PROJECT || "template-website",
+      project: process.env.WEBSITE_CDN_PROJECT || "moon-tailors-website",
       provider: process.env.WEBSITE_CDN_PROVIDER || "manual",
       user: process.env.WEBSITE_CDN_USER || "",
       host: process.env.WEBSITE_CDN_HOST || "",
@@ -188,7 +188,7 @@ function resolveCdnMeta(kind) {
   }
   return {
     dist: process.env.CLIENT_CDN_DIST || "client/build/client",
-    project: process.env.CLIENT_CDN_PROJECT || "template-client",
+    project: process.env.CLIENT_CDN_PROJECT || "moon-tailors-client",
     provider: process.env.CLIENT_CDN_PROVIDER || "manual",
     user: process.env.CLIENT_CDN_USER || "",
     host: process.env.CLIENT_CDN_HOST || "",
@@ -351,7 +351,7 @@ function skip(msg) {
 
 /** Stop leftover SSR/dev client without deleting images (mode switches). */
 function removeClientContainerIfPresent(dcEnv) {
-  const name = `${dcEnv.COMPOSE_PROJECT_NAME || "template"}-client`;
+  const name = `${dcEnv.COMPOSE_PROJECT_NAME || "moon-tailors"}-client`;
   const inspect = spawnSync("docker", ["inspect", name], {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
@@ -524,7 +524,7 @@ function parseArgs(argv) {
 }
 
 function composeImageName(dcEnv, service) {
-  const project = dcEnv.COMPOSE_PROJECT_NAME || "template";
+  const project = dcEnv.COMPOSE_PROJECT_NAME || "moon-tailors";
   const suffix = dcEnv.IMAGE_SUFFIX || "";
   return `${project}-${service}${suffix}`;
 }
@@ -543,7 +543,7 @@ function extractImageDir(dcEnv, service, fromPath, outDir) {
     fail(`Cannot replace ${outDir}`, wipe.stderr || wipe.stdout || "permission denied");
   }
   mkdirSync(outDir, { recursive: true });
-  const name = `template-extract-${service}-${process.pid}`;
+  const name = `moon-tailors-extract-${service}-${process.pid}`;
   const image = composeImageName(dcEnv, service);
   try {
     run("docker", ["create", "--name", name, image], { env: dcEnv });
@@ -642,7 +642,7 @@ function deployLocal(target, envName, clientModeOverride, { start = false, migra
       console.log(
         `▸ port check: ${ports.map((p) => `${p.label}:${p.port}`).join(", ")}`,
       );
-      assertHostPortsAvailable(cfg.projectName || "template", ports);
+      assertHostPortsAvailable(cfg.projectName || "moon-tailors", ports);
     }
   }
 
@@ -765,7 +765,7 @@ function deployLocal(target, envName, clientModeOverride, { start = false, migra
   if (start && migrate && (target === "server" || target === "all" || target === "api")) {
     console.log("🗃️  migrations…");
     // Same idea as Vivast: find compiled TypeORM data-source under the API package.
-    // Template package is `server/` (not `backend/`); Nest webpack emits main.js,
+    // App package is `server/` (not `backend/`); Nest webpack emits main.js,
     // then `tsc -p tsconfig.typeorm.json` adds dist/database/data-source.js.
     const mig = `set -e
 cd /app/server
@@ -838,23 +838,23 @@ function deployStaticUpload(label, cfg) {
 function deployWebsiteCdn() {
   const w = resolveCdnMeta("website");
   console.log(`🌐 Website CDN (provider=${w.provider}) — no Docker`);
-  console.log("→ Installing @template/website deps…");
-  run("pnpm", ["install", "--filter", "@template/website..."]);
-  console.log("→ Building @template/website…");
-  run("pnpm", ["--filter", "@template/website", "build"]);
+  console.log("→ Installing @moon-tailors/website deps…");
+  run("pnpm", ["install", "--filter", "@moon-tailors/website..."]);
+  console.log("→ Building @moon-tailors/website…");
+  run("pnpm", ["--filter", "@moon-tailors/website", "build"]);
   deployStaticUpload("Website", w);
 }
 
 function deployClientCdn() {
   const c = resolveCdnMeta("client");
   console.log(`☁️  Client CDN (provider=${c.provider}) — no Docker`);
-  console.log("→ Installing @template/client deps…");
-  run("pnpm", ["install", "--filter", "@template/client..."]);
-  console.log("→ Building @template/contracts + @template/client (SPA)…");
-  run("pnpm", ["--filter", "@template/contracts", "build"], {
+  console.log("→ Installing @moon-tailors/client deps…");
+  run("pnpm", ["install", "--filter", "@moon-tailors/client..."]);
+  console.log("→ Building @moon-tailors/contracts + @moon-tailors/client (SPA)…");
+  run("pnpm", ["--filter", "@moon-tailors/contracts", "build"], {
     env: { ...process.env, CLIENT_SSR: "false" },
   });
-  run("pnpm", ["--filter", "@template/client", "build"], {
+  run("pnpm", ["--filter", "@moon-tailors/client", "build"], {
     env: { ...process.env, CLIENT_SSR: "false" },
   });
   deployStaticUpload("Client", c);
@@ -1108,7 +1108,7 @@ function servicesForPortCheck(cfg, target) {
   if (t === "client" && !clientUsesDockerService(cfg.clientMode)) {
     if (cfg.clientMode === "nest") {
       const out = cfg.services.filter(
-        (s) => s === "server" || s === "gateway" || ["postgres", "redis", "mailpit", "mqtt", "mediamtx"].includes(s),
+        (s) => s === "server" || s === "gateway" || ["postgres", "redis", "mailpit"].includes(s),
       );
       return out.length ? out : cfg.services.includes("gateway") ? ["gateway"] : [];
     }
@@ -1119,7 +1119,7 @@ function servicesForPortCheck(cfg, target) {
   }
   const out = cfg.services.filter((s) => {
     if (s === t) return true;
-    if (t === "server" && ["postgres", "redis", "mailpit", "mqtt", "mediamtx"].includes(s)) {
+    if (t === "server" && ["postgres", "redis", "mailpit"].includes(s)) {
       return true;
     }
     return false;
@@ -1157,7 +1157,7 @@ function assertRemotePortsBeforeDeploy(h, target) {
   info(
     `checking ports on ${h.host}: ${ports.map((p) => `${p.label}:${p.port}`).join(", ")}…`,
   );
-  const script = remotePortCheckShell(cfg.projectName || "template", ports);
+  const script = remotePortCheckShell(cfg.projectName || "moon-tailors", ports);
   try {
     ssh(h, script, { forwardAgent: false, quiet: true });
     ok("ports free (or only our stack)");

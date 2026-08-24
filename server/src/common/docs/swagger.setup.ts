@@ -19,9 +19,9 @@ export function setupApiDocumentation(
   if (!configService.get<AppConfig>("app")?.apiDocsEnabled) return;
 
   const scalar = configService.get<ScalarConfig>("scalar");
-  const title = scalar?.title || "Template API";
+  const title = scalar?.title || "Moon Tailors API";
   const description =
-    scalar?.description || "Backend template with shared Zod contracts";
+    scalar?.description || "Moon Tailors API with shared Zod contracts";
   const port = configService.get<AppConfig>("app")?.port ?? 3000;
 
   const config = new DocumentBuilder()

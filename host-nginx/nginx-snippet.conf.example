@@ -7,8 +7,8 @@
 # Streams (/hls, /webrtc), /api, /app, etc. are all served by the Docker gateway.
 # Host nginx only proxies to that gateway (and shows gateway-down.html when it is down).
 #
-#   sudo mkdir -p /var/www/template
-#   sudo cp host-nginx/gateway-down.html /var/www/template/
+#   sudo mkdir -p /var/www/moon-tailors
+#   sudo cp host-nginx/gateway-down.html /var/www/moon-tailors/
 #
 # Local Docker gateway listens on GATEWAY_EXPOSE (default 8088).
 # On a VPS you may proxy :80/:443 → 127.0.0.1:80 (GATEWAY_EXPOSE=80).
@@ -19,7 +19,7 @@ server {
 
     # Static fallback page on the HOST (not inside any container)
     location = /gateway-down.html {
-        root /var/www/template;
+        root /var/www/moon-tailors;
         internal;   # only via error_page; drop "internal" to open in browser
     }
 

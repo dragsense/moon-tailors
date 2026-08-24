@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { IPaginatedResponse } from "@template/contracts";
+import type { IPaginatedResponse } from "@moon-tailors/contracts";
 import { FieldShell } from "~/lib/form";
 import type { QueryOpComponentProps } from "~/ops";
 import { Input } from "~/components/ui/input";

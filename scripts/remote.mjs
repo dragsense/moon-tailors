@@ -4,10 +4,10 @@
  * Also: pull (git sync), env (sync env + reload).
  *
  * From laptop:
- *   node scripts/remote.mjs --host development --action stop server
- *   node scripts/remote.mjs --host production --action env
- *   node scripts/remote.mjs --host development --action pull
- *   node scripts/remote.mjs --host development --action logs server
+ *   node scripts/remote.mjs --host staging --action stop server
+ *   node scripts/remote.mjs --host staging --action env
+ *   node scripts/remote.mjs --host staging --action pull
+ *   node scripts/remote.mjs --host staging --action logs server
  *
  * On the server (invoked via SSH re-exec for compose ops):
  *   node scripts/remote.mjs --action stop --env staging server
@@ -57,7 +57,7 @@ const ACTIONS = [...COMPOSE_ACTIONS, ...HOST_ACTIONS];
 const DOCKER_APPS = ["server", "client", "mcp", "website"];
 const GATEWAY = "gateway";
 const COMPOSE_TARGETS = [...DOCKER_APPS, GATEWAY];
-const INFRA = ["postgres", "redis", "mailpit", "mqtt", "mediamtx"];
+const INFRA = ["postgres", "redis", "mailpit"];
 
 function die(msg, code = 1) {
   console.error(msg);
@@ -90,10 +90,10 @@ Flags:
   --no-reload     with env: skip container reload after sync
 
 Examples:
-  node scripts/remote.mjs --host development --action pull
-  node scripts/remote.mjs --host production --action env
+  node scripts/remote.mjs --host staging --action pull
+  node scripts/remote.mjs --host staging --action env
   node scripts/remote.mjs --host staging --action reload gateway
-  node scripts/remote.mjs --host development --action stop server
+  node scripts/remote.mjs --host staging --action stop server
 `);
 }
 
@@ -665,7 +665,7 @@ function runLocalAction(args) {
 
   switch (args.action) {
     case "status": {
-      const project = cfg.projectName || process.env.COMPOSE_PROJECT_NAME || "template";
+      const project = cfg.projectName || process.env.COMPOSE_PROJECT_NAME || "moon-tailors";
       console.log(`\n── Containers (${project}) ──`);
       dc("ps", "-a");
 
@@ -747,7 +747,7 @@ function runLocalAction(args) {
         console.log(
           `▸ port check (docker.env): ${ports.map((p) => `${p.label}:${p.port}`).join(", ")}`,
         );
-        assertHostPortsAvailable(cfg.projectName || "template", ports);
+        assertHostPortsAvailable(cfg.projectName || "moon-tailors", ports);
       }
       console.log(`→ start: ${targets.join(", ")}`);
       dc(...composeUpArgs("start", targets));
@@ -763,7 +763,7 @@ function runLocalAction(args) {
         console.log(
           `▸ port check (docker.env): ${ports.map((p) => `${p.label}:${p.port}`).join(", ")}`,
         );
-        assertHostPortsAvailable(cfg.projectName || "template", ports);
+        assertHostPortsAvailable(cfg.projectName || "moon-tailors", ports);
       }
       console.log(`→ reload: ${targets.join(", ")}`);
       dc(...composeUpArgs("reload", targets));
@@ -838,7 +838,7 @@ function runLocalAction(args) {
 
       const CLEAN = {
         server: {
-          compose: ["server", "postgres", "redis", "mailpit", "mqtt", "mediamtx"],
+          compose: ["server", "postgres", "redis", "mailpit"],
           volumes: [
             "server_nm",
             "server_pkg_nm",
@@ -881,7 +881,7 @@ function runLocalAction(args) {
         },
       };
 
-      const project = cfg.projectName || process.env.COMPOSE_PROJECT_NAME || "template";
+      const project = cfg.projectName || process.env.COMPOSE_PROJECT_NAME || "moon-tailors";
       const apps = args.all
         ? [...DOCKER_APPS, "gateway"]
         : resolveTargets(cfg, args).filter(

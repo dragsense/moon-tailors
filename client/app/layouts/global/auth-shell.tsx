@@ -12,7 +12,7 @@ export type AuthShellProps = {
 };
 
 /**
- * Centered auth column — login / signup routes.
+ * Centered auth column — login / password-reset routes.
  */
 export function AuthShell({ children, className }: AuthShellProps) {
   const { t } = useI18n();
@@ -20,33 +20,42 @@ export function AuthShell({ children, className }: AuthShellProps) {
   const title = businessTheme.title ?? t("app.name");
   const tagline = businessTheme.loginTagline ?? t("auth.signInContinue");
 
+  const year = new Date().getFullYear();
+
   return (
     <div
       className={cn(
-        "relative flex min-h-screen flex-col items-center justify-center bg-muted/30 px-4 py-10",
+        "relative flex min-h-screen flex-col bg-muted/30",
         className,
       )}
     >
       <div className="absolute right-4 top-4">
         <ThemeToggle />
       </div>
-      <div className="mb-8 text-center">
-        <Link
-          to={ROOT_ROUTE}
-          className="inline-flex flex-col items-center gap-2 text-xl font-semibold tracking-tight"
-        >
-          {businessTheme.logoUrl ? (
-            <img
-              src={businessTheme.logoUrl}
-              alt=""
-              className="h-10 w-auto object-contain"
-            />
-          ) : null}
-          <span>{title}</span>
-        </Link>
-        <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>
+      <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+        <div className="mb-8 text-center">
+          <Link
+            to={ROOT_ROUTE}
+            className="inline-flex flex-col items-center gap-2 text-xl font-semibold tracking-tight"
+          >
+            {businessTheme.logoUrl ? (
+              <img
+                src={businessTheme.logoUrl}
+                alt=""
+                className="h-10 w-auto object-contain"
+              />
+            ) : null}
+            <span>{title}</span>
+          </Link>
+          <p className="mt-1 text-sm text-muted-foreground">{tagline}</p>
+        </div>
+        <div className="w-full max-w-md">{children}</div>
       </div>
-      <div className="w-full max-w-md">{children}</div>
+      <footer className="border-t px-6 py-4">
+        <p className="text-center text-xs text-muted-foreground">
+          {t("app.copyright", { year, name: t("app.legalName") })}
+        </p>
+      </footer>
     </div>
   );
 }

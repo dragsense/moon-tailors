@@ -1,7 +1,7 @@
 import { cn } from "~/lib/utils";
 
 export type AppLoaderProps = {
-  /** Brand mark letter (defaults to T). */
+  /** Brand mark letter (defaults to M). */
   initial?: string;
   /** App / product name under the mark. */
   title?: string;
@@ -15,8 +15,8 @@ export type AppLoaderProps = {
  * No hooks: safe before I18n/Theme providers mount.
  */
 export function AppLoader({
-  initial = "T",
-  title = "Template",
+  initial = "M",
+  title = "Moon Tailors",
   message = "Loading…",
   className,
 }: AppLoaderProps) {

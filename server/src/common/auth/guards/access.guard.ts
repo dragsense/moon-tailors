@@ -5,7 +5,7 @@ import {
   Injectable,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import type { EUserLevel } from "@template/contracts";
+import type { EUserLevel } from "@moon-tailors/contracts";
 import type { UserEntity } from "../../base";
 import {
   IS_PUBLIC_KEY,

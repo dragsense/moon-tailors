@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import type { EUserLevel } from "@template/contracts";
+import type { EUserLevel } from "@moon-tailors/contracts";
 
 export type RequestContextValues = {
   requestId: string;

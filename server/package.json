@@ -1,5 +1,5 @@
 {
-  "name": "@template/server",
+  "name": "@moon-tailors/server",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -35,7 +35,7 @@
     "@nestjs/typeorm": "^11.0.3",
     "@nestjs/websockets": "^11.1.28",
     "@scalar/nestjs-api-reference": "^1.2.14",
-    "@template/contracts": "workspace:*",
+    "@moon-tailors/contracts": "workspace:*",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
     "class-transformer": "^0.5.1",

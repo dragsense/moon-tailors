@@ -1,7 +1,7 @@
 import type {
   EActivityStatus,
   EActivityType,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 
 /** Input for ActivityLogsService.createActivityLog. */
 export type CreateActivityLogInput = {

@@ -11,30 +11,13 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { ApiTags } from "@nestjs/swagger";
 import type {
-  IAuthChallengeResponse,
-  IAuthOptions,
   ICsrfTokenResponse,
   ILoginResponse,
   IRefreshTokenResponse,
-  TAuthMessageResponse,
-  TEmailLoginData,
-  TForgotPasswordData,
   TLoginData,
-  TResetPasswordWithOtpData,
-  TResetPasswordWithTokenData,
-  TSignupData,
-  TVerifyOtpData,
   IAuthUser,
-} from "@template/contracts";
-import {
-  emailLoginSchema,
-  forgotPasswordSchema,
-  loginSchema,
-  resetPasswordWithOtpSchema,
-  resetPasswordWithTokenSchema,
-  signupSchema,
-  verifyOtpSchema,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
+import { loginSchema } from "@moon-tailors/contracts";
 import type { Request, Response } from "express";
 import {
   clearCsrfCookie,
@@ -71,87 +54,18 @@ export class AuthController {
     return { csrfToken: token };
   }
 
-  @Get("options")
-  @Public()
-  options(): IAuthOptions {
-    return this.authService.getOptions();
-  }
-
-  @Post("signup")
-  @Public()
-  signup(
-    @Body(new ZodValidationPipe(signupSchema)) body: TSignupData,
-  ): Promise<IAuthChallengeResponse> {
-    return this.authService.signup(body);
-  }
-
   @Post("login")
   @Public()
   @HttpCode(200)
   async login(
     @Body(new ZodValidationPipe(loginSchema)) body: TLoginData,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<
-    IAuthChallengeResponse | (ILoginResponse & ICsrfTokenResponse)
-  > {
-    const result = await this.authService.login(body);
-    if (result.kind === "challenge") return result.challenge;
-
-    this.setRefreshCookie(res, result.session.refreshToken);
-    const csrfToken = createCsrfToken();
-    this.issueCsrf(res, csrfToken);
-    return { ...result.session.response, csrfToken };
-  }
-
-  @Post("email-login")
-  @Public()
-  @HttpCode(200)
-  emailLogin(
-    @Body(new ZodValidationPipe(emailLoginSchema)) body: TEmailLoginData,
-  ): Promise<IAuthChallengeResponse | TAuthMessageResponse> {
-    return this.authService.emailLogin(body);
-  }
-
-  @Post("forgot-password")
-  @Public()
-  @HttpCode(200)
-  forgotPassword(
-    @Body(new ZodValidationPipe(forgotPasswordSchema)) body: TForgotPasswordData,
-  ): Promise<IAuthChallengeResponse | TAuthMessageResponse> {
-    return this.authService.forgotPassword(body);
-  }
-
-  @Post("reset-password")
-  @Public()
-  @HttpCode(200)
-  resetPassword(
-    @Body() body: TResetPasswordWithOtpData | TResetPasswordWithTokenData,
-  ): Promise<TAuthMessageResponse> {
-    if (this.authConfig.passwordResetMode === "link") {
-      const parsed = resetPasswordWithTokenSchema.parse(body);
-      return this.authService.resetPasswordWithToken(parsed);
-    }
-    const parsed = resetPasswordWithOtpSchema.parse(body);
-    return this.authService.resetPasswordWithOtp(parsed);
-  }
-
-  @Post("verify-otp")
-  @Public()
-  @HttpCode(200)
-  async verifyOtp(
-    @Body(new ZodValidationPipe(verifyOtpSchema)) body: TVerifyOtpData,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
   ): Promise<ILoginResponse & ICsrfTokenResponse> {
-    const { response, refreshToken } = await this.authService.verifyOtp({
-      ...body,
-      userAgent: req.get("user-agent") ?? undefined,
-      ipAddress: req.ip,
-    });
-    this.setRefreshCookie(res, refreshToken);
+    const session = await this.authService.login(body);
+    this.setRefreshCookie(res, session.refreshToken);
     const csrfToken = createCsrfToken();
     this.issueCsrf(res, csrfToken);
-    return { ...response, csrfToken };
+    return { ...session.response, csrfToken };
   }
 
   @Post("refresh")

@@ -1,7 +1,7 @@
 import type {
   IMessageResponse,
   IPaginatedResponse,
-} from "@template/contracts";
+} from "@moon-tailors/contracts";
 import {
   apiFileRequest,
   apiRequest,

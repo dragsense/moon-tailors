@@ -8,7 +8,7 @@ const { AppLoggerService } = require("../services/app-logger.service");
 
 const loggerConfig = {
   getOrThrow: () => ({
-    serviceName: "template-server",
+    serviceName: "moon-tailors-server",
     environment: "test",
   }),
 };

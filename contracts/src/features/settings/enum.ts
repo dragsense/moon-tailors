@@ -30,5 +30,5 @@ export enum ETimeFormat {
 /** App UI language codes (BCP 47 primary subtag). */
 export enum ELanguage {
   EN = "en",
-  AR = "ar",
+  UR = "ur",
 }

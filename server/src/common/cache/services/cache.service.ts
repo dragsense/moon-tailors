@@ -22,7 +22,7 @@ export class CacheService
   private readonly logger = new Logger(CacheService.name);
   private client: Redis | null = null;
   private enabled = false;
-  private prefix = "template";
+  private prefix = "moon-tailors";
   private defaultTtl = 300;
 
   constructor(private readonly config: ConfigService) {}

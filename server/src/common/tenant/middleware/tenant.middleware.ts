@@ -1,7 +1,7 @@
 import { Injectable, type NestMiddleware } from "@nestjs/common";
 import type { NextFunction, Request, Response } from "express";
 import { ConfigService } from "@nestjs/config";
-import { EAppMode } from "@template/contracts";
+import { EAppMode } from "@moon-tailors/contracts";
 import { RequestContext } from "../../context";
 import type { TenantConfig } from "../../../config";
 

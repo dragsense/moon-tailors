@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Template CLI — one entry: pnpm tpl
+ * Moon Tailors CLI — one entry: pnpm tpl
  *
  *   pnpm tpl              ask what to do
  *   pnpm tpl start        skip the menu (same for stop, deploy, …)
@@ -93,10 +93,10 @@ const CLEAN_META = {
 
 /** pnpm --filter for each app (`...` = include workspace deps like contracts) */
 const PNPM_FILTER = {
-  server: "@template/server...",
-  client: "@template/client...",
-  mcp: "@template/mcp",
-  website: "@template/website",
+  server: "@moon-tailors/server...",
+  client: "@moon-tailors/client...",
+  mcp: "@moon-tailors/mcp",
+  website: "@moon-tailors/website",
 };
 
 const c = {
@@ -123,7 +123,7 @@ const logColor = {
 
 /**
  * Tint compose service prefix only — Nest ConsoleLogger already colors levels.
- * Match container name (`template-server`), never the message body.
+ * Match container name (`moon-tailors-server`), never the message body.
  */
 function colorizeComposeLogLine(raw) {
   const m = String(raw).match(/^(\S+)\s+\|\s?(.*)$/);
@@ -177,7 +177,7 @@ const REMOTE_ACTION_PRESETS = [
 
 function help() {
   console.log(`
-${c.cyan}${c.bold}template${c.reset} — one menu, or direct scripts
+${c.cyan}${c.bold}moon-tailors${c.reset} — one menu, or direct scripts
 
   ${c.cyan}pnpm tpl${c.reset}                 ask what to do
   ${c.cyan}pnpm bootstrap|start|reload|stop|logs|build|add-pkg|migrate|remote|clean${c.reset}
@@ -244,7 +244,7 @@ function readProfile() {
 /** App folders that can be hidden in the Cursor/VS Code explorer from .profile. */
 const EXPLORER_APPS = ["server", "client", "mcp", "website"];
 
-/** Exclude keys this template manages (cleared on each sync). */
+/** Exclude keys this project manages (cleared on each sync). */
 const EXPLORER_MANAGED_KEYS = [
   ...EXPLORER_APPS,
   "contracts",
@@ -495,7 +495,7 @@ const serviceUrls = {
   client: "  Client  → http://localhost:8088/app/",
   mcp: "  MCP     → http://localhost:8088/mcp/",
   website: "  Website → http://localhost:8088/",
-  gateway: "  Gateway → http://localhost:8088  (/ · /app/ · /server/ · /mailpit/ · /hls/)",
+  gateway: "  Gateway → http://localhost:8088  (/ · /app/ · /server/ · /mailpit/)",
 };
 
 /** Services listed after --add (can repeat: --add server --add mcp) */
@@ -763,7 +763,7 @@ function getComposeProjectName() {
     const m = readFileSync(envPath, "utf8").match(/^COMPOSE_PROJECT_NAME=(.+)$/m);
     if (m?.[1]) return m[1].trim();
   }
-  return process.env.COMPOSE_PROJECT_NAME || "template";
+  return process.env.COMPOSE_PROJECT_NAME || "moon-tailors";
 }
 
 function remainingNeedsContracts(remaining) {
@@ -1177,7 +1177,7 @@ async function setupCmd(argv) {
     );
   } else {
     console.log(
-      `${c.dim}Note: no postgres/redis — not needed for this profile${c.reset}`,
+      `${c.dim}Note: no postgres — not needed for this profile${c.reset}`,
     );
   }
 
@@ -1234,11 +1234,11 @@ ${c.green}${c.bold}✓ Bootstrap complete${c.reset}  (nothing is running yet)
 }
 
 const PKG_TARGETS = [
-  { key: "server", filter: "@template/server", label: "server" },
-  { key: "client", filter: "@template/client", label: "client" },
-  { key: "mcp", filter: "@template/mcp", label: "mcp" },
-  { key: "website", filter: "@template/website", label: "website" },
-  { key: "contracts", filter: "@template/contracts", label: "contracts" },
+  { key: "server", filter: "@moon-tailors/server", label: "server" },
+  { key: "client", filter: "@moon-tailors/client", label: "client" },
+  { key: "mcp", filter: "@moon-tailors/mcp", label: "mcp" },
+  { key: "website", filter: "@moon-tailors/website", label: "website" },
+  { key: "contracts", filter: "@moon-tailors/contracts", label: "contracts" },
 ];
 
 /** Add an npm package into a workspace package (from repo root) */
@@ -1379,7 +1379,7 @@ async function startServices(services, { build = false } = {}) {
         `None of [${dockerStart.join(", ")}] are enabled in docker/environments.json (local)`,
       );
     }
-    const infra = ["postgres", "redis", "mailpit", "mqtt", "mediamtx"].filter((s) =>
+    const infra = ["postgres", "redis", "mailpit"].filter((s) =>
       allowed.has(s),
     );
     let upServices =
@@ -2217,16 +2217,16 @@ exit 1`,
 
 async function runBuild(target) {
   if (target === "all" || !target) {
-    await run("pnpm", ["--filter", "@template/contracts", "build"], "contracts");
-    await run("pnpm", ["--filter", "@template/server", "build"], "server");
-    await run("pnpm", ["--filter", "@template/client", "build"], "client");
-    await run("pnpm", ["--filter", "@template/website", "build"], "website");
-    await run("pnpm", ["--filter", "@template/mcp", "build"], "mcp");
+    await run("pnpm", ["--filter", "@moon-tailors/contracts", "build"], "contracts");
+    await run("pnpm", ["--filter", "@moon-tailors/server", "build"], "server");
+    await run("pnpm", ["--filter", "@moon-tailors/client", "build"], "client");
+    await run("pnpm", ["--filter", "@moon-tailors/website", "build"], "website");
+    await run("pnpm", ["--filter", "@moon-tailors/mcp", "build"], "mcp");
     console.log(`${c.green}✓ build complete${c.reset}`);
     return;
   }
   if (target === "server" || target === "client") {
-    await run("pnpm", ["--filter", "@template/contracts", "build"], "contracts");
+    await run("pnpm", ["--filter", "@moon-tailors/contracts", "build"], "contracts");
   }
   await run("pnpm", ["--filter", PNPM_FILTER[target].replace(/\.\.\.$/, ""), "build"], target);
 }

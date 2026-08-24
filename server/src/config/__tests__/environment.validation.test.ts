@@ -34,7 +34,7 @@ envDescribe("environment validation", () => {
       () =>
         validateEnvironment({
           NODE_ENV: "production",
-          DATABASE_URL: "postgres://postgres:postgres@localhost/template",
+          DATABASE_URL: "postgres://postgres:postgres@localhost/moon_tailors",
         }),
       /Invalid environment configuration/,
     );

@@ -9,8 +9,8 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc ./
 COPY contracts/package.json ./contracts/
 COPY server/package.json ./server/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --filter @template/server... --frozen-lockfile || \
-    pnpm install --filter @template/server...
+    pnpm install --filter @moon-tailors/server... --frozen-lockfile || \
+    pnpm install --filter @moon-tailors/server...
 
 # Local development — same Node 22 as production; source mounted at runtime
 FROM deps AS dev
@@ -20,14 +20,14 @@ RUN mkdir -p /app/env /app/logs /app/uploads
 COPY contracts ./contracts
 COPY server ./server
 EXPOSE 3000
-CMD ["pnpm", "--filter", "@template/server", "dev"]
+CMD ["pnpm", "--filter", "@moon-tailors/server", "dev"]
 
 FROM deps AS build
 ENV NODE_ENV=production
 COPY contracts ./contracts
 COPY server ./server
-RUN pnpm --filter @template/contracts build
-RUN pnpm --filter @template/server build
+RUN pnpm --filter @moon-tailors/contracts build
+RUN pnpm --filter @moon-tailors/server build
 
 # API (all modes). nest SPA is a separately built client, bind-mounted at /app/client-static.
 FROM node:22-alpine AS runtime

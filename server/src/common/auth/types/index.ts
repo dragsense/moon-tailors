@@ -1,4 +1,4 @@
-import type { EAuthMethod } from "@template/contracts";
+import type { EAuthMethod } from "@moon-tailors/contracts";
 import type { UserEntity } from "../../base";
 
 /** Request shape after AuthGuard attaches the user / API-key context. */

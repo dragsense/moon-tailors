@@ -7,7 +7,7 @@ function logEnvironment(level: "info" | "warn", message: string): void {
     `${JSON.stringify({
       timestamp: new Date().toISOString(),
       level,
-      service: process.env.SERVICE_NAME ?? "template-server",
+      service: process.env.SERVICE_NAME ?? "moon-tailors-server",
       context: "Environment",
       message,
     })}\n`,
