@@ -36,7 +36,7 @@ export class TokenService {
   }
 
   async toAuthUser(user: UserEntity): Promise<IAuthUser> {
-    const permissions = await this.permissions.resolveForUser(user.id);
+    const permissions = await this.permissions.resolveForUser(user);
     return {
       id: user.id,
       email: user.email,

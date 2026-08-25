@@ -1,87 +1,41 @@
 import type { IDashboardSummary } from "@moon-tailors/contracts";
 import { Link } from "react-router";
 import { Alert } from "~/components/layout-ui";
+import { CustomerDirectory } from "~/features/customers/list/customer-directory";
+import {
+  formatDateTimeWithSettings,
+  settingsOps,
+} from "~/features/settings";
 import { useI18n } from "~/hooks/use-i18n";
 import { Page } from "~/layouts";
-import type { QueryOpComponentProps } from "~/ops";
+import { cn } from "~/lib/utils";
 import { APP_ROUTES } from "~/config/routes.config";
+import { useOp, type QueryOpComponentProps } from "~/ops";
 
 export function DashboardView({
   data,
   isPending,
   isError,
   error,
+  store,
 }: QueryOpComponentProps) {
-  const { t } = useI18n();
+  const { t, intlLocale } = useI18n();
+  const listCustomers = useOp(store, "listCustomers");
+  const mySettings = useOp(settingsOps, "mySettings");
   const summary = data as IDashboardSummary | undefined;
+  const prefsData = mySettings.kind === "query" ? mySettings.data : undefined;
   const errorMessage =
     isError && error instanceof Error
       ? error.message
       : isError
         ? t("dashboard.loadError")
         : null;
+  const delayed =
+    summary?.stats.find((stat) => stat.key === "delayed")?.value ?? 0;
 
   return (
-    <Page
-      title={t("dashboard.title")}
-      description={t("dashboard.description")}
-    >
-      <div className="flex flex-col gap-8">
-        <section className="flex flex-col gap-4">
-          <h2 className="font-heading text-lg font-semibold">
-            {t("dashboard.howTo")}
-          </h2>
-          <ol className="grid gap-4 sm:grid-cols-3">
-            <li className="rounded-2xl border border-border/70 bg-card px-5 py-5">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                1
-              </p>
-              <p className="mt-2 text-lg font-semibold leading-snug">
-                {t("dashboard.findCustomer")}
-              </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {t("dashboard.findCustomerHint")}
-              </p>
-            </li>
-            <li className="rounded-2xl border border-border/70 bg-card px-5 py-5">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                2
-              </p>
-              <p className="mt-2 text-lg font-semibold leading-snug">
-                {t("dashboard.openCustomer")}
-              </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {t("dashboard.openCustomerHint")}
-              </p>
-            </li>
-            <li className="rounded-2xl border border-border/70 bg-card px-5 py-5">
-              <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-                3
-              </p>
-              <p className="mt-2 text-lg font-semibold leading-snug">
-                {t("dashboard.allOrders")}
-              </p>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {t("dashboard.allOrdersHint")}
-              </p>
-            </li>
-          </ol>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Link
-              to={APP_ROUTES.CUSTOMERS}
-              className="flex min-h-16 items-center justify-center rounded-xl bg-primary px-6 py-4 text-center text-lg font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
-            >
-              {t("dashboard.findCustomer")}
-            </Link>
-            <Link
-              to={APP_ROUTES.ORDERS}
-              className="flex min-h-16 items-center justify-center rounded-xl border border-border bg-card px-6 py-4 text-center text-lg font-semibold hover:border-primary/40"
-            >
-              {t("dashboard.allOrders")}
-            </Link>
-          </div>
-        </section>
-
+    <Page title={t("dashboard.title")} description={t("dashboard.description")}>
+      <div className="flex flex-col gap-6">
         {errorMessage ? (
           <Alert title={t("dashboard.loadError")} tone="danger">
             {errorMessage}
@@ -94,60 +48,92 @@ export function DashboardView({
           </p>
         ) : null}
 
-        {summary ? (
-          <>
-            <section className="flex flex-col gap-3">
-              <h2 className="font-heading text-lg font-semibold">
-                {t("dashboard.glance")}
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                {summary.stats.map((stat) => (
-                  <div
-                    key={stat.key}
-                    className="rounded-xl border border-border/60 bg-card px-5 py-4"
-                  >
-                    <p className="text-muted-foreground text-sm">{stat.label}</p>
-                    <p className="mt-1 text-4xl font-semibold tracking-tight tabular-nums">
-                      {stat.value}
-                    </p>
-                    {stat.hint ? (
-                      <p className="text-muted-foreground mt-1 text-sm">
-                        {stat.hint}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="flex flex-col gap-3">
-              <h2 className="font-heading text-lg font-semibold">
-                {t("dashboard.activity")}
-              </h2>
-              <ul className="divide-border/60 divide-y rounded-xl border border-border/60 bg-card">
-                {summary.activity.map((item) => (
-                  <li key={item.id} className="px-5 py-4">
-                    <p className="text-base font-medium">{item.title}</p>
-                    {item.detail ? (
-                      <p className="text-muted-foreground mt-0.5 text-sm">
-                        {item.detail}
-                      </p>
-                    ) : null}
-                    <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-                      {new Date(item.at).toLocaleString()}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-              <p className="text-muted-foreground text-xs">
-                {t("dashboard.updatedAt", {
-                  time: new Date(summary.generatedAt).toLocaleString(),
-                })}
-              </p>
-            </section>
-          </>
+        {listCustomers.kind === "query" && listCustomers.allowed ? (
+          <CustomerDirectory
+            store={store}
+            data={listCustomers.data}
+            error={listCustomers.error}
+            isPending={listCustomers.isPending}
+            isError={listCustomers.isError}
+            params={listCustomers.params}
+            setParams={listCustomers.setParams}
+            refetch={listCustomers.refetch}
+            afterSearch={
+              summary ? (
+                <DashboardStatus
+                  summary={summary}
+                  delayed={delayed}
+                  generatedAt={formatDateTimeWithSettings(
+                    summary.generatedAt,
+                    prefsData,
+                    intlLocale,
+                  )}
+                />
+              ) : null
+            }
+          />
+        ) : summary ? (
+          <DashboardStatus
+            summary={summary}
+            delayed={delayed}
+            generatedAt={formatDateTimeWithSettings(
+              summary.generatedAt,
+              prefsData,
+              intlLocale,
+            )}
+          />
         ) : null}
       </div>
     </Page>
+  );
+}
+
+function DashboardStatus({
+  summary,
+  delayed,
+  generatedAt,
+}: {
+  summary: IDashboardSummary;
+  delayed: number;
+  generatedAt: string;
+}) {
+  const { t } = useI18n();
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Link
+        to={APP_ROUTES.ORDERS}
+        className={cn(
+          "rounded-lg border px-3 py-2 text-sm transition-colors hover:border-primary/40",
+          delayed > 0
+            ? "border-destructive/40 bg-destructive/5"
+            : "border-border/60 bg-card",
+        )}
+      >
+        <p className="flex flex-col gap-0.5 sm:flex-row sm:items-baseline sm:gap-2">
+          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+            {generatedAt}
+          </span>
+          <span className="font-medium">
+            {delayed > 0
+              ? t("dashboard.delayedCount", { count: delayed })
+              : t("dashboard.onSchedule")}
+          </span>
+        </p>
+      </Link>
+      <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
+        {summary.stats.map((stat) => (
+          <div
+            key={stat.key}
+            className="rounded-lg border border-border/60 bg-card px-3 py-2"
+          >
+            <p className="text-muted-foreground text-xs">{stat.label}</p>
+            <p className="text-xl font-semibold tracking-tight tabular-nums">
+              {stat.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

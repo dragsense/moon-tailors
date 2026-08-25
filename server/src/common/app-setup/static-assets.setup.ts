@@ -1,23 +1,16 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import type { ConfigService } from "@nestjs/config";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import type { AppConfig } from "../../config";
-import type { StorageConfig } from "../../config/storage.config";
 import type { AppLoggerService } from "../logging";
 
-/** Serve local uploads (`/uploads/...`) + optional SPA under `/app`. */
+/** Optional SPA under `/app` when Nest serves the built client. */
 export function setupStaticAssets(
   app: NestExpressApplication,
   configService: ConfigService,
   logger: AppLoggerService,
 ): void {
-  const storage = configService.get<StorageConfig>("storage");
-  const uploadRoot = storage?.localRoot ?? join(process.cwd(), "public");
-  mkdirSync(uploadRoot, { recursive: true });
-  app.useStaticAssets(uploadRoot, { index: false });
-  logger.log(`Uploads ${uploadRoot}`, "AppSetup");
-
   const staticDir = configService.get<AppConfig>("app")?.clientStaticDir;
   if (!staticDir || !existsSync(staticDir)) return;
 

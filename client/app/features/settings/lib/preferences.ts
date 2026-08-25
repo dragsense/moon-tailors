@@ -43,6 +43,5 @@ export function mergePreferences(
     ...patch,
     theme: { ...current.theme, ...patch.theme },
     time: { ...current.time, ...patch.time },
-    notifications: { ...current.notifications, ...patch.notifications },
   });
 }

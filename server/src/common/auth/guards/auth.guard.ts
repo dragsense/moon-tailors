@@ -82,12 +82,40 @@ export class AuthGuard implements CanActivate {
       return { method: EAuthMethod.JWT, token: bearer };
     }
 
-    const cookieToken = request.cookies?.[this.authConfig.accessCookieName];
-    if (typeof cookieToken === "string" && cookieToken && looksLikeJwt(cookieToken)) {
+    const cookieToken = this.readAccessCookie(request);
+    if (cookieToken && looksLikeJwt(cookieToken)) {
       return { method: EAuthMethod.JWT, token: cookieToken };
     }
 
     return null;
+  }
+
+  private readAccessCookie(request: AuthenticatedRequest): string | undefined {
+    const name = this.authConfig.accessCookieName;
+    const parsed = request.cookies?.[name];
+    if (typeof parsed === "string" && parsed) return parsed;
+
+    const signed = (
+      request as AuthenticatedRequest & {
+        signedCookies?: Record<string, unknown>;
+      }
+    ).signedCookies?.[name];
+    if (typeof signed === "string" && signed) return signed;
+
+    const header = request.headers.cookie;
+    if (!header) return undefined;
+    for (const part of header.split(";")) {
+      const cut = part.trim().indexOf("=");
+      if (cut < 0) continue;
+      const key = part.trim().slice(0, cut);
+      if (key !== name) continue;
+      try {
+        return decodeURIComponent(part.trim().slice(cut + 1));
+      } catch {
+        return part.trim().slice(cut + 1);
+      }
+    }
+    return undefined;
   }
 
   private async authenticateJwt(
@@ -96,8 +124,10 @@ export class AuthGuard implements CanActivate {
   ): Promise<void> {
     try {
       const payload = await this.jwt.verifyAsync<AccessPayload>(token);
-      const user = await this.users.findById(payload.sub);
-      if (!user) throw new UnauthorizedException("Unauthorized");
+      const user = await this.users.findByIdForAuth(payload.sub);
+      if (!user || !user.isActive) {
+        throw new UnauthorizedException("Unauthorized");
+      }
       this.attachUser(request, user);
     } catch {
       throw new UnauthorizedException("Unauthorized");

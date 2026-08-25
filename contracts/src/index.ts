@@ -5,7 +5,7 @@
  * Layout:
  *
  *   common/     pagination, message, list query base
- *   features/   auth, user, task (enum + schema + types + interfaces)
+ *   features/   auth, user, customer, order, … (enum + schema + types + interfaces)
  *   lib/        field(), format, dates, pagination helpers
  */
 export * from "./lib/index.js";

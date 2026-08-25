@@ -23,9 +23,7 @@ function columnNames<Entity extends ObjectLiteral>(
  * STAFF / MEMBER stay owner-scoped (`createdByUserId`).
  */
 const SKIP_DEFAULT_OWNER_LEVELS: ReadonlySet<EUserLevel> = new Set([
-  EUserLevel.PLATFORM_OWNER,
-  EUserLevel.SUPER_ADMIN,
-  EUserLevel.ADMIN,
+  EUserLevel.PLATFORM_OWNER
 ]);
 
 /** True when default `createdByUserId` owner ACL should not be applied. */

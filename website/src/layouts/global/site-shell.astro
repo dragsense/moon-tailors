@@ -1,0 +1,17 @@
+---
+import { AuthButton } from "@/features/auth";
+import { BlankShell } from "./blank-shell";
+import { HeaderPrefs, SiteHeader } from "./header";
+import { SiteFooter } from "./footer";
+---
+
+<BlankShell>
+  <div class="landing">
+    <SiteHeader>
+      <HeaderPrefs client:idle />
+      <AuthButton client:load />
+    </SiteHeader>
+    <slot />
+    <SiteFooter />
+  </div>
+</BlankShell>

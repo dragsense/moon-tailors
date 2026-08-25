@@ -1,4 +1,5 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, Index, OneToMany } from "typeorm";
+import { EGender } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../common/entities";
 import { MeasurementEntity } from "../../measurements/entities/measurement.entity";
 import { OrderEntity } from "../../orders/entities/order.entity";
@@ -7,6 +8,9 @@ import { OrderEntity } from "../../orders/entities/order.entity";
 export class CustomerEntity extends GeneralBaseEntity {
   @Column({ type: "varchar", length: 120 })
   name!: string;
+
+  @Column({ type: "varchar", length: 16, nullable: true })
+  gender!: EGender | null;
 
   @Index()
   @Column({ type: "varchar", length: 40 })
@@ -25,12 +29,8 @@ export class CustomerEntity extends GeneralBaseEntity {
   @Column({ type: "text", nullable: true })
   notes!: string | null;
 
-  @Column({ type: "uuid", nullable: true })
-  defaultMeasurementId!: string | null;
-
-  @ManyToOne(() => MeasurementEntity, { nullable: true, onDelete: "SET NULL" })
-  @JoinColumn({ name: "defaultMeasurementId" })
-  defaultMeasurement?: MeasurementEntity | null;
+  @OneToMany(() => MeasurementEntity, (measurement) => measurement.customer)
+  measurements?: MeasurementEntity[];
 
   @OneToMany(() => OrderEntity, (order) => order.customer)
   orders?: OrderEntity[];

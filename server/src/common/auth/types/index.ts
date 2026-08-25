@@ -6,6 +6,7 @@ export type AuthenticatedRequest = {
   method?: string;
   headers: {
     authorization?: string;
+    cookie?: string;
   };
   cookies?: Record<string, string | undefined>;
   user?: UserEntity;

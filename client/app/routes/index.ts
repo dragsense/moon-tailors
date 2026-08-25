@@ -5,7 +5,7 @@
  * ```txt
  * routes/
  *   guards/
- *     guest-guard.tsx       → guest-only (login, forgot/reset, …)
+ *     guest-guard.tsx       → guest-only (login)
  *     auth-guard.tsx        → session required
  *     access-guard.tsx      → level + permission check
  *     route-loading.tsx

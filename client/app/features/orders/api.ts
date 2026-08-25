@@ -46,9 +46,9 @@ class OrdersService extends BaseService<
     );
   }
 
-  applyMeasurementsToDefault(id: string) {
+  applyMeasurementsToDefault(id: string, garmentTypeId: string) {
     return this.post<IOrder>(
-      {} as TCreateOrderData,
+      { garmentTypeId } as unknown as TCreateOrderData,
       undefined,
       `/${id}/apply-measurements-to-default`,
     );

@@ -8,9 +8,7 @@ import { EventService } from "./event.service";
 @ApiTags("Events")
 @Controller("events")
 @RequireUserLevels(
-  EUserLevel.PLATFORM_OWNER,
-  EUserLevel.SUPER_ADMIN,
-  EUserLevel.ADMIN,
+  EUserLevel.PLATFORM_OWNER
 )
 export class EventsController {
   constructor(private readonly events: EventService) {}

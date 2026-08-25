@@ -130,39 +130,6 @@ services:
     networks:
       - app
 
-  mcp:
-    build:
-      context: ..
-      dockerfile: docker/mcp.Dockerfile
-      target: ${MCP_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
-    image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-mcp${IMAGE_SUFFIX:-}
-    container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-mcp
-    expose:
-      - "${MCP_INTERNAL:-4000}"
-    environment:
-      NODE_ENV: ${MCP_NODE_ENV:-${NODE_ENV:-production}}
-      MCP_PORT: ${MCP_INTERNAL:-4000}
-      MCP_API_BASE_URL: ${MCP_API_BASE_URL:-http://server:${SERVER_INTERNAL:-3000}/api}
-      ENV_FILE: /app/env/mcp.env
-      # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
-      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
-      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
-      WATCHPACK_POLL_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
-      TSC_WATCHFILE: ${TSC_WATCHFILE:-DynamicPriorityPolling}
-      TSC_WATCHDIRECTORY: ${TSC_WATCHDIRECTORY:-DynamicPriorityPolling}
-    volumes:
-      - ${V_MCP_1}
-      - ${V_MCP_2}
-      - ${V_MCP_3}
-      - ${V_MCP_4}
-      - ${V_MCP_5}
-      - ${V_MCP_6}
-      - ${V_MCP_7}
-      - ${V_MCP_8}
-    restart: ${MCP_RESTART:-${RESTART_POLICY:-no}}
-    networks:
-      - app
-
   website:
     build:
       context: ..
@@ -176,6 +143,8 @@ services:
       - "${WEBSITE_INTERNAL:-4321}"
     environment:
       NODE_ENV: ${WEBSITE_NODE_ENV:-${NODE_ENV:-production}}
+      # Browser HMR websocket must use the published gateway port, not :4321.
+      GATEWAY_EXPOSE: ${GATEWAY_EXPOSE:-8088}
       # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
@@ -205,7 +174,6 @@ services:
       GATEWAY_DOMAIN: ${GATEWAY_DOMAIN:-localhost}
       SERVER_INTERNAL: ${SERVER_INTERNAL:-3000}
       CLIENT_INTERNAL: ${CLIENT_INTERNAL:-5173}
-      MCP_INTERNAL: ${MCP_INTERNAL:-4000}
       WEBSITE_INTERNAL: ${WEBSITE_INTERNAL:-4321}
       GATEWAY_APP_UPSTREAM: ${GATEWAY_APP_UPSTREAM:-client:5173}
     volumes:
@@ -221,8 +189,6 @@ services:
 volumes:
   postgres_data:
     name: ${POSTGRES_VOLUME_NAME:-moon_tailors_postgres_data}
-  uploads:
-    name: ${UPLOADS_VOLUME_NAME:-moon_tailors_uploads}
   server_logs:
     name: ${LOGS_VOLUME_NAME:-moon_tailors_server_logs}
   server_nm:
@@ -231,8 +197,6 @@ volumes:
   client_nm:
   client_pkg_nm:
   client_contracts_nm:
-  mcp_nm:
-  mcp_pkg_nm:
   website_nm:
   website_pkg_nm:
 

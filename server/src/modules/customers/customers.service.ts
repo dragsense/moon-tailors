@@ -1,7 +1,13 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { randomUUID } from "node:crypto";
+import {
+  BadRequestException,
+  Injectable,
+  OnModuleInit,
+} from "@nestjs/common";
 import type {
   ICustomer,
   IPaginatedResponse,
+  TCopyCustomerMeasurementData,
   TCreateCustomerData,
   TCustomerListQuery,
   TMeasurementValues,
@@ -9,8 +15,10 @@ import type {
 } from "@moon-tailors/contracts";
 import {
   customerListQuerySchema,
+  EGender,
   EResource,
   filtersFromListSchema,
+  garmentAudienceForGender,
 } from "@moon-tailors/contracts";
 import { ActivityLogRegistry } from "../../common/activity-logs";
 import { PermissionsService } from "../../common/base";
@@ -20,6 +28,7 @@ import {
 } from "../../common/database";
 import { DomainEventRegistry } from "../../common/events";
 import type { EntityKey, EntityQueryConfig } from "../../common/query";
+import { GarmentTypesService } from "../garment-types/garment-types.service";
 import { MeasurementsService } from "../measurements/measurements.service";
 import { CustomerEntity } from "./entities/customer.entity";
 
@@ -31,8 +40,6 @@ export const CUSTOMER_QUERY: EntityQueryConfig = {
   filters: filtersFromListSchema(customerListQuerySchema),
 };
 
-const RELATIONS = ["defaultMeasurement"] as const;
-
 @Injectable()
 export class CustomersService implements OnModuleInit {
   private readonly entity: IBoundEntityService<CustomerEntity>;
@@ -41,6 +48,7 @@ export class CustomersService implements OnModuleInit {
     private readonly entityService: EntityService,
     private readonly permissions: PermissionsService,
     private readonly measurements: MeasurementsService,
+    private readonly garmentTypes: GarmentTypesService,
   ) {
     this.entity = this.entityService.bind(CustomerEntity, CUSTOMER_QUERY);
   }
@@ -61,20 +69,22 @@ export class CustomersService implements OnModuleInit {
   async create(input: TCreateCustomerData): Promise<ICustomer> {
     const customer = await this.entity.create({
       name: input.name.trim(),
+      gender: input.gender,
       phone: input.phone.trim(),
       whatsapp: emptyToNull(input.whatsapp),
-      email: emptyToNull(input.email),
+      email: uniqueCustomerEmail(),
       address: emptyToNull(input.address),
       notes: emptyToNull(input.notes),
     });
 
-    const defaultMeasurement = await this.measurements.createDefault(
-      customer.id,
-      input.defaultMeasurement,
-    );
-    await this.entity.update(customer.id, {
-      defaultMeasurementId: defaultMeasurement.id,
-    });
+    for (const row of input.measurements ?? []) {
+      await this.assertTypeForCustomer(customer.gender, row.garmentTypeId);
+      await this.measurements.upsertDefault(
+        customer.id,
+        row.garmentTypeId,
+        row,
+      );
+    }
 
     return this.get(customer.id);
   }
@@ -82,13 +92,14 @@ export class CustomersService implements OnModuleInit {
   async list(
     query: TCustomerListQuery,
   ): Promise<IPaginatedResponse<ICustomer>> {
-    const page = await this.entity.list(query, { _relations: [...RELATIONS] });
-    return { ...page, data: page.data.map((row) => this.toPayload(row)) };
+    const page = await this.entity.list(query);
+    return { ...page, data: page.data.map((row) => this.toPayload(row, [])) };
   }
 
   async get(key: EntityKey): Promise<ICustomer> {
-    const row = await this.entity.require(key, { _relations: [...RELATIONS] });
-    return this.toPayload(row);
+    const row = await this.entity.require(key);
+    const defaults = await this.measurements.listDefaults(row.id);
+    return this.toPayload(row, defaults);
   }
 
   async update(
@@ -97,33 +108,40 @@ export class CustomersService implements OnModuleInit {
   ): Promise<ICustomer> {
     const patch: Partial<CustomerEntity> = {};
     if (input.name !== undefined) patch.name = input.name.trim();
+    if (input.gender !== undefined) patch.gender = input.gender;
     if (input.phone !== undefined) patch.phone = input.phone.trim();
     if (input.whatsapp !== undefined) patch.whatsapp = emptyToNull(input.whatsapp);
-    if (input.email !== undefined) patch.email = emptyToNull(input.email);
     if (input.address !== undefined) patch.address = emptyToNull(input.address);
     if (input.notes !== undefined) patch.notes = emptyToNull(input.notes);
-    await this.entity.update(key, patch);
+    if (Object.keys(patch).length > 0) {
+      await this.entity.update(key, patch);
+    }
     return this.get(key);
   }
 
-  async updateDefaultMeasurements(
+  async upsertMeasurement(
     customerId: string,
+    garmentTypeId: string,
     input: TMeasurementValues,
   ): Promise<ICustomer> {
     const customer = await this.entity.require(customerId);
-    if (!customer.defaultMeasurementId) {
-      const created = await this.measurements.createDefault(customer.id);
-      await this.entity.update(customer.id, {
-        defaultMeasurementId: created.id,
-      });
-      await this.measurements.updateValues(created.id, input);
-      return this.get(customer.id);
-    }
-    await this.measurements.updateValues(
-      customer.defaultMeasurementId,
-      input,
+    await this.assertTypeForCustomer(customer.gender, garmentTypeId);
+    await this.measurements.upsertDefault(customer.id, garmentTypeId, input);
+    return this.get(customer.id);
+  }
+
+  async copyMeasurement(
+    customerId: string,
+    input: TCopyCustomerMeasurementData,
+  ): Promise<ICustomer> {
+    const customer = await this.entity.require(customerId);
+    await this.assertTypeForCustomer(customer.gender, input.toGarmentTypeId);
+    await this.measurements.copyDefault(
+      customer.id,
+      input.fromGarmentTypeId,
+      input.toGarmentTypeId,
     );
-    return this.get(customerId);
+    return this.get(customer.id);
   }
 
   count(): Promise<number> {
@@ -134,23 +152,41 @@ export class CustomersService implements OnModuleInit {
       .getCount();
   }
 
-  private toPayload(row: CustomerEntity): ICustomer {
+  private async assertTypeForCustomer(
+    gender: EGender | null,
+    garmentTypeId: string,
+  ) {
+    const type = await this.garmentTypes.require(garmentTypeId);
+    const expected = garmentAudienceForGender(gender);
+    if (expected && type.audience !== expected) {
+      throw new BadRequestException(
+        "That garment does not match this customer’s gents/ladies type",
+      );
+    }
+  }
+
+  private toPayload(
+    row: CustomerEntity,
+    defaults: Awaited<ReturnType<MeasurementsService["listDefaults"]>>,
+  ): ICustomer {
     return {
       id: row.id,
       name: row.name,
+      gender: row.gender === EGender.FEMALE ? EGender.FEMALE : EGender.MALE,
       phone: row.phone,
       whatsapp: row.whatsapp ?? undefined,
       email: row.email ?? undefined,
       address: row.address ?? undefined,
       notes: row.notes ?? undefined,
-      defaultMeasurementId: row.defaultMeasurementId,
-      defaultMeasurement: row.defaultMeasurement
-        ? this.measurements.toPayload(row.defaultMeasurement)
-        : null,
+      measurements: defaults.map((item) => this.measurements.toPayload(item)),
       createdAt: toIso(row.createdAt),
       updatedAt: toIso(row.updatedAt),
     };
   }
+}
+
+function uniqueCustomerEmail() {
+  return `c-${randomUUID()}@customers.internal`;
 }
 
 function emptyToNull(value?: string | null) {

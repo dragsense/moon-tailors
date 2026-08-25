@@ -1,15 +1,10 @@
-import { OpsProvider } from "~/ops";
-import { customersListOps } from "~/features/customers/ops";
-import type { Route } from "./+types/list";
+import { Navigate } from "react-router";
+import { APP_ROUTES } from "~/config/routes.config";
 
-export function meta(_args: Route.MetaArgs) {
+export function meta() {
   return [{ title: "Customers · Moon Tailors" }];
 }
 
 export default function CustomersPage() {
-  return (
-    <OpsProvider store={customersListOps}>
-      {({ components }) => components.listCustomers}
-    </OpsProvider>
-  );
+  return <Navigate to={APP_ROUTES.DASHBOARD} replace />;
 }

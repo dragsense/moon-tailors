@@ -52,21 +52,30 @@ api.interceptors.request.use((config) => {
 });
 
 /** Fetch or reuse CSRF token for cookie-auth mutations. */
+let csrfInflight: Promise<string | null> | null = null;
+
 export async function ensureCsrfToken(): Promise<string | null> {
   const existing = getCsrfToken();
   if (existing) return existing;
+  if (csrfInflight) return csrfInflight;
 
-  try {
-    const response = await api.get<{ csrfToken?: string }>("/auth/csrf");
-    const data = await unwrapData<{ csrfToken?: string }>(response.data);
-    if (typeof data?.csrfToken === "string") {
-      setCsrfToken(data.csrfToken);
-      return data.csrfToken;
+  csrfInflight = (async () => {
+    try {
+      const response = await api.get<{ csrfToken?: string }>("/auth/csrf");
+      const data = await unwrapData<{ csrfToken?: string }>(response.data);
+      if (typeof data?.csrfToken === "string") {
+        setCsrfToken(data.csrfToken);
+        return data.csrfToken;
+      }
+    } catch {
+      /* CSRF optional when CSRF_ENABLED=false */
+    } finally {
+      csrfInflight = null;
     }
-  } catch {
-    /* CSRF optional when CSRF_ENABLED=false */
-  }
-  return getCsrfToken();
+    return getCsrfToken();
+  })();
+
+  return csrfInflight;
 }
 
 function captureCsrfFromPayload(data: unknown): void {

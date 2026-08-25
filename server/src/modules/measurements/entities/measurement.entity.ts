@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
-import { EGarmentType } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../common/entities";
 import { CustomerEntity } from "../../customers/entities/customer.entity";
+import { GarmentTypeEntity } from "../../garment-types/entities/garment-type.entity";
 import { OrderEntity } from "../../orders/entities/order.entity";
 
 @Entity("measurements")
@@ -14,7 +14,7 @@ export class MeasurementEntity extends GeneralBaseEntity {
   @JoinColumn({ name: "customerId" })
   customer?: CustomerEntity;
 
-  /** Set when this row is an order snapshot; null for the customer default. */
+  /** Set when this row is an order snapshot; null for a customer default. */
   @Index()
   @Column({ type: "uuid", nullable: true })
   orderId!: string | null;
@@ -23,8 +23,13 @@ export class MeasurementEntity extends GeneralBaseEntity {
   @JoinColumn({ name: "orderId" })
   order?: OrderEntity | null;
 
-  @Column({ type: "varchar", length: 32, nullable: true })
-  garmentType!: EGarmentType | null;
+  @Index()
+  @Column({ type: "uuid" })
+  garmentTypeId!: string;
+
+  @ManyToOne(() => GarmentTypeEntity, { onDelete: "RESTRICT" })
+  @JoinColumn({ name: "garmentTypeId" })
+  garmentType?: GarmentTypeEntity;
 
   @Column({ type: "decimal", precision: 8, scale: 2, nullable: true })
   length!: string | null;

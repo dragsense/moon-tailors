@@ -11,7 +11,7 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { useI18n } from "~/hooks/use-i18n";
 import { useLogout } from "~/features/auth/hooks";
-import { APP_ROUTES } from "~/config";
+import { getAccountNavItems } from "~/config";
 import { Link } from "react-router";
 import { cn } from "~/lib/utils";
 
@@ -20,13 +20,14 @@ export type UserMenuProps = {
   className?: string;
 };
 
-/** Top-right account menu — profile, settings, and logout. */
+/** Top-right account menu — profile, reset password, settings, logout. */
 export function UserMenu({ user, className }: UserMenuProps) {
   const { t, alignEnd } = useI18n();
   const { logout, isLoading } = useLogout();
   const fullName = `${user.firstName} ${user.lastName}`.trim();
   const initials =
     `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  const accountItems = getAccountNavItems(user);
 
   return (
     <DropdownMenu>
@@ -71,12 +72,11 @@ export function UserMenu({ user, className }: UserMenuProps) {
           </div>
         </div>
         <DropdownMenuSeparator className="md:hidden" />
-        <DropdownMenuItem asChild>
-          <Link to={APP_ROUTES.PROFILE}>{t("nav.items.profile")}</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to={APP_ROUTES.SETTINGS}>{t("nav.items.settings")}</Link>
-        </DropdownMenuItem>
+        {accountItems.map((item) => (
+          <DropdownMenuItem key={item.url} asChild>
+            <Link to={item.url}>{t(item.titleKey)}</Link>
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
           disabled={isLoading}

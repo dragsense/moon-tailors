@@ -1,4 +1,5 @@
-import { createOps } from "~/ops";
+import { createOps, pickOps } from "~/ops";
+import { customerOpsCore } from "~/features/customers/ops/core";
 import { dashboardOpsCore } from "./core";
 
 export const dashboardPageOps = createOps({
@@ -6,6 +7,10 @@ export const dashboardPageOps = createOps({
   scope: "page",
   ops: {
     ...dashboardOpsCore,
+    ...pickOps(customerOpsCore, [
+      "listCustomers",
+      "createCustomer",
+    ]),
   },
 });
 

@@ -1,32 +1,52 @@
 ---
-import Base from "../layouts/global/base.astro";
-import { appHref, getSiteConfig } from "../config/site";
-
-const site = getSiteConfig();
-const loginUrl = appHref(site.loginPath, site);
+import Base from "../layouts/Base.astro";
+import SiteShell from "../layouts/global/site-shell.astro";
+import { getLoginUrl, getSiteChrome, SITE_ROUTES } from "../config";
+import { en } from "../locales/en";
+import { ur } from "../locales/ur";
 
 Astro.response.status = 404;
+
+const chrome = getSiteChrome();
 ---
 
-<Base title="Page not found" description="The page you requested could not be found.">
-  <main class="hero">
-    <div class="hero__atmosphere"></div>
-    <div class="hero__grain"></div>
+<Base
+  title="Page not found"
+  description="The page you requested could not be found."
+>
+  <SiteShell>
+    <section class="hero">
+      <img class="hero__cover" src={chrome.coverImage} alt="" />
+      <div class="hero__veil"></div>
 
-    <section class="hero__content">
-      <p class="hero__support animate-rise">404</p>
-      <h1 class="hero__brand animate-rise animate-rise--delay-1">{site.name}</h1>
-      <h2 class="hero__headline animate-rise animate-rise--delay-2">
-        This page could not be found.
-      </h2>
-      <p class="hero__support animate-rise animate-rise--delay-3">
-        The link may be outdated, or the page may have moved. You can return to the
-        website homepage or open the app.
-      </p>
-      <div class="hero__cta animate-rise animate-rise--delay-3">
-        <a class="btn btn--primary" href="/">Back to website</a>
-        <a class="btn btn--ghost" href={loginUrl}>Open app</a>
+      <div class="hero__content">
+        <p class="hero__support animate-rise">{en.notFound.code}</p>
+        <h1 class="hero__title animate-rise animate-rise--delay-1">
+          <span class="hero__title-main">{chrome.brand}</span>
+        </h1>
+        <h2 class="hero__headline animate-rise animate-rise--delay-2" data-locale="en">
+          {en.notFound.title}
+        </h2>
+        <h2 class="hero__headline animate-rise animate-rise--delay-2" data-locale="ur">
+          {ur.notFound.title}
+        </h2>
+        <p class="hero__support animate-rise animate-rise--delay-3" data-locale="en">
+          {en.notFound.support}
+        </p>
+        <p class="hero__support animate-rise animate-rise--delay-3" data-locale="ur">
+          {ur.notFound.support}
+        </p>
+        <div class="hero__cta animate-rise animate-rise--delay-3">
+          <a class="hero__cta-primary" href={SITE_ROUTES.HOME}>
+            <span data-locale="en">{en.notFound.back}</span>
+            <span data-locale="ur">{ur.notFound.back}</span>
+          </a>
+          <a class="hero__cta-ghost" href={getLoginUrl()}>
+            <span data-locale="en">{en.notFound.openApp}</span>
+            <span data-locale="ur">{ur.notFound.openApp}</span>
+          </a>
+        </div>
       </div>
     </section>
-  </main>
+  </SiteShell>
 </Base>

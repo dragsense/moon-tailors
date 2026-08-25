@@ -1,9 +1,7 @@
 import {
-  ClipboardList,
   CircleUser,
-  House,
+  KeyRound,
   Settings,
-  Users,
   type LucideIcon,
 } from "lucide-react";
 import {
@@ -13,7 +11,7 @@ import {
   type IAuthUser,
 } from "@moon-tailors/contracts";
 import type { TranslationKey } from "~/locales";
-import { hasPermission } from "~/lib/permissions";
+import { canReadResource } from "../lib/permissions";
 import { APP_ROUTES } from "./routes.config";
 
 export type NavItem = {
@@ -31,95 +29,45 @@ export type NavItemGroup = {
   items: NavItem[];
 };
 
-const baseNavItems: NavItemGroup[] = [
+const accountNavItems: NavItem[] = [
   {
-    groupTitleKey: "nav.groups.work",
-    items: [
-      {
-        titleKey: "nav.items.dashboard",
-        url: APP_ROUTES.DASHBOARD,
-        icon: House,
-        requiredResource: EResource.DASHBOARD,
-        requiredAction: EPermissionAction.READ,
-      },
-      {
-        titleKey: "nav.items.customers",
-        url: APP_ROUTES.CUSTOMERS,
-        icon: Users,
-        requiredResource: EResource.CUSTOMERS,
-        requiredAction: EPermissionAction.READ,
-      },
-      {
-        titleKey: "nav.items.orders",
-        url: APP_ROUTES.ORDERS,
-        icon: ClipboardList,
-        requiredResource: EResource.ORDERS,
-        requiredAction: EPermissionAction.READ,
-      },
-    ],
+    titleKey: "nav.items.profile",
+    url: APP_ROUTES.PROFILE,
+    icon: CircleUser,
   },
   {
-    groupTitleKey: "nav.groups.account",
-    items: [
-      {
-        titleKey: "nav.items.profile",
-        url: APP_ROUTES.PROFILE,
-        icon: CircleUser,
-      },
-      {
-        titleKey: "nav.items.settings",
-        url: APP_ROUTES.SETTINGS,
-        icon: Settings,
-      },
-    ],
+    titleKey: "nav.items.resetPassword",
+    url: APP_ROUTES.RESET_PASSWORD,
+    icon: KeyRound,
+  },
+  {
+    titleKey: "nav.items.settings",
+    url: APP_ROUTES.SETTINGS,
+    icon: Settings,
   },
 ];
 
-function filterNavItems(
-  items: NavItem[],
-  level: EUserLevel,
-  user?: IAuthUser | null,
-): NavItem[] {
-  return items
-    .filter((item) => {
-      if (item.levels && !item.levels.includes(level)) return false;
-      if (item.requiredResource) {
-        return hasPermission(user, item.requiredResource, [
-          item.requiredAction ?? EPermissionAction.READ,
-          EPermissionAction.MANAGE,
-        ]);
-      }
-      return true;
-    })
-    .map((item) => ({
-      ...item,
-      children: item.children
-        ? filterNavItems(item.children, level, user)
-        : undefined,
-    }));
-}
-
-function buildNavItemsForLevel(
-  level: EUserLevel,
-  user?: IAuthUser | null,
-): NavItemGroup[] {
-  return baseNavItems
-    .map((group) => ({
-      ...group,
-      items: filterNavItems(group.items, level, user),
-    }))
-    .filter((group) => group.items.length > 0);
+/** Account links for the top-right user menu. */
+export function getAccountNavItems(user?: IAuthUser | null): NavItem[] {
+  return accountNavItems.filter((item) => {
+    if (!item.requiredResource) return true;
+    return canReadResource(user, item.requiredResource);
+  });
 }
 
 export const navItemsByLevel: Record<
   EUserLevel,
   (user?: IAuthUser | null) => NavItemGroup[]
 > = {
-  [EUserLevel.PLATFORM_OWNER]: (user) =>
-    buildNavItemsForLevel(EUserLevel.PLATFORM_OWNER, user),
-  [EUserLevel.STAFF]: (user) => buildNavItemsForLevel(EUserLevel.STAFF, user),
-  [EUserLevel.CUSTOMER]: (user) =>
-    buildNavItemsForLevel(EUserLevel.CUSTOMER, user),
+  [EUserLevel.PLATFORM_OWNER]: () => [
+    { groupTitleKey: "nav.groups.account", items: accountNavItems },
+  ],
+  [EUserLevel.STAFF]: () => [
+    { groupTitleKey: "nav.groups.account", items: accountNavItems },
+  ],
+  [EUserLevel.CUSTOMER]: () => [
+    { groupTitleKey: "nav.groups.account", items: accountNavItems },
+  ],
 };
 
 export function getNavItems(user?: IAuthUser | null): NavItemGroup[] {

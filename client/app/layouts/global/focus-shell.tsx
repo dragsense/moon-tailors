@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link, Outlet } from "react-router";
 import { NavTopbar } from "~/components/layout-ui";
 import { ThemeToggle } from "~/components/layout-ui/theme-toggle";
+import { LanguageToggle } from "~/components/layout-ui/language-toggle";
 import { Button } from "~/components/ui/button";
 import { PUBLIC_ROUTES, ROOT_ROUTE } from "~/config";
 import { cn } from "~/lib/utils";
@@ -25,6 +26,7 @@ export function FocusShell({ children, className }: FocusShellProps) {
         }
         actions={
           <>
+            <LanguageToggle />
             <ThemeToggle />
             <Button variant="ghost" size="sm" asChild>
               <Link to={PUBLIC_ROUTES.LOGIN}>Login</Link>

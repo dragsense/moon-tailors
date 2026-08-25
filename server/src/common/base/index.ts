@@ -6,9 +6,7 @@ export {
 export {
   BaseBusinessModule,
   BaseBusinessService,
-  BaseBusinessThemeService,
   BusinessEntity,
-  BusinessThemeEntity,
 } from "./business";
 export type { CreateBusinessOptions } from "./business";
 

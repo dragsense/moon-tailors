@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from "@nestjs/common";
 import {
   EPermissionAction,
   EResource,
+  EUserLevel,
 } from "@moon-tailors/contracts";
 import { In } from "typeorm";
 import {
@@ -108,15 +109,22 @@ export class PermissionsService implements OnModuleInit {
     }
   }
 
-  async resolveForUser(userId: string): Promise<string[]> {
-    const page = await this.userPermissions.list(
-      { page: 1, limit: 1 },
-      {
-        access: { type: "eq", column: "userId", value: userId },
-        _relations: ["permission"],
-        skipPagination: true,
-      },
-    );
-    return [...new Set(page.data.map((row) => row.permission.name))];
+  async resolveForUser(user: {
+    id: string;
+    level: EUserLevel;
+  }): Promise<string[]> {
+    if (user.level === EUserLevel.PLATFORM_OWNER) {
+      return [WILDCARD];
+    }
+
+    const rows = await this.userPermissions
+      .getRepository()
+      .createQueryBuilder("grant")
+      .innerJoinAndSelect("grant.permission", "permission")
+      .where("grant.userId = :userId", { userId: user.id })
+      .andWhere("grant.deletedAt IS NULL")
+      .getMany();
+
+    return [...new Set(rows.map((row) => row.permission.name))];
   }
 }

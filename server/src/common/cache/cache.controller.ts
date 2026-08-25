@@ -33,9 +33,7 @@ export class CacheController {
 
   @Get("ping")
   @RequireUserLevels(
-    EUserLevel.PLATFORM_OWNER,
-    EUserLevel.SUPER_ADMIN,
-    EUserLevel.ADMIN,
+    EUserLevel.PLATFORM_OWNER
   )
   async ping() {
     const key = `health:${Date.now()}`;

@@ -52,15 +52,28 @@ function watchPolling() {
   };
 }
 
+/** Browser hits the gateway, not container :4321 — HMR websocket must use that port. */
+function hmrBehindGateway() {
+  const clientPort = Number(process.env.GATEWAY_EXPOSE || 8088);
+  if (!Number.isFinite(clientPort) || clientPort <= 0) return undefined;
+  return { clientPort };
+}
+
 export default defineConfig({
   integrations: [react()],
   output: "static",
   vite: {
     envDir: path.resolve(websiteDir, "../env"),
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        "@": path.join(websiteDir, "src"),
+      },
+    },
     server: {
       host: "0.0.0.0",
       watch: watchPolling(),
+      hmr: hmrBehindGateway(),
     },
   },
 });

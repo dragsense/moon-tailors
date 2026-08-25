@@ -8,7 +8,6 @@ import { ActivityLogsModule } from "./common/activity-logs";
 import { EventsModule } from "./common/events";
 import { BrowserHtmlModule } from "./common/http";
 import { CacheModule } from "./common/cache";
-import { FileUploadModule } from "./common/file-upload";
 import {
   configOptions,
 } from "./config";
@@ -19,6 +18,7 @@ import { BusinessModule } from "./modules/business";
 import { UserSettingsModule } from "./modules/user-settings/user-settings.module";
 import { UsersModule } from "./modules/users/users.module";
 import { DashboardModule } from "./modules/dashboard";
+import { GarmentTypesModule } from "./modules/garment-types/garment-types.module";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { MeasurementsModule } from "./modules/measurements/measurements.module";
 import { OrdersModule } from "./modules/orders/orders.module";
@@ -34,7 +34,6 @@ import { ServerGatewayModule } from "./common/gateways";
     TenantModule,
     BrowserHtmlModule,
     CacheModule,
-    FileUploadModule,
     ActivityLogsModule,
     EventsModule,
     ServerGatewayModule,
@@ -42,6 +41,7 @@ import { ServerGatewayModule } from "./common/gateways";
     BusinessModule,
     UsersModule,
     UserSettingsModule,
+    GarmentTypesModule,
     MeasurementsModule,
     CustomersModule,
     OrdersModule,

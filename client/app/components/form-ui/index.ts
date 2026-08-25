@@ -45,8 +45,3 @@ export {
 export { FieldControl, type FieldControlProps } from "./field-control";
 export { FieldError } from "./field-error";
 export { Stepper, type StepperItem, type StepperProps } from "./stepper";
-export {
-  FileUpload,
-  type FileUploadProps,
-  type FileUploadValue,
-} from "./file-upload";

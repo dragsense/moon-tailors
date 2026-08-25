@@ -24,13 +24,6 @@ const PUBLISH = {
       internalDefault: "5173",
     },
   ],
-  mcp: [
-    {
-      exposeKey: "MCP_EXPOSE",
-      internalKey: "MCP_INTERNAL",
-      internalDefault: "4000",
-    },
-  ],
   website: [
     {
       exposeKey: "WEBSITE_EXPOSE",

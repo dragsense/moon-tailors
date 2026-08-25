@@ -1,6 +1,7 @@
 import type {
   ICustomer,
   IPaginatedResponse,
+  TCopyCustomerMeasurementData,
   TCreateCustomerData,
   TCustomerListQuery,
   TMeasurementValues,
@@ -38,11 +39,23 @@ class CustomersService extends BaseService<
     return this.patch<ICustomer>(id)(body);
   }
 
-  updateDefaultMeasurements(id: string, body: TMeasurementValues) {
+  upsertMeasurement(
+    id: string,
+    garmentTypeId: string,
+    body: TMeasurementValues,
+  ) {
     return this.patch<ICustomer>()(
       body as TUpdateCustomerData,
       undefined,
-      `/${id}/default-measurements`,
+      `/${id}/measurements/${garmentTypeId}`,
+    );
+  }
+
+  copyMeasurement(id: string, body: TCopyCustomerMeasurementData) {
+    return this.post<ICustomer>(
+      body as unknown as TCreateCustomerData,
+      undefined,
+      `/${id}/measurements/copy`,
     );
   }
 }

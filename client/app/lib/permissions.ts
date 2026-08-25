@@ -1,5 +1,6 @@
 import {
   EPermissionAction,
+  EUserLevel,
   type EResource,
   type IAuthUser,
 } from "@moon-tailors/contracts";
@@ -10,11 +11,20 @@ export type OpPermission = {
   action: EPermissionAction;
 };
 
-/** Effective permission names supplied by the authentication response. */
+/** Effective permission names supplied by `/auth/me` and login. */
 export function getUserPermissionNames(
   user: IAuthUser | null | undefined,
 ): string[] {
   return [...new Set(user?.permissions ?? [])];
+}
+
+/** Platform owner (`*:*` or level 0) — full client-side access. */
+export function hasWildcardAccess(
+  user: IAuthUser | null | undefined,
+): boolean {
+  if (!user) return false;
+  if (user.level === EUserLevel.PLATFORM_OWNER) return true;
+  return getUserPermissionNames(user).includes("*:*");
 }
 
 /** True when any requested action is allowed for the resource. */
@@ -23,14 +33,14 @@ export function hasPermission(
   resource: EResource,
   actions: EPermissionAction[],
 ): boolean {
-  const names = getUserPermissionNames(user);
+  if (hasWildcardAccess(user)) return true;
 
+  const names = getUserPermissionNames(user);
   return actions.some(
     (action) =>
       names.includes(`${resource}:${action}`) ||
       names.includes(`${resource}:*`) ||
-      names.includes(`*:${action}`) ||
-      names.includes("*:*"),
+      names.includes(`*:${action}`),
   );
 }
 
@@ -38,12 +48,12 @@ export function hasResourcePermission(
   user: IAuthUser | null | undefined,
   resource: EResource,
 ): boolean {
+  if (hasWildcardAccess(user)) return true;
+
   const names = getUserPermissionNames(user);
   return names.some(
     (name) =>
-      name.startsWith(`${resource}:`) ||
-      name === `${resource}:*` ||
-      name === "*:*",
+      name.startsWith(`${resource}:`) || name === `${resource}:*`,
   );
 }
 

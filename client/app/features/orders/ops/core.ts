@@ -137,8 +137,11 @@ export const orderOpsCore = {
       action: EPermissionAction.UPDATE,
     },
     mutate: (vars: unknown) => {
-      const { id } = vars as { id: string };
-      return ordersService.applyMeasurementsToDefault(id);
+      const { id, garmentTypeId } = vars as {
+        id: string;
+        garmentTypeId: string;
+      };
+      return ordersService.applyMeasurementsToDefault(id, garmentTypeId);
     },
     onSuccess: refreshOrders,
     onError: (error: Error) => {

@@ -9,14 +9,10 @@ type NestedKey<G extends keyof WebsiteDict> =
 
 export type TranslationKey =
   | NestedKey<"hero">
-  | NestedKey<"features">
-  | NestedKey<"stack">
-  | NestedKey<"modules">
-  | NestedKey<"monorepo">
-  | NestedKey<"cta">
   | NestedKey<"prefs">
   | NestedKey<"a11y">
-  | NestedKey<"footer">;
+  | NestedKey<"footer">
+  | NestedKey<"notFound">;
 
 export const LOCALE_CATALOG: Record<
   Language,
@@ -31,8 +27,15 @@ export const DEFAULT_LANGUAGE: Language = "en";
 export function resolveTranslation(
   dict: WebsiteDict,
   key: TranslationKey,
+  params?: Record<string, string | number>,
 ): string {
   const [group, leaf] = key.split(".") as [keyof WebsiteDict, string];
   const section = dict[group] as Record<string, string> | undefined;
-  return section?.[leaf] ?? key;
+  let value = section?.[leaf] ?? key;
+  if (params) {
+    for (const [name, next] of Object.entries(params)) {
+      value = value.replaceAll(`{{${name}}}`, String(next));
+    }
+  }
+  return value;
 }

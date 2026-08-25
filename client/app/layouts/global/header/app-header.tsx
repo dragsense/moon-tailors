@@ -8,7 +8,7 @@ export type AppHeaderProps = {
   className?: string;
 };
 
-/** Default app-shell top bar — sidebar trigger, route title, actions. */
+/** Default app-shell top bar — brand, route title, actions. */
 export function AppHeader({
   start,
   title,

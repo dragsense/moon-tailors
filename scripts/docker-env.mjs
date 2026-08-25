@@ -2,7 +2,7 @@
  * Load docker/environments.json and build docker compose args.
  *
  * Environments: local (laptop) and staging. Each nests
- *   server / client / mcp / website  — with env paths (+ server.needs for infra)
+ *   server / client / website  — with env paths (+ server.needs for infra)
  *
  * Deploy picks one or more apps (multi-select or all) from that environment.
  *
@@ -20,13 +20,12 @@ import { writePublishPortsCompose } from "./port-check.mjs";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = resolve(root, "docker/environments.json");
 
-export const ENV_APPS = ["server", "client", "mcp", "website"];
+export const ENV_APPS = ["server", "client", "website"];
 const SERVICE_ORDER = [
   "postgres",
   "redis",
   "server",
   "client",
-  "mcp",
   "website",
   "gateway",
 ];
@@ -75,11 +74,11 @@ export function listEnvApps(envName = "local") {
 /**
  * Expand selected apps → compose services (apps + server.needs infra).
  * @param {object} envBlock
- * @param {string[]} selectedApps server|client|mcp|website
+ * @param {string[]} selectedApps server|client|website
  */
 function expandServices(envBlock, selectedApps) {
   const set = new Set();
-  const webApps = ["server", "client", "mcp", "website"];
+  const webApps = ["server", "client", "website"];
   for (const app of selectedApps) {
     if (!appBlock(envBlock, app)) continue;
     if (app === "website") {
@@ -150,9 +149,8 @@ function volumeSlots(cfg) {
     if (p.startsWith("env/") || p.includes("/")) return `../${p}`;
     return `../${envDir}/${p}`;
   };
-  const pad = "uploads:/tmp/.compose-pad";
+  const pad = "server_logs:/tmp/.compose-pad";
   const serverEnv = toVol(cfg.serverEnv, pad);
-  const mcpEnv = toVol(cfg.mcpEnv, pad);
   const clientEnv = toVol(cfg.clientEnv, pad);
   const websiteEnv = toVol(cfg.websiteEnv, pad);
 
@@ -171,13 +169,12 @@ function volumeSlots(cfg) {
           // Lockfile omitted: Docker Desktop+WSL file binds go stale when pnpm rewrites it.
           "../.npmrc:/app/.npmrc:ro",
           `${serverEnv}:/app/env/server.env:ro`,
-          "uploads:/app/uploads",
           "server_nm:/app/node_modules",
           "server_pkg_nm:/app/server/node_modules",
           "server_contracts_nm:/app/contracts/node_modules",
         ],
         11,
-        "uploads:/app/uploads",
+        "server_nm:/app/node_modules",
       ),
       client: padVolumes(
         [
@@ -193,19 +190,6 @@ function volumeSlots(cfg) {
         ],
         10,
         "client_nm:/app/node_modules",
-      ),
-      mcp: padVolumes(
-        [
-          "../mcp:/app/mcp",
-          "../package.json:/app/package.json",
-          "../pnpm-workspace.yaml:/app/pnpm-workspace.yaml",
-          "../.npmrc:/app/.npmrc:ro",
-          "mcp_nm:/app/node_modules",
-          "mcp_pkg_nm:/app/mcp/node_modules",
-          `${mcpEnv}:/app/env/mcp.env:ro`,
-        ],
-        8,
-        "mcp_nm:/app/node_modules",
       ),
       website: padVolumes(
         [
@@ -227,7 +211,6 @@ function volumeSlots(cfg) {
     server: padVolumes(
       [
         `${serverEnv}:/app/env/server.env:ro`,
-        "uploads:/app/uploads",
         "server_logs:/app/logs",
         ...(spaMount ? [spaMount] : []),
       ],
@@ -239,7 +222,6 @@ function volumeSlots(cfg) {
       10,
       pad,
     ),
-    mcp: padVolumes([`${mcpEnv}:/app/env/mcp.env:ro`], 8, pad),
     website: padVolumes(
       [`${websiteEnv}:/app/env/website.env:ro`],
       8,
@@ -256,7 +238,6 @@ function volumeSlots(cfg) {
  *   dockerEnv?: string,
  *   serverEnv?: string,
  *   clientEnv?: string,
- *   mcpEnv?: string,
  *   websiteEnv?: string,
  * }} [opts]
  *   apps — subset to run (default: all apps defined in the environment)
@@ -284,20 +265,17 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
 
   const server = appBlock(envBlock, "server");
   const client = appBlock(envBlock, "client");
-  const mcp = appBlock(envBlock, "mcp");
   const website = appBlock(envBlock, "website");
 
   const dockerEnv =
     opts.dockerEnv || envBlock.dockerEnv || "env/docker.env";
   const serverEnv = opts.serverEnv || server?.env || "";
   const clientEnv = opts.clientEnv || client?.env || "";
-  const mcpEnv = opts.mcpEnv || mcp?.env || "";
   const websiteEnv = opts.websiteEnv || website?.env || "";
   const websiteDist = website?.dist || "website/dist";
 
   const serverBuildTarget = server?.buildTarget || "runtime";
   const clientBuildTargetCfg = client?.buildTarget || "runtime";
-  const mcpBuildTarget = mcp?.buildTarget || "runtime";
   const websiteBuildTargetCfg = website?.buildTarget || "runtime";
   const serverNodeEnv =
     server?.nodeEnv ||
@@ -305,8 +283,6 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
   const clientNodeEnv =
     client?.nodeEnv ||
     (clientBuildTargetCfg === "dev" ? "development" : "production");
-  const mcpNodeEnv =
-    mcp?.nodeEnv || (mcpBuildTarget === "dev" ? "development" : "production");
   const websiteNodeEnv =
     website?.nodeEnv ||
     (websiteBuildTargetCfg === "dev" ? "development" : "production");
@@ -315,23 +291,17 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
   const clientRestart =
     client?.restart ||
     (clientBuildTargetCfg === "dev" ? "no" : "unless-stopped");
-  const mcpRestart =
-    mcp?.restart || (mcpBuildTarget === "dev" ? "no" : "unless-stopped");
   const websiteRestart =
     website?.restart ||
     (websiteBuildTargetCfg === "dev" ? "no" : "unless-stopped");
 
   // Stack-level fallbacks (infra restart / isDevMode)
   const buildTarget =
-    [
-      serverBuildTarget,
-      clientBuildTargetCfg,
-      mcpBuildTarget,
-      websiteBuildTargetCfg,
-    ].find((t) => t === "dev") ||
+    [serverBuildTarget, clientBuildTargetCfg, websiteBuildTargetCfg].find(
+      (t) => t === "dev",
+    ) ||
     serverBuildTarget ||
     clientBuildTargetCfg ||
-    mcpBuildTarget ||
     websiteBuildTargetCfg ||
     "runtime";
   const nodeEnv =
@@ -344,9 +314,6 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
   }
   if (selectedApps.includes("client") && !clientEnv) {
     throw new Error(`environments.${envName}.client.env is required`);
-  }
-  if (selectedApps.includes("mcp") && !mcpEnv) {
-    throw new Error(`environments.${envName}.mcp.env is required`);
   }
 
   let services = expandServices(envBlock, selectedApps);
@@ -376,7 +343,6 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
     dockerEnv,
     serverEnv,
     clientEnv,
-    mcpEnv,
     websiteEnv,
     websiteDist,
     buildTarget,
@@ -384,15 +350,12 @@ export function loadDockerEnvironment(name = "local", opts = {}) {
     restart,
     serverBuildTarget,
     clientBuildTarget: clientBuildTargetCfg,
-    mcpBuildTarget,
     websiteBuildTarget: websiteBuildTargetCfg,
     serverNodeEnv,
     clientNodeEnv,
-    mcpNodeEnv,
     websiteNodeEnv,
     serverRestart,
     clientRestart,
-    mcpRestart,
     websiteRestart,
     clientMode: client?.clientMode || envBlock.clientMode || "nginx",
     websiteMode,
@@ -423,7 +386,6 @@ export function composeProcessEnv(cfg, extra = {}) {
 
   let clientBuildTarget = cfg.clientBuildTarget || cfg.buildTarget || "runtime";
   let serverBuildTarget = cfg.serverBuildTarget || cfg.buildTarget || "runtime";
-  let mcpBuildTarget = cfg.mcpBuildTarget || cfg.buildTarget || "runtime";
   let websiteBuildTarget =
     cfg.websiteBuildTarget || cfg.buildTarget || "runtime";
   let clientContainerPort = "80";
@@ -432,8 +394,7 @@ export function composeProcessEnv(cfg, extra = {}) {
   const clientDev = clientBuildTarget === "dev";
   const serverDev = serverBuildTarget === "dev";
   const websiteDev = websiteBuildTarget === "dev";
-  const anyDev =
-    clientDev || serverDev || mcpBuildTarget === "dev" || websiteDev;
+  const anyDev = clientDev || serverDev || websiteDev;
   const imageSuffix = anyDev ? "-dev" : "";
 
   if (clientDev) {
@@ -457,24 +418,20 @@ export function composeProcessEnv(cfg, extra = {}) {
     BUILD_TARGET: cfg.buildTarget || "runtime",
     CLIENT_BUILD_TARGET: clientBuildTarget,
     SERVER_BUILD_TARGET: serverBuildTarget,
-    MCP_BUILD_TARGET: mcpBuildTarget,
     WEBSITE_BUILD_TARGET: websiteBuildTarget,
     CLIENT_MODE: clientMode,
     CLIENT_SSR: resolveClientSsr(cfg, clientMode, clientDev),
     NODE_ENV: cfg.nodeEnv || "production",
     SERVER_NODE_ENV: cfg.serverNodeEnv || cfg.nodeEnv || "production",
     CLIENT_NODE_ENV: cfg.clientNodeEnv || cfg.nodeEnv || "production",
-    MCP_NODE_ENV: cfg.mcpNodeEnv || cfg.nodeEnv || "production",
     WEBSITE_NODE_ENV: cfg.websiteNodeEnv || cfg.nodeEnv || "production",
     RESTART_POLICY: cfg.restart || "unless-stopped",
     SERVER_RESTART: cfg.serverRestart || cfg.restart || "unless-stopped",
     CLIENT_RESTART: cfg.clientRestart || cfg.restart || "unless-stopped",
-    MCP_RESTART: cfg.mcpRestart || cfg.restart || "unless-stopped",
     WEBSITE_RESTART: cfg.websiteRestart || cfg.restart || "unless-stopped",
     IMAGE_SUFFIX: imageSuffix,
     ENV_DIR: resolve(cfg.root || root, cfg.envDir || "env"),
     SERVER_ENV_FILE: cfg.serverEnv || "",
-    MCP_ENV_FILE: cfg.mcpEnv || "",
     CLIENT_ENV_FILE: cfg.clientEnv || "env/client.env",
     WEBSITE_ENV_FILE: cfg.websiteEnv || "env/website.env",
     CLIENT_CONTAINER_PORT: clientContainerPort,
@@ -503,9 +460,6 @@ export function composeProcessEnv(cfg, extra = {}) {
   });
   vols.client.forEach((v, i) => {
     env[`V_CLIENT_${i + 1}`] = v;
-  });
-  vols.mcp.forEach((v, i) => {
-    env[`V_MCP_${i + 1}`] = v;
   });
   (vols.website || []).forEach((v, i) => {
     env[`V_WEBSITE_${i + 1}`] = v;
@@ -547,7 +501,6 @@ export function envFilesForDeployTarget(cfg, target) {
       cfg.dockerEnv,
       cfg.serverEnv,
       cfg.clientEnv,
-      cfg.mcpEnv,
       cfg.websiteEnv,
     ].filter(Boolean);
   }
@@ -555,7 +508,6 @@ export function envFilesForDeployTarget(cfg, target) {
   const out = [cfg.dockerEnv];
   if (t === "server" && cfg.serverEnv) out.push(cfg.serverEnv);
   else if (t === "client" && cfg.clientEnv) out.push(cfg.clientEnv);
-  else if (t === "mcp" && cfg.mcpEnv) out.push(cfg.mcpEnv);
   return [...new Set(out.filter(Boolean))];
 }
 

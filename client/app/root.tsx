@@ -67,13 +67,7 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 }
 
-const PUBLIC_AUTH_PATHS = new Set([
-  "/",
-  "/login",
-  "/verify-otp",
-  "/forgot-password",
-  "/reset-password",
-]);
+const PUBLIC_AUTH_PATHS = new Set(["/"]);
 
 export default function App() {
   useEffect(() => {

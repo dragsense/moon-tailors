@@ -35,7 +35,7 @@ Three layout groups in `app/routes.ts`. Guards (middleware-style) wrap shells �
 
 | Group | Guard | Shell | Routes |
 |---|---|---|---|
-| Auth | `GuestGuard` | `AuthShell` | `/` (login) (`/login` → `/`) |
+| Auth | `GuestGuard` | `AuthShell` | `/` (login) |
 | App | `AuthGuard` → `AccessGuard` | `AppShell` | `/dashboard`, `/customers`, `/orders`, … |
 
 Marketing landing lives on the **website** package (`http://localhost:8088/`), not here.
@@ -57,17 +57,17 @@ URLs and navigation are data, not markup — `app/config/`:
 ```txt
 config/
   routes.config.ts   routes, titles, ROUTE_LEVELS, ROUTE_PERMISSIONS, LEVEL_HOME
-  nav.config.ts      grouped NavItems + navItemsByLevel / getNavItems
+  nav.config.ts      account menu items (`getAccountNavItems`)
 ```
 
-`app/routes.ts` registers paths from these constants, `AppShell` renders the sidebar from `getNavItems(user)`, and `access-guard` denies a page via `canAccessRoute()`. Individual buttons/actions use op-level `permission` + `useOp().allowed`. Broad account categories use `EUserLevel`; fine-grained access comes from server-assigned permissions. The shop has a single **platform owner** seeded from env.
+`app/routes.ts` registers paths from these constants, `AppShell` uses the top header (brand + theme + account menu from `getAccountNavItems()`), and `access-guard` denies a page via `canAccessRoute()`. Individual buttons/actions use op-level `permission` + `useOp().allowed`. Broad account categories use `EUserLevel`; fine-grained access comes from server-assigned permissions. The shop has a single **platform owner** seeded from env.
 
 Adding a page:
 
 1. Add the path to `APP_ROUTES` and a label to `ROUTE_TITLES`.
 2. Add the screen under `app/pages/public` or `app/pages/protected`.
 3. Register it in `app/routes.ts` under the right layout group.
-4. Add a `NavItem` (with optional `levels` and permission) in `nav.config.ts`.
+4. If it belongs in the account menu, add a `NavItem` in `nav.config.ts`.
 5. Add a matching server permission decorator; client checks are UX only.
 
 `NavItem` carries `levels`, permission requirements, and `children`; subscription-feature checks can be added without changing the shell.

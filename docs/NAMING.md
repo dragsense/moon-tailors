@@ -6,9 +6,9 @@ Keep names predictable across contracts, API, and UI.
 
 | Prefix | Kind | Example | Where |
 |---|---|---|---|
-| `E` | Enum | `ETaskStatus` | `contracts/src/features/{feature}/enum.ts` |
-| `I` | Interface (entity / response) | `ITask`, `ILoginResponse` | `contracts/src/features/{feature}/interface.ts` |
-| `T` | Type alias (request / form / query) | `TCreateTaskData`, `TLoginData` | `contracts/src/features/{feature}/types.ts` |
+| `E` | Enum | `EOrderStatus` | `contracts/src/features/{feature}/enum.ts` |
+| `I` | Interface (entity / response) | `IOrder`, `ILoginResponse` | `contracts/src/features/{feature}/interface.ts` |
+| `T` | Type alias (request / form / query) | `TCreateOrderData`, `TLoginData` | `contracts/src/features/{feature}/types.ts` |
 
 ## Feature folders
 
@@ -20,7 +20,8 @@ contracts/src/
   features/
     auth/
     user/
-    task/     enum.ts, schema.ts, types.ts, interface.ts
+    customer/
+    order/    enum.ts, schema.ts, types.ts, interface.ts
   lib/
 ```
 
@@ -28,9 +29,9 @@ contracts/src/
 
 Zod schemas are **not** prefixed with I/E/T:
 
-- `createTaskSchema` / `updateTaskSchema` — write
-- `taskSchema` — get / entity (response)
-- `taskListQuerySchema` / `paginatedTasksSchema` — list
+- `createOrderSchema` / `updateOrderSchema` — write
+- `orderSchema` — get / entity (response)
+- `orderListQuerySchema` / `paginatedOrdersSchema` — list
 
 They live in `contracts/src/features/{feature}/schema.ts`.
 
@@ -41,16 +42,15 @@ Pure helpers used by both apps live in `contracts/src/lib/`:
 - `field()`, `getFormFields()`
 - `formatDate()`, `formatDateTime()`
 - `buildPaginationMeta()`, `pageOffset()`, `createPaginatedSchema()`
-- `slugify()`, `truncate()`, `toTitleCase()`
 
 ## Return types
 
 Controllers/services should return **interfaces**:
 
 ```ts
-create(input: TCreateTaskData): ITask
+create(input: TCreateOrderData): IOrder
 login(input: TLoginData): ILoginResponse
-list(query: TTaskListQuery): IPaginatedTasks
+list(query: TOrderListQuery): IPaginatedOrders
 ```
 
 ## Form data

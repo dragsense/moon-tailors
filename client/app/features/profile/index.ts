@@ -1,2 +1,3 @@
 export { ProfilePage } from "./profile-page";
-export { profileOps } from "./ops";
+export { ResetPasswordPage } from "./reset-password-page";
+export { profileOps, resetPasswordOps } from "./ops";

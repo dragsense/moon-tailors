@@ -1,19 +1,14 @@
 import type { ReactNode } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Link, Outlet, useLocation } from "react-router";
 import type { IAuthUser } from "@moon-tailors/contracts";
 import { GlobalHeader, UserMenu } from "./header";
-import { AppSidebar } from "~/components/layout-ui/sidebar/app-sidebar";
 import { ThemeToggle } from "~/components/layout-ui/theme-toggle";
-import { Separator } from "~/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "~/components/ui/sidebar";
-import { getRouteTitle } from "~/config";
+import { LanguageToggle } from "~/components/layout-ui/language-toggle";
+import { APP_ROUTES, getRouteTitle } from "~/config";
 import { useSession } from "~/features/auth/hooks";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
+import { AppFooter } from "./footer";
 
 export type AppShellProps = {
   user: IAuthUser;
@@ -22,8 +17,7 @@ export type AppShellProps = {
 };
 
 /**
- * Authenticated shell with shadcn Sidebar (collapsible + mobile sheet).
- * Nav comes from `config/nav.config.ts`.
+ * Authenticated shell — top bar with brand, theme, and account menu.
  */
 export function AppShell({
   user,
@@ -35,42 +29,46 @@ export function AppShell({
   const title = getRouteTitle(location.pathname);
   const appName = t("app.name");
   const year = new Date().getFullYear();
+  const isHome = location.pathname === APP_ROUTES.DASHBOARD;
 
   return (
-    <SidebarProvider className="min-h-0 flex-1 overflow-hidden">
-      <AppSidebar user={user} />
-      <SidebarInset
-        className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-hidden",
-          className,
-        )}
-      >
-        <GlobalHeader
-          className="sticky top-0 z-20 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
-          start={
-            <>
-              <SidebarTrigger />
-              <Separator orientation="vertical" className="me-2 h-4" />
-            </>
-          }
-          title={title ?? appName}
-          actions={
-            <>
-              <ThemeToggle />
-              <UserMenu user={user} />
-            </>
-          }
-        />
-        <main className="min-h-0 flex-1 overflow-auto p-6">
-          {children}
-        </main>
-        <footer className="shrink-0 border-t px-6 py-4">
-          <p className="text-center text-xs text-muted-foreground">
-            {t("app.copyright", { year, name: t("app.legalName") })}
-          </p>
-        </footer>
-      </SidebarInset>
-    </SidebarProvider>
+    <div
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-hidden",
+        className,
+      )}
+    >
+      <GlobalHeader
+        className="sticky top-0 z-20 shrink-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80"
+        start={
+          <Link
+            to={APP_ROUTES.DASHBOARD}
+            className="flex min-w-0 items-center gap-2"
+          >
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-semibold text-primary-foreground">
+              {t("app.initial")}
+            </span>
+            <span className="hidden truncate font-semibold sm:block">
+              {appName}
+            </span>
+          </Link>
+        }
+        title={isHome ? undefined : (title ?? appName)}
+        actions={
+          <>
+            <LanguageToggle />
+            <ThemeToggle />
+            <UserMenu user={user} />
+          </>
+        }
+      />
+      <main className="min-h-0 flex-1 overflow-auto p-6">{children}</main>
+      <AppFooter className="px-6 py-4">
+        <p className="text-center text-xs text-muted-foreground">
+          {t("app.copyright", { year, name: t("app.legalName") })}
+        </p>
+      </AppFooter>
+    </div>
   );
 }
 

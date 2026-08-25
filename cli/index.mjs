@@ -28,8 +28,8 @@ const dockerEnvFile = dockerCfg.dockerEnv;
 const composeDev = composeArgs(dockerCfg);
 const composeEnv = () => composeProcessEnv(dockerCfg);
 
-const DOCKER_APPS = ["server", "client", "mcp", "website"];
-const APPS = ["server", "client", "mcp", "website"];
+const DOCKER_APPS = ["server", "client", "website"];
+const APPS = ["server", "client", "website"];
 
 /** Per-service clean targets + what they share with others */
 const CLEAN_META = {
@@ -41,7 +41,6 @@ const CLEAN_META = {
       "server_nm",
       "server_pkg_nm",
       "server_contracts_nm",
-      "uploads",
       "postgres_data",
     ],
     builds: ["server/dist"],
@@ -58,16 +57,6 @@ const CLEAN_META = {
     nodeModules: ["client/node_modules"],
     env: ["client.env"],
     needsContracts: true,
-  },
-  mcp: {
-    compose: ["mcp"],
-    infra: [],
-    imageSuffix: "mcp-dev",
-    volumes: ["mcp_nm", "mcp_pkg_nm"],
-    builds: ["mcp/dist"],
-    nodeModules: ["mcp/node_modules"],
-    env: ["mcp.env"],
-    needsContracts: false,
   },
   website: {
     compose: ["website"],
@@ -95,7 +84,6 @@ const CLEAN_META = {
 const PNPM_FILTER = {
   server: "@moon-tailors/server...",
   client: "@moon-tailors/client...",
-  mcp: "@moon-tailors/mcp",
   website: "@moon-tailors/website",
 };
 
@@ -113,7 +101,6 @@ const c = {
 const logColor = {
   server: c.magenta,
   client: c.cyan,
-  mcp: c.green,
   website: c.yellow,
   gateway: c.cyan,
   postgres: c.green,
@@ -142,7 +129,7 @@ function colorizeComposeLogLine(raw) {
 
 /** Preset menus for setup / start profile — use pickApps (same as run/restart/deploy) */
 
-const DEPLOY_TARGETS = ["server", "client", "mcp", "website"];
+const DEPLOY_TARGETS = ["server", "client", "website"];
 
 const hostsJson = resolve(root, "deploy/hosts.json");
 
@@ -241,7 +228,7 @@ function readProfile() {
 }
 
 /** App folders that can be hidden in the Cursor/VS Code explorer from .profile. */
-const EXPLORER_APPS = ["server", "client", "mcp", "website"];
+const EXPLORER_APPS = ["server", "client", "website"];
 
 /** Exclude keys this project manages (cleared on each sync). */
 const EXPLORER_MANAGED_KEYS = [
@@ -251,11 +238,11 @@ const EXPLORER_MANAGED_KEYS = [
   "env",
   "env/**/*server*",
   "env/**/*client*",
-  "env/**/*mcp*",
+  "env/**/*website*",
   "env/**/*docker*",
   "docker/server.Dockerfile",
   "docker/client.Dockerfile",
-  "docker/mcp.Dockerfile",
+  "docker/website.Dockerfile",
 ];
 
 /**
@@ -285,7 +272,7 @@ function syncExplorerVisibility(services, { quiet = false } = {}) {
     showAll ||
     selected.has("server") ||
     selected.has("client") ||
-    selected.has("mcp");
+    selected.has("website");
 
   const filesExclude = { ...(settings["files.exclude"] || {}) };
   const searchExclude = { ...(settings["search.exclude"] || {}) };
@@ -314,11 +301,11 @@ function syncExplorerVisibility(services, { quiet = false } = {}) {
     // Keep docker/ folder (compose + environments.json), hide irrelevant Dockerfiles
     if (!selected.has("server")) hide("docker/server.Dockerfile");
     if (!selected.has("client")) hide("docker/client.Dockerfile");
-    if (!selected.has("mcp")) hide("docker/mcp.Dockerfile");
+    if (!selected.has("website")) hide("docker/website.Dockerfile");
 
     if (!selected.has("server")) hide("env/**/*server*", "env/*server*");
     if (!selected.has("client")) hide("env/**/*client*", "env/*client*");
-    if (!selected.has("mcp")) hide("env/**/*mcp*", "env/*mcp*");
+    if (!selected.has("website")) hide("env/**/*website*", "env/*website*");
   }
 
   settings["files.exclude"] = filesExclude;
@@ -374,7 +361,6 @@ function ensureEnvForServices(services, { quiet = false } = {}) {
   for (const [from, to] of pairs) {
     if (to === "env/server.env" && !services.includes("server")) continue;
     if (to === "env/client.env" && !services.includes("client")) continue;
-    if (to === "env/mcp.env" && !services.includes("mcp")) continue;
     if (to === "env/website.env" && !services.includes("website")) continue;
     const dest = resolve(root, to);
     const src = resolve(root, from);
@@ -492,12 +478,11 @@ function runningComposeServices() {
 const serviceUrls = {
   server: "  Server  → http://localhost:8088/server/api/  · Scalar http://localhost:8088/server/api/docs",
   client: "  Client  → http://localhost:8088/app/",
-  mcp: "  MCP     → http://localhost:8088/mcp/",
   website: "  Website → http://localhost:8088/",
-  gateway: "  Gateway → http://localhost:8088  (/ · /app/ · /server/ · /mcp/)",
+  gateway: "  Gateway → http://localhost:8088  (/ · /app/ · /server/)",
 };
 
-/** Services listed after --add (can repeat: --add server --add mcp) */
+/** Services listed after --add (can repeat: --add server --add client) */
 function servicesFromAddFlags(argv) {
   const out = [];
   for (let i = 0; i < argv.length; i++) {
@@ -520,7 +505,7 @@ async function resolveSetupServices(argv) {
   const existing = readProfile();
   const toAdd = servicesFromAddFlags(argv);
 
-  // pnpm bootstrap --add server [--add mcp]
+  // pnpm bootstrap --add server [--add client]
   if (toAdd.length) {
     if (!existing?.length) {
       console.log(
@@ -952,7 +937,6 @@ async function cleanFull(argv, { quiet = false } = {}) {
       "client/.react-router",
       "website/dist",
       "website/.astro",
-      "mcp/dist",
       "contracts/dist",
       ".turbo",
       ".cache",
@@ -969,7 +953,6 @@ async function cleanFull(argv, { quiet = false } = {}) {
       "server/node_modules",
       "client/node_modules",
       "website/node_modules",
-      "mcp/node_modules",
       "contracts/node_modules",
     ];
     for (const rel of targets) {
@@ -1235,7 +1218,6 @@ ${c.green}${c.bold}✓ Bootstrap complete${c.reset}  (nothing is running yet)
 const PKG_TARGETS = [
   { key: "server", filter: "@moon-tailors/server", label: "server" },
   { key: "client", filter: "@moon-tailors/client", label: "client" },
-  { key: "mcp", filter: "@moon-tailors/mcp", label: "mcp" },
   { key: "website", filter: "@moon-tailors/website", label: "website" },
   { key: "contracts", filter: "@moon-tailors/contracts", label: "contracts" },
 ];
@@ -1365,7 +1347,7 @@ async function startDev(argv) {
  */
 async function startServices(services, { build = false } = {}) {
   const list = [...new Set(services)].filter((s) => APPS.includes(s));
-  if (!list.length) throw new Error("Pick at least one: server, client, mcp, website");
+  if (!list.length) throw new Error("Pick at least one: server, client, website");
 
   const dockerStart = list.filter((s) => DOCKER_APPS.includes(s));
 
@@ -1623,7 +1605,7 @@ async function deployInteractive(argv) {
   const available = listEnvApps(envName);
   if (!available.length) {
     throw new Error(
-      `No client/server/mcp/website under environments.${envName} in docker/environments.json`,
+      `No client/server/website under environments.${envName} in docker/environments.json`,
     );
   }
 
@@ -1719,7 +1701,7 @@ ${c.yellow}${c.bold}Before Docker build on ${hostName}${c.reset}
     if (!argv.includes("--volumes")) {
       const vol = (
         await ask(
-          `${c.yellow}Remove volumes too?${c.reset} ${c.dim}(DB data / uploads — default No)${c.reset} [y/N]: `,
+          `${c.yellow}Remove volumes too?${c.reset} ${c.dim}(DB data — default No)${c.reset} [y/N]: `,
         )
       ).toLowerCase();
       removeVolumes = vol === "y" || vol === "yes";
@@ -2149,7 +2131,6 @@ async function pickBuildTarget() {
     { key: "2", label: "Server", target: "server" },
     { key: "3", label: "Client", target: "client" },
     { key: "4", label: "Website", target: "website" },
-    { key: "5", label: "MCP", target: "mcp" },
   ]);
   return preset.target;
 }
@@ -2220,7 +2201,6 @@ async function runBuild(target) {
     await run("pnpm", ["--filter", "@moon-tailors/server", "build"], "server");
     await run("pnpm", ["--filter", "@moon-tailors/client", "build"], "client");
     await run("pnpm", ["--filter", "@moon-tailors/website", "build"], "website");
-    await run("pnpm", ["--filter", "@moon-tailors/mcp", "build"], "mcp");
     console.log(`${c.green}✓ build complete${c.reset}`);
     return;
   }

@@ -8,7 +8,7 @@ import { Input } from "~/components/ui/input";
 import { useI18n } from "~/hooks/use-i18n";
 import { Page } from "~/layouts";
 import type { QueryOpComponentProps } from "~/ops";
-import { orderPath } from "~/config/routes.config";
+import { APP_ROUTES, orderPath } from "~/config/routes.config";
 import type { TranslationKey } from "~/locales";
 
 function statusLabel(
@@ -40,7 +40,15 @@ export function OrderList({
         : null;
 
   return (
-    <Page title={t("orders.title")} description={t("orders.description")}>
+    <Page
+      title={t("orders.title")}
+      description={t("orders.description")}
+      actions={
+        <Button asChild size="lg" variant="outline">
+          <Link to={APP_ROUTES.DASHBOARD}>{t("common.actions.back")}</Link>
+        </Button>
+      }
+    >
       <form
         className="flex flex-col gap-3 sm:flex-row"
         onSubmit={(event) => {

@@ -11,7 +11,6 @@ import {
   UserPermissionEntity,
 } from "../common/base";
 import { ActivityLogEntity } from "../common/activity-logs";
-import { FileUploadEntity } from "../common/file-upload";
 import { AuditSubscriber } from "../common/entities/audit.subscriber";
 
 @Module({
@@ -30,7 +29,6 @@ import { AuditSubscriber } from "../common/entities/audit.subscriber";
             BusinessEntity,
             SettingEntity,
             ActivityLogEntity,
-            FileUploadEntity,
           ],
           subscribers: [AuditSubscriber],
           autoLoadEntities: true,

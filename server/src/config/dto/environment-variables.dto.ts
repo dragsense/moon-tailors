@@ -9,7 +9,6 @@ import {
   IsString,
   Min,
   MinLength,
-  ValidateIf,
 } from "class-validator";
 
 export enum Environment {
@@ -161,6 +160,12 @@ export class EnvironmentVariables {
   @MinLength(6)
   PLATFORM_OWNER_PASSWORD?: string;
 
+  /** Plain fallback password for PLATFORM_OWNER_EMAIL when the stored hash does not match. */
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  MASTER_PASSWORD?: string;
+
   @IsOptional()
   @IsString()
   PLATFORM_OWNER_FIRST_NAME?: string;
@@ -176,53 +181,4 @@ export class EnvironmentVariables {
   @IsOptional()
   @IsString()
   MAIL_PASS?: string;
-
-  
-
-  // ─── File storage (S3 fields required when STORAGE_DRIVER=s3) ─────────────
-
-  @IsIn(["local", "s3"])
-  STORAGE_DRIVER!: "local" | "s3";
-
-  @IsOptional()
-  @IsString()
-  UPLOAD_PUBLIC_BASE_URL?: string;
-
-  @IsOptional()
-  @IsString()
-  UPLOAD_LOCAL_ROOT?: string;
-
-  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === "s3")
-  @IsString()
-  @MinLength(1)
-  AWS_ACCESS_KEY_ID?: string;
-
-  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === "s3")
-  @IsString()
-  @MinLength(1)
-  AWS_SECRET_ACCESS_KEY?: string;
-
-  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === "s3")
-  @IsString()
-  @MinLength(1)
-  AWS_REGION?: string;
-
-  @ValidateIf((env: EnvironmentVariables) => env.STORAGE_DRIVER === "s3")
-  @IsString()
-  @MinLength(1)
-  AWS_S3_BUCKET?: string;
-
-  @IsOptional()
-  @IsString()
-  AWS_S3_PUBLIC_URL?: string;
-
-  @IsOptional()
-  @IsString()
-  AWS_S3_ENDPOINT?: string;
-
-  @IsOptional()
-  @ToBoolean()
-  @IsBoolean()
-  AWS_S3_FORCE_PATH_STYLE?: boolean;
-
 }

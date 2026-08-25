@@ -32,13 +32,13 @@ function buildDefaults(
       : "dev-jwt-secret-change-me-32chars!!",
     JWT_ACCESS_TTL_SEC: 604800,
     ACCESS_COOKIE_NAME: "access_token",
+    MASTER_PASSWORD: isProduction ? undefined : "dev-master-password",
     CLUSTER_ENABLED: false,
     ACTIVITY_LOGS_ENABLED: false,
     EVENTS_ENABLED: false,
     CACHE_ENABLED: false,
     CACHE_PREFIX: "moon-tailors",
     CACHE_DEFAULT_TTL: 300,
-    STORAGE_DRIVER: "local",
    
   };
 }

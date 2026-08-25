@@ -7,7 +7,6 @@ import cacheConfig from "./cache.config";
 import clusterConfig from "./cluster.config";
 import databaseConfig from "./database.config";
 import platformOwnerConfig from "./platform-owner.config";
-import storageConfig from "./storage.config";
 
 import securitySkipConfig from "./security-skip.config";
 import tenantConfig from "./tenant.config";
@@ -30,7 +29,6 @@ export const configOptions: ConfigModuleOptions = {
     activityLogsConfig,
     eventsConfig,
     cacheConfig,
-    storageConfig,
     scalarConfig,
   ],
 };

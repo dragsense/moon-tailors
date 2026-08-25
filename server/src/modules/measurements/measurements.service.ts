@@ -1,4 +1,8 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import {
+  BadRequestException,
+  Injectable,
+  OnModuleInit,
+} from "@nestjs/common";
 import type {
   IMeasurement,
   TMeasurementValues,
@@ -10,6 +14,7 @@ import {
   type IBoundEntityService,
 } from "../../common/database";
 import type { EntityQueryConfig } from "../../common/query";
+import { GarmentTypesService } from "../garment-types/garment-types.service";
 import { MeasurementEntity } from "./entities/measurement.entity";
 
 export const MEASUREMENT_QUERY: EntityQueryConfig = {
@@ -20,7 +25,6 @@ export const MEASUREMENT_QUERY: EntityQueryConfig = {
 };
 
 const VALUE_KEYS = [
-  "garmentType",
   "length",
   "chest",
   "waist",
@@ -48,6 +52,7 @@ export class MeasurementsService implements OnModuleInit {
   constructor(
     private readonly entityService: EntityService,
     private readonly permissions: PermissionsService,
+    private readonly garmentTypes: GarmentTypesService,
   ) {
     this.entity = this.entityService.bind(
       MeasurementEntity,
@@ -63,7 +68,6 @@ export class MeasurementsService implements OnModuleInit {
     input: TMeasurementValues | MeasurementEntity,
   ): TMeasurementValues {
     return {
-      garmentType: input.garmentType ?? undefined,
       length: num(input.length),
       chest: num(input.chest),
       waist: num(input.waist),
@@ -87,35 +91,140 @@ export class MeasurementsService implements OnModuleInit {
       id: row.id,
       customerId: row.customerId,
       orderId: row.orderId,
+      garmentTypeId: row.garmentTypeId,
+      garmentType: row.garmentType
+        ? this.garmentTypes.toPayload(row.garmentType)
+        : null,
       createdAt: toIso(row.createdAt),
       updatedAt: toIso(row.updatedAt),
     };
   }
 
-  async createDefault(
+  findDefault(
     customerId: string,
+    garmentTypeId: string,
+  ): Promise<MeasurementEntity | null> {
+    return this.entity
+      .getRepository()
+      .createQueryBuilder("measurement")
+      .leftJoinAndSelect("measurement.garmentType", "garmentType")
+      .where("measurement.customerId = :customerId", { customerId })
+      .andWhere("measurement.garmentTypeId = :garmentTypeId", { garmentTypeId })
+      .andWhere("measurement.orderId IS NULL")
+      .andWhere("measurement.deletedAt IS NULL")
+      .getOne();
+  }
+
+  listDefaults(customerId: string): Promise<MeasurementEntity[]> {
+    return this.entity
+      .getRepository()
+      .createQueryBuilder("measurement")
+      .leftJoinAndSelect("measurement.garmentType", "garmentType")
+      .where("measurement.customerId = :customerId", { customerId })
+      .andWhere("measurement.orderId IS NULL")
+      .andWhere("measurement.deletedAt IS NULL")
+      .orderBy("garmentType.sortOrder", "ASC")
+      .addOrderBy("garmentType.name", "ASC")
+      .getMany();
+  }
+
+  async upsertDefault(
+    customerId: string,
+    garmentTypeId: string,
     values?: TMeasurementValues,
   ): Promise<MeasurementEntity> {
+    await this.garmentTypes.require(garmentTypeId);
+    const existing = await this.findDefault(customerId, garmentTypeId);
+    if (existing) {
+      if (hasMeasurementValues(values)) {
+        return this.updateValues(existing.id, values);
+      }
+      return this.requireWithType(existing.id);
+    }
     const created = await this.entity.create({
       customerId,
       orderId: null,
+      garmentTypeId,
     });
     if (hasMeasurementValues(values)) {
       return this.updateValues(created.id, values);
     }
-    return created;
+    return this.requireWithType(created.id);
   }
 
-  copyForOrder(
-    source: MeasurementEntity,
+  async copyDefault(
     customerId: string,
-    orderId: string | null,
+    fromGarmentTypeId: string,
+    toGarmentTypeId: string,
   ): Promise<MeasurementEntity> {
-    const values = this.pickValues(source);
-    return this.entity.create({
+    if (fromGarmentTypeId === toGarmentTypeId) {
+      throw new BadRequestException("Pick a different garment to copy into");
+    }
+    const source = await this.findDefault(customerId, fromGarmentTypeId);
+    if (!source) {
+      throw new BadRequestException("Nothing to copy from that garment");
+    }
+    return this.upsertDefault(
       customerId,
-      orderId,
-      garmentType: values.garmentType ?? null,
+      toGarmentTypeId,
+      this.pickValues(source),
+    );
+  }
+
+  async createOrderSnapshot(
+    customerId: string,
+    garmentTypeId: string,
+    values?: TMeasurementValues,
+  ): Promise<MeasurementEntity> {
+    await this.garmentTypes.require(garmentTypeId);
+    const source = await this.findDefault(customerId, garmentTypeId);
+    const created = await this.entity.create({
+      customerId,
+      orderId: null,
+      garmentTypeId,
+      ...(source ? this.toColumnValues(this.pickValues(source)) : {}),
+    });
+    if (hasMeasurementValues(values)) {
+      return this.updateValues(created.id, values);
+    }
+    return this.requireWithType(created.id);
+  }
+
+  async updateValues(
+    id: string,
+    input: TMeasurementValues,
+  ): Promise<MeasurementEntity> {
+    const values = this.pickValues(input);
+    const patch: Partial<MeasurementEntity> = {};
+    for (const key of VALUE_KEYS) {
+      if (input[key] !== undefined) {
+        if (key === "extraNotes") {
+          patch.extraNotes = emptyToNull(values.extraNotes);
+        } else {
+          (patch as Record<string, unknown>)[key] = dec(
+            values[key] as number | null | undefined,
+          );
+        }
+      }
+    }
+    await this.entity.update(id, patch);
+    return this.requireWithType(id);
+  }
+
+  get(id: string): Promise<MeasurementEntity> {
+    return this.requireWithType(id);
+  }
+
+  attachToOrder(id: string, orderId: string): Promise<MeasurementEntity> {
+    return this.entity.update(id, { orderId });
+  }
+
+  private requireWithType(id: string): Promise<MeasurementEntity> {
+    return this.entity.require(id, { _relations: ["garmentType"] });
+  }
+
+  private toColumnValues(values: TMeasurementValues): Partial<MeasurementEntity> {
+    return {
       length: dec(values.length),
       chest: dec(values.chest),
       waist: dec(values.waist),
@@ -129,36 +238,7 @@ export class MeasurementsService implements OnModuleInit {
       thigh: dec(values.thigh),
       bottom: dec(values.bottom),
       extraNotes: emptyToNull(values.extraNotes),
-    });
-  }
-
-  async updateValues(
-    id: string,
-    input: TMeasurementValues,
-  ): Promise<MeasurementEntity> {
-    const values = this.pickValues(input);
-    const patch: Partial<MeasurementEntity> = {};
-    for (const key of VALUE_KEYS) {
-      if (input[key] !== undefined) {
-        if (key === "garmentType") patch.garmentType = values.garmentType ?? null;
-        else if (key === "extraNotes") {
-          patch.extraNotes = emptyToNull(values.extraNotes);
-        } else {
-          (patch as Record<string, unknown>)[key] = dec(
-            values[key] as number | null | undefined,
-          );
-        }
-      }
-    }
-    return this.entity.update(id, patch);
-  }
-
-  get(id: string): Promise<MeasurementEntity> {
-    return this.entity.require(id);
-  }
-
-  attachToOrder(id: string, orderId: string): Promise<MeasurementEntity> {
-    return this.entity.update(id, { orderId });
+    };
   }
 }
 

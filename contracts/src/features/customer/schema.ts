@@ -4,9 +4,8 @@ import {
   listQuerySchema,
 } from "../../common/schema.js";
 import { field } from "../../lib/field-meta.js";
-import { EGarmentType } from "./enum.js";
-
-export const garmentTypeSchema = z.nativeEnum(EGarmentType);
+import { garmentTypeSchema } from "../garment-type/schema.js";
+import { EGender } from "../user/enum.js";
 
 const optionalText = (label: string, order: number, max = 120) =>
   field(z.string().trim().max(max).optional().or(z.literal("")), {
@@ -22,44 +21,30 @@ const optionalMeasure = (label: string, order: number) =>
     order,
   });
 
-/** Numeric / note fields stored on the measurements table. */
+/** Numeric / note fields stored on a measurement row (type lives on garmentTypeId). */
 export const measurementValuesSchema = z.object({
-  garmentType: field(garmentTypeSchema.optional(), {
-    type: "select",
-    label: "Garment",
-    order: 1,
-    options: [
-      { label: "Shalwar kameez", value: EGarmentType.SHALWAR_KAMEEZ },
-      { label: "Shirt", value: EGarmentType.SHIRT },
-      { label: "Pant", value: EGarmentType.PANT },
-      { label: "Coat", value: EGarmentType.COAT },
-      { label: "Waistcoat", value: EGarmentType.WAISTCOAT },
-      { label: "Other", value: EGarmentType.OTHER },
-    ],
-  }),
-  length: optionalMeasure("Length", 2),
-  chest: optionalMeasure("Chest", 3),
-  waist: optionalMeasure("Waist", 4),
-  hip: optionalMeasure("Hip", 5),
-  shoulder: optionalMeasure("Shoulder", 6),
-  sleeve: optionalMeasure("Sleeve", 7),
-  neck: optionalMeasure("Neck", 8),
-  armhole: optionalMeasure("Armhole", 9),
-  cuff: optionalMeasure("Cuff", 10),
-  trouserLength: optionalMeasure("Trouser length", 11),
-  thigh: optionalMeasure("Thigh", 12),
-  bottom: optionalMeasure("Bottom", 13),
+  length: optionalMeasure("Length", 1),
+  chest: optionalMeasure("Chest", 2),
+  waist: optionalMeasure("Waist", 3),
+  hip: optionalMeasure("Hip", 4),
+  shoulder: optionalMeasure("Shoulder", 5),
+  sleeve: optionalMeasure("Sleeve", 6),
+  neck: optionalMeasure("Neck", 7),
+  armhole: optionalMeasure("Armhole", 8),
+  cuff: optionalMeasure("Cuff", 9),
+  trouserLength: optionalMeasure("Trouser length", 10),
+  thigh: optionalMeasure("Thigh", 11),
+  bottom: optionalMeasure("Bottom", 12),
   extraNotes: field(z.string().trim().max(2000).optional().or(z.literal("")), {
     type: "textarea",
     label: "Measurement notes",
-    order: 14,
+    order: 13,
   }),
 });
 
 export const updateMeasurementSchema = measurementValuesSchema;
 
 export const MEASUREMENT_VALUE_KEYS = [
-  "garmentType",
   "length",
   "chest",
   "waist",
@@ -98,13 +83,38 @@ export function hasMeasurementValues(
   });
 }
 
+export const measurementInputSchema = measurementValuesSchema.extend({
+  garmentTypeId: z.string().uuid(),
+});
+
 export const measurementSchema = measurementValuesSchema.extend({
   id: z.string().uuid(),
   customerId: z.string().uuid(),
   orderId: z.string().uuid().nullable(),
+  garmentTypeId: z.string().uuid(),
+  garmentType: garmentTypeSchema.nullish(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
+
+export const copyCustomerMeasurementSchema = z.object({
+  fromGarmentTypeId: z.string().uuid(),
+  toGarmentTypeId: z.string().uuid(),
+});
+
+const customerGenderSchema = field(
+  z.enum([EGender.MALE, EGender.FEMALE]).default(EGender.MALE),
+  {
+    type: "select",
+    label: "Gender",
+    required: true,
+    order: 2,
+    options: [
+      { label: "Male", value: EGender.MALE },
+      { label: "Female", value: EGender.FEMALE },
+    ],
+  },
+);
 
 export const createCustomerSchema = z.object({
   name: field(z.string().trim().min(1, "Name is required").max(120), {
@@ -114,35 +124,44 @@ export const createCustomerSchema = z.object({
     required: true,
     order: 1,
   }),
+  gender: customerGenderSchema,
   phone: field(z.string().trim().min(1, "Phone is required").max(40), {
     type: "text",
     label: "Phone",
     placeholder: "03xx…",
     required: true,
-    order: 2,
+    order: 3,
   }),
-  whatsapp: optionalText("WhatsApp", 3, 40),
-  email: optionalText("Email", 4, 255),
-  address: optionalText("Address", 5, 255),
+  whatsapp: optionalText("WhatsApp", 4, 40),
+  email: field(z.string().trim().max(255).optional().or(z.literal("")), {
+    type: "hidden",
+    label: "Email",
+    order: 5,
+  }),
+  address: optionalText("Address", 6, 255),
   notes: field(z.string().trim().max(2000).optional().or(z.literal("")), {
     type: "textarea",
     label: "Notes",
-    order: 6,
+    order: 7,
   }),
-  defaultMeasurement: measurementValuesSchema.optional(),
+  measurements: field(z.array(measurementInputSchema).optional(), {
+    type: "hidden",
+    order: 99,
+  }),
 });
 
 export const updateCustomerSchema = createCustomerSchema
-  .omit({ defaultMeasurement: true })
+  .omit({ measurements: true })
   .partial();
 
-export const customerSchema = createCustomerSchema.extend({
-  id: z.string().uuid(),
-  defaultMeasurementId: z.string().uuid().nullable(),
-  defaultMeasurement: measurementSchema.nullish(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-});
+export const customerSchema = createCustomerSchema
+  .omit({ measurements: true })
+  .extend({
+    id: z.string().uuid(),
+    measurements: z.array(measurementSchema),
+    createdAt: z.string().datetime(),
+    updatedAt: z.string().datetime(),
+  });
 
 export const customerListQuerySchema = listQuerySchema.extend({});
 

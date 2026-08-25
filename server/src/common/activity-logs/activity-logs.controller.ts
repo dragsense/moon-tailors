@@ -17,9 +17,7 @@ import { ActivityLogEntity } from "./entities";
 @ApiTags("Activity logs")
 @Controller("activity-logs")
 @RequireUserLevels(
-  EUserLevel.PLATFORM_OWNER,
-  EUserLevel.SUPER_ADMIN,
-  EUserLevel.ADMIN,
+  EUserLevel.PLATFORM_OWNER
 )
 export class ActivityLogsController {
   constructor(private readonly activityLogs: ActivityLogsService) {}

@@ -24,7 +24,9 @@ pnpm bootstrap --fresh
 
 Local Docker uses the **local** block in `docker/environments.json` and `docker/compose.yml` (postgres + redis via `server.needs`; bind mounts + `dev` build target).
 
-**Watch (server / client / mcp / website):** compose sets `WATCHPACK_POLLING` + `CHOKIDAR_USEPOLLING` so create/edit/**delete** on the host rebuild under Docker Desktop / WSL (inotify is often dropped). Each app’s `dev` script clears package caches (`.cache` / `.vite` / `.astro` / Nest `dist`) so stale deleted modules cannot linger.
+**Watch (server / client / website):** compose sets `WATCHPACK_POLLING` + `CHOKIDAR_USEPOLLING` so create/edit/**delete** on the host rebuild under Docker Desktop / WSL (inotify is often dropped). Server, client, and website `dev` scripts clear package caches (`.cache` / `.vite` / Nest `dist`) so stale deleted modules cannot linger.
+
+Website HMR talks to the **gateway** (`:8088`), not Astro’s internal `:4321`. Recreate `website` + `gateway` after changing `astro.config.mjs` or the nginx template so the browser websocket can refresh the page.
 
 ### Start / Stop / Logs
 
@@ -70,9 +72,7 @@ One `gateway` container is the **only** published HTTP port (local **`:8088`**, 
 | http://localhost:8088/ | website |
 | http://localhost:8088/app/ | client |
 | http://localhost:8088/server/api/ | Nest API |
-| http://localhost:8088/server/uploads/ | Nest public files |
 | http://localhost:8088/server/api/docs | Scalar |
-| http://localhost:8088/mcp/ | mcp |
 | http://localhost:8088/hub/ | service index |
 
 Nginx templates (picked from `clientMode`; local always uses the first):
@@ -85,7 +85,7 @@ Nginx templates (picked from `clientMode`; local always uses the first):
 
 Website: local Astro **dev** container. Deploy builds **static HTML** (`website/dist`); the gateway serves `/` — no website container. That is SSG, not `clientMode=ssr`.
 
-Set `GATEWAY_EXPOSE=80` on a VPS if you want standard HTTP. Optional domains: `GATEWAY_DOMAIN=example.com` → `api.` / `app.` / `mcp.` / `www.`
+Set `GATEWAY_EXPOSE=80` on a VPS if you want standard HTTP. Optional domains: `GATEWAY_DOMAIN=example.com` → `api.` / `app.` / `www.`
 
 If a **host / main nginx** sits in front of the Docker gateway and Docker (or the gateway container) is down, only the host can show an error page. Install [`host-nginx/gateway-down.html`](../host-nginx/gateway-down.html) onto the host (never inside a container):
 
@@ -104,9 +104,18 @@ pnpm add-pkg client axios    # non-interactive
 ```
 
 Installs on the **host**, then syncs the Docker **named** `node_modules` volume
-(`client_pkg_nm`, `server_pkg_nm`, …). Source code and lockfile are bind-mounted;
-`node_modules` is intentionally a named volume so host/container installs do not
-fight — without the sync step, new packages would be missing inside Docker.
+(`website_pkg_nm`, `client_pkg_nm`, `server_pkg_nm`, …).
+
+**Why a second install?** Compose already uses volumes — but two different kinds:
+
+| Mount | What | Syncs from host? |
+|---|---|---|
+| Bind | Source (`website/`, `package.json`, …) | Yes — edit on the laptop, container sees it |
+| Named volume | `node_modules` (`website_nm`, `website_pkg_nm`) | **No** — that tree lives only inside Docker |
+
+`node_modules` is a named volume on purpose so the host install (WSL/macOS) and the Linux container install do not overwrite each other (different `pnpm` store paths, optional native binaries). The lockfile is **not** bind-mounted either: Docker Desktop + WSL often serves a stale file after `pnpm` rewrites it.
+
+So: `pnpm add lucide-react` on the host updates bind-mounted `package.json`, but the container’s volume still has yesterday’s packages until something runs `pnpm install` **inside** Docker. `pnpm add-pkg website lucide-react` does both.
 
 ### Bootstrap
 
@@ -118,8 +127,8 @@ fight — without the sync step, new packages would be missing inside Docker.
 6. Updates `.profile` and hides unrelated folders in the Cursor explorer:
    - app folders not in the profile
    - `contracts` only if **server** or **client** is selected
-   - `docker/` + `env/` only if a Docker app (server/client/mcp/website) is selected
-   - inside `env/`, only files for selected services (e.g. no `*mcp*` if MCP is off)
+   - `docker/` + `env/` only if a Docker app (server/client/website) is selected
+   - inside `env/`, only files for selected services (e.g. no `*website*` if website is off)
 
 Folders are only **hidden in the editor**, not deleted. Change profile with `pnpm bootstrap` to show them again. 
 
@@ -127,7 +136,7 @@ Folders are only **hidden in the editor**, not deleted. Change profile with `pnp
 
 ```bash
 pnpm clean                 # ask which profile services (+ depth)
-pnpm clean client mcp      # only those; keep shared if others remain
+pnpm clean client website  # only those; keep shared if others remain
 pnpm clean --all           # full wipe
 pnpm bootstrap --fresh     # wipe then bootstrap
 ```
@@ -155,7 +164,6 @@ Docker envs (local laptop + staging): [`docker/environments.json`](../docker/env
 | http://localhost:8088/app/ | Client |
 | http://localhost:8088/server/api | Server |
 | http://localhost:8088/server/api/docs | Scalar |
-| http://localhost:8088/mcp | MCP |
 
 ## Contracts live reload
 

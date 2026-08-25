@@ -64,10 +64,10 @@ function help() {
   const envs = listDockerEnvironments().join("|");
   console.log(`
 Usage:
-  node scripts/deploy.mjs --host <name> --target server|client|mcp|all [--verbose]
+  node scripts/deploy.mjs --host <name> --target server|client|all [--verbose]
   node scripts/deploy.mjs --target website
   node scripts/deploy.mjs --target client          # when clientMode=cdn
-  node scripts/deploy.mjs --target server|client|mcp|all [--env ${envs || "staging|production"}] [--client-mode ${CLIENT_MODES.join("|")}]
+  node scripts/deploy.mjs --target server|client|all [--env ${envs || "staging|production"}] [--client-mode ${CLIENT_MODES.join("|")}]
 
 Remote: auto-creates folder/git/env/Docker only when missing; otherwise skips.
   --verbose   show raw SSH commands
@@ -140,7 +140,6 @@ function resolveHost(name) {
     dockerEnv: h.dockerEnv || "",
     serverEnv: h.serverEnv || "",
     clientEnv: h.clientEnv || "",
-    mcpEnv: h.mcpEnv || "",
   };
 }
 
@@ -620,7 +619,6 @@ function deployLocal(target, envName, clientModeOverride, { start = false, migra
   ensure(cfg.dockerEnv, "docker.env.example");
   ensure(cfg.serverEnv, "server.env.example");
   ensure(cfg.clientEnv, "client.env.example");
-  ensure(cfg.mcpEnv, "mcp.env.example");
   ensure(cfg.websiteEnv, "website.env.example");
 
   const allowed = new Set(cfg.services);
@@ -648,7 +646,7 @@ function deployLocal(target, envName, clientModeOverride, { start = false, migra
 
   let targets =
     target === "all"
-      ? ["server", "client", "mcp", "website"].filter((t) => {
+      ? ["server", "client", "website"].filter((t) => {
           if (t === "client" && !clientUsesDockerService(clientMode)) {
             return clientMode === "cdn" || clientMode === "nginx" || clientMode === "nest";
           }
@@ -740,15 +738,6 @@ function deployLocal(target, envName, clientModeOverride, { start = false, migra
             dc("up", "-d", "--no-deps", "--force-recreate", "gateway");
           }
         }
-      }
-    } else if (t === "mcp") {
-      console.log("📦 mcp");
-      dc("build", "mcp");
-      if (start) {
-        if (infra.length) dc("up", "-d", ...infra);
-        const up = ["mcp"];
-        if (allowed.has("gateway")) up.push("gateway");
-        dc("up", "-d", ...up);
       }
     } else if (t === "website") {
       console.log(
@@ -872,7 +861,6 @@ function ensureRemote(h) {
       h.dockerEnv && `docker=${h.dockerEnv}`,
       h.clientEnv && `client=${h.clientEnv}`,
       h.serverEnv && `server=${h.serverEnv}`,
-      h.mcpEnv && `mcp=${h.mcpEnv}`,
     ].filter(Boolean);
     console.log(`  files    ${bits.join("  ")}`);
   }
@@ -1034,7 +1022,7 @@ docker info >/dev/null
 /**
  * Env files needed for a deploy target (compose always needs docker.env).
  * @param {object} cfg
- * @param {string} target server|client|mcp|all
+ * @param {string} target server|client|website|all
  */
 function envFilesForTarget(cfg, target) {
   return envFilesForDeployTarget(cfg, target);
@@ -1053,7 +1041,6 @@ function syncEnvToRemote(h, target, { skipDockerEnv = false } = {}) {
       dockerEnv: h.dockerEnv || undefined,
       serverEnv: h.serverEnv || undefined,
       clientEnv: h.clientEnv || undefined,
-      mcpEnv: h.mcpEnv || undefined,
     });
   } catch (err) {
     fail("Bad docker environment", err instanceof Error ? err.message : err);
@@ -1124,11 +1111,11 @@ function servicesForPortCheck(cfg, target) {
     }
     return false;
   });
-  // Deploy/start also recreates gateway for server/client/mcp — check GATEWAY_EXPOSE.
+  // Deploy/start also recreates gateway for server/client — check GATEWAY_EXPOSE.
   if (
     cfg.services.includes("gateway") &&
     !out.includes("gateway") &&
-    (t === "server" || t === "client" || t === "mcp")
+    (t === "server" || t === "client")
   ) {
     out.push("gateway");
   }
@@ -1145,7 +1132,6 @@ function assertRemotePortsBeforeDeploy(h, target) {
       dockerEnv: h.dockerEnv || undefined,
       serverEnv: h.serverEnv || undefined,
       clientEnv: h.clientEnv || undefined,
-      mcpEnv: h.mcpEnv || undefined,
     });
   } catch {
     return;
@@ -1291,7 +1277,7 @@ if (args.target === "website" && !args.host) {
     );
   }
 } else if (args.host) {
-  if (!args.target) die("--host requires --target server|client|mcp|website|all");
+  if (!args.target) die("--host requires --target server|client|website|all");
   const h = resolveHost(args.host);
   if (clientModeArg) h.clientMode = clientModeArg;
   if (args.target === "client" && h.clientMode === "cdn") {

@@ -18,12 +18,6 @@
         "restart": "no",
         "env": "env/client.env"
       },
-      "mcp": {
-        "buildTarget": "dev",
-        "nodeEnv": "development",
-        "restart": "no",
-        "env": "env/mcp.env"
-      },
       "website": {
         "buildTarget": "dev",
         "nodeEnv": "development",
@@ -50,12 +44,6 @@
         "nodeEnv": "staging",
         "restart": "unless-stopped",
         "env": "env/staging/client.env"
-      },
-      "mcp": {
-        "buildTarget": "runtime",
-        "nodeEnv": "staging",
-        "restart": "unless-stopped",
-        "env": "env/staging/mcp.env"
       },
       "website": {
         "buildTarget": "runtime",

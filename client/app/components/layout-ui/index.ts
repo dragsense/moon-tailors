@@ -13,7 +13,7 @@
  *   list/      ListStack (default), ListDivided
  *   pagination/ PaginationBar (default), ListPagination
  *   breadcrumb/ BreadcrumbTrail (default), BreadcrumbCompact
- *   sidebar/   AppSidebar (shadcn, default), SidebarPanel, LayoutSidebarRail
+ *   sidebar/   SidebarPanel, LayoutSidebarRail
  *   nav/       NavTopbar (default), NavTabs
  * ```
  *
@@ -85,7 +85,6 @@ export {
 } from "./list";
 
 export {
-  AppSidebar,
   LegacySidebar,
   SidebarPanel,
   LayoutSidebarRail,
@@ -93,7 +92,6 @@ export {
   type SidebarNavGroup,
   type SidebarRailProps,
   type SidebarPanelProps,
-  type AppSidebarProps,
 } from "./sidebar";
 
 export {
@@ -106,6 +104,8 @@ export {
 } from "./nav";
 
 export { ThemeToggle } from "./theme-toggle";
+
+export { LanguageToggle } from "./language-toggle";
 
 export {
   Pagination,

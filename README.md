@@ -1,6 +1,6 @@
 # Moon Tailors (monorepo)
 
-Contracts-first starter: NestJS API, React Router app (**login at `/`**), Astro marketing site, shared Zod contracts, MCP tools, and Docker/SSH deploy.
+Contracts-first starter: NestJS API, React Router app (**login at `/`**), Astro marketing site, shared Zod contracts, and Docker/SSH deploy.
 
 ## Package map
 
@@ -21,18 +21,13 @@ moon-tailors/
       layouts/        App / auth / blank shells
       components/     UI + layout primitives
       ops/            createOps + OpsProvider
-  website/            Astro + React SSG marketing landing
+  website/            Astro SSG marketing landing
     src/
-      pages/          File routes (index → landing)
-      features/landing/  Hero, stack, features, modules, monorepo, CTA
-      config/         PUBLIC_* site + app URLs
-      locales/        en / ur (RTL)
-      components/     SiteChrome, theme/language prefs
-  mcp/                MCP server (NestJS, HTTP + stdio) over Nest APIs
-    src/
-      common/api/     ApiClient + BaseApiService
-      common/mcp/     McpRegistrar helpers
-      modules/        transport, platform, health, …
+      pages/          Astro routes (index, 404)
+      layouts/        Base.astro + global shell / header / footer
+      features/       auth (session + AuthButton) + landing hero
+      components/     ui (shadcn) + layout-ui (toggles, banner)
+      config/         site / routes / nav (PUBLIC_* )
   cli/                `pnpm tpl` / bootstrap / remote menus
   docker/             compose.yml + environments.json
   deploy/             hosts.json (SSH targets)
@@ -51,7 +46,6 @@ Only the **gateway** is published on the host (default `:8088`). Everything else
 | http://localhost:8088/app/ | Client (**login** at `/app/`) |
 | http://localhost:8088/server/api | Server |
 | http://localhost:8088/server/api/docs | Scalar API docs |
-| http://localhost:8088/mcp | MCP |
 
 ```bash
 pnpm tpl                   # menu: bootstrap / start / stop / remote / …
@@ -66,10 +60,9 @@ pnpm remote                # deploy + SSH host control
 | Package | Role |
 |---|---|
 | **website** | Public landing — shop hero + Login / Open shop; CTAs → client `/` or `/dashboard` |
-| **client** | Product app — `/` is always login; signed-in modules under `/dashboard`, `/customers`, `/orders`, … |
+| **client** | Product app — `/` is always login; home is `/dashboard` (stats + customers). Account, reset password, and settings live in the top-right menu. |
 | **server** | REST + WebSocket — tenant/owner ACL, permissions, password auth, EntityService |
 | **contracts** | Single source of truth for request/response shapes (`I*` / `E*` / `T*`) |
-| **mcp** | Agent tools wrapping Nest endpoints (HTTP `/mcp` + stdio) |
 
 ---
 
@@ -80,13 +73,12 @@ pnpm remote                # deploy + SSH host control
 | **database** | `EntityService` bind / list / get / create / update / soft+hard delete |
 | **query** | `_relations` / `_select`, nested paths, `restrictedFields`, searchable + filters + sort, tenant + owner ACL |
 | **base/users** | Users, password hashing, platform-owner seed |
-| **base/business** | Businesses, themes (logo/favicon files) |
+| **base/business** | Businesses |
 | **base/chat** | Chats, messages, participants (realtime-ready) |
 | **base/permissions** | Resource permissions + user grants |
 | **base/notifications** | In-app notifications, Web Push, FCM |
 | **base/settings** | Key/value entity settings |
 | **auth** | Guards, JWT/session helpers used by modules |
-| **file-upload** | Uploads (local/S3), folders |
 | **email** | Outbound mail + sent-email log |
 | **payment-processors** / **ai-processors** | Processor catalogs |
 | **schedule** | Cron / scheduled actions per tenant |
@@ -97,7 +89,7 @@ pnpm remote                # deploy + SSH host control
 
 ## Server — `src/modules/` (features)
 
-`auth` · `users` · `customers` · `orders` · `measurements` · `business` · `user-settings` · `dashboard`
+`auth` · `users` · `customers` · `orders` · `measurements` · `garment-types` · `business` · `user-settings` · `dashboard`
 
 Query model: clients may request any real `_select` / `_relations` path; secrets use `restrictedFields`. Nested searchable/filters/sort supported (`sender.firstName`, `participants.user.email`).
 
@@ -125,14 +117,6 @@ Theme + language (`en` / `ur` RTL) share localStorage keys with the client. CTAs
 
 ---
 
-## MCP — `mcp/`
-
-NestJS MCP server. Modules mirror Nest domains (`tasks`, `health`, `platform`, …).  
-`common/api` talks to the Nest API like the client; tools register via `McpRegistrar`.  
-Transports: HTTP `http://localhost:4000/mcp` and stdio for Cursor/Claude.
-
----
-
 ## Docs
 
 - [docs/LOCAL.md](docs/LOCAL.md)
@@ -142,5 +126,4 @@ Transports: HTTP `http://localhost:4000/mcp` and stdio for Cursor/Claude.
 - [client/README.md](client/README.md)
 - [server/README.md](server/README.md)
 - [website/README.md](website/README.md)
-- [mcp/README.md](mcp/README.md)
 - [contracts/README.md](contracts/README.md)

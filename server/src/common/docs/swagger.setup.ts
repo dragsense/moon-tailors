@@ -7,22 +7,24 @@ import type { ScalarConfig } from "../../config/scalar.config";
 import type { AppLoggerService } from "../logging";
 
 /**
- * Mount Scalar OpenAPI UI at `/api/docs` when API_DOCS_ENABLED
- * (same pattern as Vivast: Scalar UI + docs-json + optional swagger UI).
- * Gateway path: `/server/api/docs` (no nginx rewrite).
+ * Mount Scalar OpenAPI UI at `/api/docs`.
+ * Gateway: `/server/api/docs`. Nest already uses global prefix `api`, so the
+ * OpenAPI server is `/server/api` and paths stay `/health` (not `/api/health`).
  */
 export function setupApiDocumentation(
   app: INestApplication,
   configService: ConfigService,
   logger: AppLoggerService,
 ): void {
-  if (!configService.get<AppConfig>("app")?.apiDocsEnabled) return;
+  const appConfig = configService.get<AppConfig>("app");
+  if (!appConfig?.apiDocsEnabled) return;
 
   const scalar = configService.get<ScalarConfig>("scalar");
   const title = scalar?.title || "Moon Tailors API";
   const description =
     scalar?.description || "Moon Tailors API with shared Zod contracts";
-  const port = configService.get<AppConfig>("app")?.port ?? 3000;
+  const port = appConfig.port ?? 3000;
+  const publicApiPath = `${appConfig.publicServerPath}/api`;
 
   const config = new DocumentBuilder()
     .setTitle(title)
@@ -38,16 +40,17 @@ export function setupApiDocumentation(
       },
       "access-token",
     )
-    .addServer("/api", "API")
+    .addServer(publicApiPath, "API")
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, config, {
+    ignoreGlobalPrefix: true,
+  });
 
   app.use(
     "/api/docs",
     apiReference({
       content: document,
-      routePrefix: "/api",
       title,
       meta: {
         description,
@@ -55,8 +58,7 @@ export function setupApiDocumentation(
     }),
   );
 
-  // Keep Swagger UI available for tools that expect it
-  SwaggerModule.setup("api/swagger-docs", app, document);
+  SwaggerModule.setup("swagger-docs", app, document);
 
   const httpAdapter = app.getHttpAdapter();
   if (httpAdapter.getType() === "express") {

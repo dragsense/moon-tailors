@@ -11,12 +11,14 @@ import { ApiTags } from "@nestjs/swagger";
 import type {
   IOrder,
   IPaginatedResponse,
+  TApplyMeasurementsToDefaultData,
   TCreateOrderData,
   TOrderListQuery,
   TUpdateOrderData,
   TUpdateOrderMeasurementData,
 } from "@moon-tailors/contracts";
 import {
+  applyMeasurementsToDefaultSchema,
   createOrderSchema,
   EPermissionAction,
   EResource,
@@ -98,7 +100,14 @@ export class OrdersController {
     resource: EResource.MEASUREMENTS,
     action: EPermissionAction.UPDATE,
   })
-  applyMeasurementsToDefault(@Param("id") id: string): Promise<IOrder> {
-    return this.ordersService.applyMeasurementsToDefault(id);
+  applyMeasurementsToDefault(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(applyMeasurementsToDefaultSchema))
+    body: TApplyMeasurementsToDefaultData,
+  ): Promise<IOrder> {
+    return this.ordersService.applyMeasurementsToDefault(
+      id,
+      body.garmentTypeId,
+    );
   }
 }

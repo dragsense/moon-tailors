@@ -33,7 +33,7 @@ export class PermissionGuard implements CanActivate {
     const user = request.user;
     if (!user) throw new ForbiddenException("Forbidden");
 
-    const names = await this.permissions.resolveForUser(user.id);
+    const names = await this.permissions.resolveForUser(user);
 
     const allowed = required.every(({ resource, action }) =>
       [

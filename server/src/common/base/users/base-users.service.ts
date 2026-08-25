@@ -60,6 +60,19 @@ export class BaseUsersService {
     return this.entity.get(id, { access: [] });
   }
 
+  /**
+   * Session lookup for AuthGuard. Must not apply tenant scope — login uses
+   * the same unscoped query, and platform owner rows may have `tenantId` null.
+   */
+  findByIdForAuth(id: string): Promise<UserEntity | null> {
+    return this.entity
+      .getRepository()
+      .createQueryBuilder("user")
+      .where("user.id = :id", { id })
+      .andWhere("user.deletedAt IS NULL")
+      .getOne();
+  }
+
   requireById(id: EntityKey): Promise<UserEntity> {
     return this.entity.require(id, { access: [] });
   }

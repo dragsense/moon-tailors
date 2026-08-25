@@ -28,6 +28,36 @@ export function applyLanguage(lang: Language) {
   root.setAttribute("dir", dir);
 }
 
+export function readStoredTheme(): Theme {
+  if (typeof window === "undefined") return "system";
+  const stored = localStorage.getItem(THEME_STORAGE_KEY);
+  if (stored === "light" || stored === "dark" || stored === "system") {
+    return stored;
+  }
+  return "system";
+}
+
+export function persistTheme(theme: Theme) {
+  localStorage.setItem(THEME_STORAGE_KEY, theme);
+  applyTheme(resolveTheme(theme));
+}
+
+export function readStoredLanguage(): Language {
+  if (typeof window === "undefined") return "en";
+  const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  if (stored === "ar") {
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, "ur");
+    return "ur";
+  }
+  if (stored === "en" || stored === "ur") return stored;
+  return "en";
+}
+
+export function persistLanguage(lang: Language) {
+  localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+  applyLanguage(lang);
+}
+
 /** Inline scripts for Base layout — same keys as the client app. */
 export const themeInitScript = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KEY)};var t=localStorage.getItem(k)||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.classList.remove('light','dark');document.documentElement.classList.add(r);}catch(e){}})();`;
 

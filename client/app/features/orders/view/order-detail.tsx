@@ -2,19 +2,23 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import type { IOrder } from "@moon-tailors/contracts";
 import {
+  garmentAudienceForGender,
   updateOrderSchema,
   type TUpdateOrderData,
 } from "@moon-tailors/contracts";
 import { Alert } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Label } from "~/components/ui/label";
 import { SchemaForm } from "~/components/form-ui";
 import { useI18n } from "~/hooks/use-i18n";
 import { Page } from "~/layouts";
 import { useOp, type QueryOpComponentProps } from "~/ops";
 import { customerPath } from "~/config/routes.config";
 import type { TranslationKey } from "~/locales";
+import { useGarmentTypes } from "~/features/garment-types/use-garment-types";
 import {
+  GarmentTypeSelect,
   MeasurementForm,
   MeasurementReadout,
 } from "~/features/customers/components/measurement-fields";
@@ -32,22 +36,32 @@ export function OrderDetail({
   const { id } = useParams<{ id: string }>();
   const [editing, setEditing] = useState(false);
   const [editingMeasures, setEditingMeasures] = useState(false);
+  const [defaultTypeId, setDefaultTypeId] = useState("");
   const updateOrder = useOp(store, "updateOrder");
   const updateOrderMeasurements = useOp(store, "updateOrderMeasurements");
   const applyMeasurementsToDefault = useOp(
     store,
     "applyMeasurementsToDefault",
   );
+  const order = data as IOrder | undefined;
+  const { types } = useGarmentTypes(
+    garmentAudienceForGender(order?.customer?.gender),
+  );
 
   useEffect(() => {
     if (id && params.id !== id) setParams({ id });
   }, [id, params.id, setParams]);
 
+  useEffect(() => {
+    if (!defaultTypeId && order?.measurement?.garmentTypeId) {
+      setDefaultTypeId(order.measurement.garmentTypeId);
+    }
+  }, [defaultTypeId, order?.measurement?.garmentTypeId]);
+
   if (updateOrder.kind !== "mutation") return null;
   if (updateOrderMeasurements.kind !== "mutation") return null;
   if (applyMeasurementsToDefault.kind !== "mutation") return null;
 
-  const order = data as IOrder | undefined;
   const errorMessage =
     isError && error instanceof Error
       ? error.message
@@ -182,22 +196,6 @@ export function OrderDetail({
                 {t("orders.orderMeasurements")}
               </h2>
               <div className="flex gap-2">
-                {applyMeasurementsToDefault.allowed ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      if (window.confirm(t("orders.updateDefaultsConfirm"))) {
-                        void applyMeasurementsToDefault
-                          .run({ id: order.id })
-                          .catch(() => {});
-                      }
-                    }}
-                  >
-                    {t("orders.updateDefaults")}
-                  </Button>
-                ) : null}
                 {updateOrderMeasurements.allowed ? (
                   <Button
                     type="button"
@@ -217,6 +215,11 @@ export function OrderDetail({
                 ) : null}
               </div>
             </div>
+            {order.measurement?.garmentType?.name ? (
+              <p className="text-muted-foreground mb-3 text-sm">
+                {order.measurement.garmentType.name}
+              </p>
+            ) : null}
             {editingMeasures ? (
               <MeasurementForm
                 measurement={order.measurement}
@@ -233,6 +236,37 @@ export function OrderDetail({
             ) : (
               <MeasurementReadout measurement={order.measurement} />
             )}
+            {applyMeasurementsToDefault.allowed ? (
+              <div className="mt-4 space-y-2 border-t border-border/60 pt-4">
+                <Label>{t("orders.updateDefaultType")}</Label>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="min-w-0 flex-1">
+                    <GarmentTypeSelect
+                      types={types}
+                      value={defaultTypeId}
+                      placeholder={t("orders.pickGarment")}
+                      onChange={setDefaultTypeId}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!defaultTypeId}
+                    onClick={() => {
+                      if (!defaultTypeId) return;
+                      if (window.confirm(t("orders.updateDefaultsConfirm"))) {
+                        void applyMeasurementsToDefault
+                          .run({ id: order.id, garmentTypeId: defaultTypeId })
+                          .catch(() => {});
+                      }
+                    }}
+                  >
+                    {t("orders.updateDefaults")}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </section>
         </div>
       ) : null}

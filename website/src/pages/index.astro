@@ -1,27 +1,14 @@
 ---
-import Base from "../layouts/global/base.astro";
-import { LandingPage } from "../features/landing/landing-page";
-import { appHref, getSiteConfig } from "../config/site";
-import { en } from "../locales/en";
+import Base from "../layouts/Base.astro";
+import SiteShell from "../layouts/global/site-shell.astro";
+import { LandingHero } from "../features/landing";
+import { getSiteConfig } from "../config";
 
 const site = getSiteConfig();
-const loginUrl = appHref(site.loginPath, site);
-const dashboardUrl = appHref(site.dashboardPath, site);
-
-const taglineOverride =
-  site.tagline !== en.hero.tagline ? site.tagline : undefined;
-const descriptionOverride =
-  site.description !== en.hero.description ? site.description : undefined;
 ---
 
 <Base title={site.name} description={site.description}>
-  <LandingPage
-    client:load
-    brand={site.name}
-    loginUrl={loginUrl}
-    dashboardUrl={dashboardUrl}
-    apiUrl={site.apiUrl}
-    taglineOverride={taglineOverride}
-    descriptionOverride={descriptionOverride}
-  />
+  <SiteShell>
+    <LandingHero />
+  </SiteShell>
 </Base>

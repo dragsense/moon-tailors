@@ -25,11 +25,6 @@ export {
 } from "./scalar.config";
 export { default as cacheConfig, type CacheConfig } from "./cache.config";
 export {
-  default as storageConfig,
-  type StorageConfig,
-  type StorageS3Config,
-} from "./storage.config";
-export {
   default as platformOwnerConfig,
   type PlatformOwnerConfig,
 } from "./platform-owner.config";

@@ -34,15 +34,4 @@ envDescribe("environment validation", () => {
       /Invalid environment configuration/,
     );
   });
-
-  envIt("requires AWS credentials when STORAGE_DRIVER=s3", () => {
-    envAssert.throws(
-      () =>
-        validateEnvironment({
-          NODE_ENV: "development",
-          STORAGE_DRIVER: "s3",
-        }),
-      /Invalid environment configuration/,
-    );
-  });
 });

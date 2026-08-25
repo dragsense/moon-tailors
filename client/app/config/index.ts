@@ -4,10 +4,10 @@
  * ```txt
  * config/
  *   routes.config.ts  routes, titles, level + permission access
- *   nav.config.ts     grouped NavItems filtered by level + permission
+ *   nav.config.ts     account menu items for the header dropdown
  * ```
  *
- * Add a page: route constant → nav entry → optional access rule.
+ * Add a page: route constant → optional account-menu entry → optional access rule.
  */
 export {
   APP_ROUTES,
@@ -19,12 +19,16 @@ export {
   ROUTE_PERMISSIONS,
   ROUTE_TITLES,
   canAccessRoute,
+  customerNewOrderPath,
+  customerPath,
   getRouteTitle,
+  orderPath,
   type AppRoute,
   type PublicRoute,
 } from "./routes.config";
 
 export {
+  getAccountNavItems,
   getNavItems,
   navItemsByLevel,
   type NavItem,

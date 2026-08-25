@@ -1,4 +1,5 @@
 import type {
+  TCopyCustomerMeasurementData,
   TCreateCustomerData,
   TMeasurementValues,
   TUpdateCustomerData,
@@ -12,7 +13,6 @@ import {
 } from "~/ops";
 import { customersService } from "../api";
 import { CreateCustomerModal } from "../form/create-customer-modal";
-import { CustomerList } from "../list/customer-list";
 import { customerKeys } from "../query-keys";
 import { CustomerDetail } from "../view/customer-detail";
 import { ordersService } from "~/features/orders/api";
@@ -41,7 +41,6 @@ export const customerOpsCore = {
         limit: Number(params.limit ?? 20),
         search: typeof params.search === "string" ? params.search : undefined,
       }),
-    component: CustomerList,
     auto: false,
     onError: (error: Error) => {
       console.error("[customers.listCustomers]", error.message);
@@ -91,6 +90,7 @@ export const customerOpsCore = {
         page: Number(params.page ?? 1),
         limit: Number(params.limit ?? 20),
         customerId,
+        search: typeof params.search === "string" ? params.search : undefined,
       });
     },
     auto: false,
@@ -135,12 +135,32 @@ export const customerOpsCore = {
       action: EPermissionAction.UPDATE,
     },
     mutate: (vars: unknown) => {
-      const { id, ...body } = vars as TMeasurementValues & { id: string };
-      return customersService.updateDefaultMeasurements(id, body);
+      const { id, garmentTypeId, ...body } = vars as TMeasurementValues & {
+        id: string;
+        garmentTypeId: string;
+      };
+      return customersService.upsertMeasurement(id, garmentTypeId, body);
     },
     onSuccess: refreshCustomers,
     onError: (error: Error) => {
       console.error("[customers.updateDefaultMeasurements]", error.message);
+    },
+  },
+  copyMeasurement: {
+    kind: "mutation" as const,
+    permission: {
+      resource: EResource.MEASUREMENTS,
+      action: EPermissionAction.UPDATE,
+    },
+    mutate: (vars: unknown) => {
+      const { id, ...body } = vars as TCopyCustomerMeasurementData & {
+        id: string;
+      };
+      return customersService.copyMeasurement(id, body);
+    },
+    onSuccess: refreshCustomers,
+    onError: (error: Error) => {
+      console.error("[customers.copyMeasurement]", error.message);
     },
   },
 } satisfies Record<string, OpConfig>;

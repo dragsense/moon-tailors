@@ -18,5 +18,6 @@ export const customerDetailOps = createOps({
     listCustomerOrders: customerOpsCore.listCustomerOrders,
     updateCustomer: customerOpsCore.updateCustomer,
     updateDefaultMeasurements: customerOpsCore.updateDefaultMeasurements,
+    copyMeasurement: customerOpsCore.copyMeasurement,
   },
 });

@@ -10,7 +10,7 @@ Or: `pnpm tpl` → Remote → Deploy
 Asks:
 1. **Which host?** — prints **git branch** from `deploy/hosts.json` (host name is not the branch)
 2. **Remote action?** — GitHub warning only for **Deploy** and **Pull** (right after you pick that action)
-3. **What?** one or more: server / client / mcp / website / all
+3. **What?** one or more: server / client / website / all
 4. Env sync / image prune / volumes / start (Deploy only — first three default No)
 
 **Status / Start / Stop / Logs / Clean** only inspect or control Docker. They do **not** `mkdir` the host path. Creating `path` + env files happens on **Deploy** (and env sync on Env/Pull).
@@ -31,7 +31,7 @@ Needs **Docker Compose v2** (`docker compose`). Engine-only installs fail with `
 | Config | Role |
 |---|---|
 | `deploy/hosts.json` | SSH hosts — name matches `environments.<name>` (env defaults to host name) |
-| `docker/environments.json` | Per env: nested `server` / `client` / `mcp` / `website` (+ env paths). Deploy multi-picks from those |
+| `docker/environments.json` | Per env: nested `server` / `client` / `website` (+ env paths). Deploy multi-picks from those |
 | `docker/compose.yml` | Single compose (full stack) |
 | `scripts/deploy.mjs` | Deploy entry |
 
@@ -74,9 +74,8 @@ The Docker **gateway** is the only published HTTP port. Paths do not change by m
 |---|---|
 | `/` | Marketing site (Astro **static HTML**) |
 | `/app/` | Product UI (React) |
-| `/server/` | Nest API (`/api`, `/uploads`, Scalar at `/api/docs`) |
-| `/api/` `/uploads/` | Same as `/server/api/` and `/server/uploads/` (shorter aliases) |
-| `/mcp/` | MCP |
+| `/server/` | Nest API (`/api`, Scalar at `/api/docs`) |
+| `/api/` | Same as `/server/api/` (shorter alias) |
 
 **Local** (`pnpm tpl start`) ignores `clientMode`. Gateway uses `nginx-gateway.conf.template`. **Client** and **website** containers run (Vite + Astro `dev`).
 
@@ -156,7 +155,6 @@ Before a non-CDN **client** deploy, any leftover `*-client` container is **remov
 | **server** | `compose build server` (`runtime` — API only) | Infra if needed; `--no-deps --force-recreate` **server** + **gateway**. Optional TypeORM (`/app/server/dist/database/data-source.js`) |
 | **client** (nginx / nest) | Client SPA image + extract to `client/build/client` | Recreate **gateway** only |
 | **client** (ssr) | Client `ssr` image | Recreate **client** + **gateway** (`--no-deps`) so `/app/` is not left pointing at Nest |
-| **mcp** | `compose build mcp` | **mcp** + gateway |
 | **website** (docker) | Website image + extract to `website/dist` | Recreate **gateway** only |
 | **all** | Each of the above in turn | Same per target |
 

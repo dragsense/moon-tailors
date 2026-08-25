@@ -1,6 +1,5 @@
 import type {
   IUserSettingsResponse,
-  TDeleteUserSettingResponse,
   TSaveUserSettingsData,
   TSaveUserSettingsResponse,
 } from "@moon-tailors/contracts";
@@ -25,22 +24,6 @@ class UserSettingsService extends BaseService<
 
   saveMine(body: TSaveUserSettingsData) {
     return this.put<TSaveUserSettingsResponse>()(body, undefined, "/me");
-  }
-
-  getForUser(userId: string) {
-    return this.getSingle<IUserSettingsResponse>(userId);
-  }
-
-  saveForUser(userId: string, body: TSaveUserSettingsData) {
-    return this.put<TSaveUserSettingsResponse>(userId)(body);
-  }
-
-  deleteKey(userId: string, key: string) {
-    return this.delete<TDeleteUserSettingResponse>(
-      key,
-      undefined,
-      `/${userId}/keys`,
-    );
   }
 }
 

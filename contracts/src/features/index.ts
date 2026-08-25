@@ -4,7 +4,7 @@ export * from "./user/index.js";
 export * from "./settings/index.js";
 export * from "./business/index.js";
 export * from "./activity-log/index.js";
-export * from "./file-upload/index.js";
 export * from "./dashboard/index.js";
+export * from "./garment-type/index.js";
 export * from "./customer/index.js";
 export * from "./order/index.js";

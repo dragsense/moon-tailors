@@ -13,10 +13,11 @@ import type {
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
 import {
+  EGender,
   EOrderStatus,
   EResource,
   filtersFromListSchema,
-  hasMeasurementValues,
+  garmentAudienceForGender,
   orderListQuerySchema,
 } from "@moon-tailors/contracts";
 import { ActivityLogRegistry } from "../../common/activity-logs";
@@ -28,6 +29,7 @@ import {
 import { DomainEventRegistry } from "../../common/events";
 import type { EntityKey, EntityQueryConfig } from "../../common/query";
 import { CustomersService } from "../customers/customers.service";
+import { GarmentTypesService } from "../garment-types/garment-types.service";
 import { MeasurementsService } from "../measurements/measurements.service";
 import { OrderEntity } from "./entities/order.entity";
 
@@ -46,7 +48,7 @@ export const ORDER_QUERY: EntityQueryConfig = {
   filters: filtersFromListSchema(orderListQuerySchema),
 };
 
-const RELATIONS = ["customer", "measurement"] as const;
+const RELATIONS = ["customer", "measurement", "measurement.garmentType"] as const;
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
@@ -57,6 +59,7 @@ export class OrdersService implements OnModuleInit {
     private readonly permissions: PermissionsService,
     private readonly customers: CustomersService,
     private readonly measurements: MeasurementsService,
+    private readonly garmentTypes: GarmentTypesService,
   ) {
     this.entity = this.entityService.bind(OrderEntity, ORDER_QUERY);
   }
@@ -76,14 +79,12 @@ export class OrdersService implements OnModuleInit {
 
   async create(input: TCreateOrderData): Promise<IOrder> {
     const customer = await this.customers.get(input.customerId);
-    if (!customer.defaultMeasurementId) {
-      throw new BadRequestException("Customer has no default measurements");
-    }
-    const source = await this.measurements.get(customer.defaultMeasurementId);
-    const snapshot = await this.measurements.copyForOrder(
-      source,
+    await this.assertTypeForCustomer(customer.gender, input.garmentTypeId);
+
+    const snapshot = await this.measurements.createOrderSnapshot(
       customer.id,
-      null,
+      input.garmentTypeId,
+      input.measurement,
     );
 
     const order = await this.entity.create({
@@ -100,13 +101,14 @@ export class OrdersService implements OnModuleInit {
 
     await this.measurements.attachToOrder(snapshot.id, order.id);
 
-    if (hasMeasurementValues(input.measurement)) {
-      await this.measurements.updateValues(snapshot.id, input.measurement);
-    }
     if (input.replaceDefault) {
+      const targetTypeId =
+        input.replaceDefaultGarmentTypeId ?? input.garmentTypeId;
+      await this.assertTypeForCustomer(customer.gender, targetTypeId);
       const latest = await this.measurements.get(snapshot.id);
-      await this.customers.updateDefaultMeasurements(
+      await this.customers.upsertMeasurement(
         customer.id,
+        targetTypeId,
         this.measurements.pickValues(latest),
       );
     }
@@ -153,13 +155,19 @@ export class OrdersService implements OnModuleInit {
     return this.get(orderId);
   }
 
-  async applyMeasurementsToDefault(orderId: string): Promise<IOrder> {
+  async applyMeasurementsToDefault(
+    orderId: string,
+    garmentTypeId: string,
+  ): Promise<IOrder> {
     const order = await this.get(orderId);
     if (!order.measurement) {
       throw new BadRequestException("Order has no measurements");
     }
-    await this.customers.updateDefaultMeasurements(
+    const gender = order.customer?.gender ?? EGender.MALE;
+    await this.assertTypeForCustomer(gender, garmentTypeId);
+    await this.customers.upsertMeasurement(
       order.customerId,
+      garmentTypeId,
       this.measurements.pickValues(order.measurement),
     );
     return this.get(orderId);
@@ -190,6 +198,19 @@ export class OrdersService implements OnModuleInit {
     return { total, active, delayed };
   }
 
+  private async assertTypeForCustomer(
+    gender: EGender | null | undefined,
+    garmentTypeId: string,
+  ) {
+    const type = await this.garmentTypes.require(garmentTypeId);
+    const expected = garmentAudienceForGender(gender);
+    if (expected && type.audience !== expected) {
+      throw new BadRequestException(
+        "That garment does not match this customer’s gents/ladies type",
+      );
+    }
+  }
+
   private assertWritable(order: OrderEntity, forceEdit?: boolean) {
     if (order.status === EOrderStatus.DELIVERED && !forceEdit) {
       throw new ForbiddenException(
@@ -218,6 +239,10 @@ export class OrdersService implements OnModuleInit {
             name: row.customer.name,
             phone: row.customer.phone,
             whatsapp: row.customer.whatsapp ?? undefined,
+            gender:
+              row.customer.gender === EGender.FEMALE
+                ? EGender.FEMALE
+                : EGender.MALE,
           }
         : undefined,
       measurement: row.measurement

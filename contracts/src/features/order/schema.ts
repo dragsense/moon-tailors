@@ -67,30 +67,62 @@ export const createOrderSchema = z.object({
     label: "Notes",
     order: 7,
   }),
+  garmentTypeId: field(z.string().uuid(), {
+    type: "hidden",
+    label: "Garment",
+    required: true,
+    order: 8,
+  }),
   measurement: measurementValuesSchema.optional(),
   replaceDefault: field(z.boolean().optional().default(false), {
     type: "switch",
     label: "Replace usual measurements",
-    order: 8,
+    order: 9,
   }),
+  replaceDefaultGarmentTypeId: field(
+    z.preprocess(
+      (value) => (value === "" || value === undefined ? undefined : value),
+      z.string().uuid().optional(),
+    ),
+    {
+      type: "hidden",
+      label: "Update usual measurements for",
+      order: 10,
+    },
+  ),
 });
 
 export const updateOrderSchema = createOrderSchema
-  .omit({ customerId: true, measurement: true, replaceDefault: true })
+  .omit({
+    customerId: true,
+    garmentTypeId: true,
+    measurement: true,
+    replaceDefault: true,
+    replaceDefaultGarmentTypeId: true,
+  })
   .partial()
   .extend({
     forceEdit: z.boolean().optional(),
   });
+
+export const applyMeasurementsToDefaultSchema = z.object({
+  garmentTypeId: z.string().uuid(),
+});
 
 const orderCustomerSchema = customerSchema.pick({
   id: true,
   name: true,
   phone: true,
   whatsapp: true,
+  gender: true,
 });
 
 export const orderSchema = createOrderSchema
-  .omit({ replaceDefault: true })
+  .omit({
+    replaceDefault: true,
+    replaceDefaultGarmentTypeId: true,
+    garmentTypeId: true,
+  })
   .extend({
     id: z.string().uuid(),
     orderNumber: z.string(),

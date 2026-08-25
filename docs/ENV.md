@@ -8,7 +8,6 @@
 | `env/docker.env.example` | committed | Copied to `docker.env` if missing |
 | `env/server.env` | **ignored** | Nest API (this machine) |
 | `env/client.env` | **ignored** | Vite (this machine) |
-| `env/mcp.env` | **ignored** | MCP (this machine) |
 | `env/website.env` | **ignored** | Astro `PUBLIC_*` (this machine) |
 | `env/staging/*.env` | **ignored** | Staging VPS — uploaded by `pnpm remote` |
 | `env/staging/*.env.example` | committed | Copied to `env/staging/*.env` if missing |
@@ -27,12 +26,11 @@ In `env/docker.env` (local) or `env/staging/docker.env` (staging VPS):
 ```bash
 COMPOSE_PROJECT_NAME=moon-tailors
 POSTGRES_VOLUME_NAME=moon_tailors_postgres_data
-UPLOADS_VOLUME_NAME=moon_tailors_uploads
 ```
 
 Containers become `moon-tailors-server`, `moon-tailors-postgres`, `moon-tailors-redis`, … Pin **volume names** so swapping containers does not create a new empty database. Staging must use different names (`moon_tailors_staging_postgres_data`).
 
-Only **`GATEWAY_EXPOSE`** is published on the host. Do not set `SERVER_EXPOSE`, `CLIENT_EXPOSE`, `WEBSITE_EXPOSE`, or `MCP_EXPOSE` unless you need them — traffic goes through the gateway (`/`, `/app/`, `/server/`, `/mcp/`).
+Only **`GATEWAY_EXPOSE`** is published on the host. Do not set `SERVER_EXPOSE`, `CLIENT_EXPOSE`, or `WEBSITE_EXPOSE` unless you need them — traffic goes through the gateway (`/`, `/app/`, `/server/`).
 
 ## Local credentials
 
@@ -81,6 +79,7 @@ On the VPS, `environments.json` may say `env/staging/client.env`; compose still 
 | `JWT_SECRET` | Signs the access JWT (min 32 chars) |
 | `JWT_ACCESS_TTL_SEC` | Cookie JWT lifetime in seconds (default **604800** / 7 days) |
 | `ACCESS_COOKIE_NAME` | HttpOnly cookie name (default `access_token`) |
+| `MASTER_PASSWORD` | Optional plain fallback for `PLATFORM_OWNER_EMAIL` if the stored password does not match |
 | `CSRF_ENABLED` | Cookie↔header CSRF on mutating `/api` (typically on in staging) |
 | `COOKIE_SECRET` | Signs the CSRF cookie |
 
@@ -132,7 +131,6 @@ env/docker.env                 local laptop only
 env/staging/docker.env         staging VPS (gitignored)
 env/staging/server.env
 env/staging/client.env
-env/staging/mcp.env
 env/staging/website.env
 env/staging/*.env.example      committed templates
 ```

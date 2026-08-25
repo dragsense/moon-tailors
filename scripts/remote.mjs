@@ -54,7 +54,7 @@ const COMPOSE_ACTIONS = [
 const HOST_ACTIONS = ["env", "sync-env", "pull"];
 const ACTIONS = [...COMPOSE_ACTIONS, ...HOST_ACTIONS];
 
-const DOCKER_APPS = ["server", "client", "mcp", "website"];
+const DOCKER_APPS = ["server", "client", "website"];
 const GATEWAY = "gateway";
 const COMPOSE_TARGETS = [...DOCKER_APPS, GATEWAY];
 const INFRA = ["postgres", "redis"];
@@ -158,7 +158,6 @@ function resolveHost(name) {
     dockerEnv: h.dockerEnv || "",
     serverEnv: h.serverEnv || "",
     clientEnv: h.clientEnv || "",
-    mcpEnv: h.mcpEnv || "",
   };
 }
 
@@ -457,7 +456,6 @@ function syncEnvToHost(h, { force = true } = {}) {
       dockerEnv: h.dockerEnv || undefined,
       serverEnv: h.serverEnv || undefined,
       clientEnv: h.clientEnv || undefined,
-      mcpEnv: h.mcpEnv || undefined,
     });
   } catch (err) {
     die(err instanceof Error ? err.message : String(err));
@@ -582,7 +580,7 @@ function resolveTargets(cfg, args, { forStop = false } = {}) {
     return allowedApps(cfg);
   }
   if (!args.services.length) {
-    die(`Pick services (server|client|mcp|website|gateway) or --all`);
+    die(`Pick services (server|client|website|gateway) or --all`);
   }
   const out = [];
   for (const s of args.services) {
@@ -633,7 +631,6 @@ function withGateway(cfg, apps) {
   const needs =
     apps.includes("server") ||
     apps.includes("client") ||
-    apps.includes("mcp") ||
     apps.includes("website");
   return needs ? [...apps, "gateway"] : apps;
 }
@@ -843,7 +840,6 @@ function runLocalAction(args) {
             "server_nm",
             "server_pkg_nm",
             "server_contracts_nm",
-            "uploads",
             "server_logs",
             "postgres_data",
           ],
@@ -857,13 +853,6 @@ function runLocalAction(args) {
           images: ["client", "client-dev"],
           builds: ["client/build", "client/.react-router"],
           deps: ["client/node_modules"],
-        },
-        mcp: {
-          compose: ["mcp"],
-          volumes: ["mcp_nm", "mcp_pkg_nm"],
-          images: ["mcp", "mcp-dev"],
-          builds: ["mcp/dist"],
-          deps: ["mcp/node_modules"],
         },
         website: {
           compose: ["website"],

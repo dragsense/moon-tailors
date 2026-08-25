@@ -5,5 +5,16 @@ import { profileOpsCore } from "./core";
 export const profileOps = createOps({
   id: "profile",
   scope: "page",
-  ops: profileOpsCore,
+  ops: {
+    myProfile: profileOpsCore.myProfile,
+    updateMe: profileOpsCore.updateMe,
+  },
+});
+
+export const resetPasswordOps = createOps({
+  id: "reset-password",
+  scope: "page",
+  ops: {
+    changePassword: profileOpsCore.changePassword,
+  },
 });

@@ -10,24 +10,31 @@ Not only types — also runtime schemas and shared functions.
 src/
   common/       pagination, message response, list-query base
   features/
-    auth/       login (schema + types + interfaces)
-    user/       create / update / get / list / paginated
-    task/       enum + create / update / get / list / paginated
+    auth/       login + session (schema + types + interfaces)
+    user/       profile / me / password
+    customer/   customers + measurements
+    garment-type/ garment catalog (gents / ladies)
+    order/      shop orders
+    settings/   user preferences
+    business/   tenant businesses
+    permission/ resources + actions
+    dashboard/
+    activity-log/
   lib/          field(), format, dates, pagination helpers
 ```
 
-Each feature folder owns its enums, Zod schemas, request `T*` types, and response `I*` interfaces — same idea as Nest DTO packs (`CreateStaffDto`, `StaffDto`, `StaffListDto`, `StaffPaginatedDto`).
+Each feature folder owns its enums, Zod schemas, request `T*` types, and response `I*` interfaces.
 
 ## What belongs here
 
 | Kind | Examples |
 |---|---|
-| Enums | `ETaskStatus` |
-| Create / update schemas | `createTaskSchema`, `updateUserSchema` |
-| Entity / get schemas | `taskSchema`, `userSchema` |
-| List query / paginated | `taskListQuerySchema`, `paginatedTasksSchema` |
-| Interfaces (responses) | `ITask`, `IPaginatedTasks`, `ILoginResponse` |
-| Types (requests) | `TCreateTaskData`, `TTaskListQuery` |
+| Enums | `EOrderStatus`, `EUserLevel` |
+| Create / update schemas | `createOrderSchema`, `updateMeSchema` |
+| Entity / get schemas | `orderSchema`, `customerSchema` |
+| List query / paginated | `orderListQuerySchema`, `paginatedOrdersSchema` |
+| Interfaces (responses) | `IOrder`, `IPaginatedOrders`, `ILoginResponse` |
+| Types (requests) | `TCreateOrderData`, `TLoginData` |
 | Shared helpers | `buildPaginationMeta`, `getFormFields`, `formatDate` |
 
 ## Naming
@@ -38,19 +45,19 @@ Each feature folder owns its enums, Zod schemas, request `T*` types, and respons
 | `I` | Interfaces (entities / responses) |
 | `T` | Type aliases (requests / forms / queries) |
 
-Schemas stay camelCase (`createTaskSchema`) — they are runtime validators.
+Schemas stay camelCase (`createOrderSchema`) — they are runtime validators.
 
-## Feature pattern (task)
+## Feature pattern (order)
 
 ```ts
 // Write
-createTaskSchema → TCreateTaskData
-updateTaskSchema → TUpdateTaskData
+createOrderSchema → TCreateOrderData
+updateOrderSchema → TUpdateOrderData
 
 // Read
-taskSchema       → ITask          (+ nested assignee)
-taskListQuerySchema → TTaskListQuery
-paginatedTasksSchema → IPaginatedTasks  (flat: data + total/page/limit/…)
+orderSchema       → IOrder
+orderListQuerySchema → TOrderListQuery
+paginatedOrdersSchema → IPaginatedOrders  (flat: data + total/page/limit/…)
 ```
 
 `meta` matches PaginationMetaDto: `total`, `page`, `limit`, `lastPage`, `hasNextPage`, `hasPrevPage`.
@@ -58,9 +65,9 @@ paginatedTasksSchema → IPaginatedTasks  (flat: data + total/page/limit/…)
 ## Form generation
 
 ```ts
-import { createTaskSchema, getFormFields } from "@moon-tailors/contracts";
+import { createOrderSchema, getFormFields } from "@moon-tailors/contracts";
 
-const fields = getFormFields(createTaskSchema);
+const fields = getFormFields(createOrderSchema);
 ```
 
 ## Shared helpers

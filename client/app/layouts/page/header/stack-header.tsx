@@ -5,6 +5,7 @@ import {
   buildBreadcrumbs,
   shouldShowBreadcrumbs,
 } from "~/config/breadcrumb.config";
+import { APP_ROUTES } from "~/config/routes.config";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
 
@@ -26,7 +27,11 @@ export function StackHeader({
   const { t } = useI18n();
   const items = buildBreadcrumbs(location.pathname, t);
   const breadcrumb = shouldShowBreadcrumbs(items) ? (
-    <BreadcrumbCompact items={items} homeLabel={t("nav.items.dashboard")} />
+    <BreadcrumbCompact
+      items={items}
+      homeHref={APP_ROUTES.DASHBOARD}
+      homeLabel={t("nav.items.dashboard")}
+    />
   ) : null;
 
   if (!breadcrumb && !title && !description && !actions) {

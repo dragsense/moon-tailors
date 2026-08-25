@@ -8,7 +8,7 @@ export function appBasePath(): string {
   return raw.replace(/\/$/, "") || "";
 }
 
-/** Strip basename → path Router uses (`/app/login` → `/login`). */
+/** Strip basename → path Router uses (`/app/dashboard` → `/dashboard`). */
 export function stripAppBasename(pathname: string): string {
   const base = appBasePath();
   if (!base) return pathname || "/";
@@ -19,7 +19,7 @@ export function stripAppBasename(pathname: string): string {
   return pathname || "/";
 }
 
-/** Build an absolute browser URL path with basename (`/login` → `/app/login`). */
+/** Build an absolute browser URL path with basename (`/dashboard` → `/app/dashboard`). */
 export function withAppBasename(path: string): string {
   const base = appBasePath();
   const normalized = path.startsWith("/") ? path : `/${path}`;

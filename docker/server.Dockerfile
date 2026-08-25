@@ -16,7 +16,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 FROM deps AS dev
 ENV NODE_ENV=development
 ENV ENV_FILE=/app/env/server.env
-RUN mkdir -p /app/env /app/logs /app/uploads
+RUN mkdir -p /app/env /app/logs
 COPY contracts ./contracts
 COPY server ./server
 EXPOSE 3000
@@ -34,7 +34,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV ENV_FILE=/app/env/server.env
-RUN mkdir -p /app/logs /app/env /app/uploads /app/client-static
+RUN mkdir -p /app/logs /app/env /app/client-static
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/contracts ./contracts

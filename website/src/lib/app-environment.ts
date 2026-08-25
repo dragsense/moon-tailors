@@ -4,7 +4,6 @@
  */
 export type AppEnvironment =
   | "development"
-  | "testing"
   | "staging"
   | "production";
 
@@ -13,8 +12,6 @@ const ALIASES: Record<string, AppEnvironment> = {
   develop: "development",
   dev: "development",
   local: "development",
-  testing: "testing",
-  test: "testing",
   staging: "staging",
   stage: "staging",
   production: "production",

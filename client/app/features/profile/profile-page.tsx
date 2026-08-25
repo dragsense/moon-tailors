@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  changePasswordSchema,
   updateMeSchema,
   type IMeUser,
-  type TChangePasswordData,
   type TUpdateMeData,
 } from "@moon-tailors/contracts";
 import { SchemaForm } from "~/components/form-ui";
@@ -17,12 +15,8 @@ export function ProfilePage() {
   const { t } = useI18n();
   const myProfile = useOp(profileOps, "myProfile");
   const updateMe = useOp(profileOps, "updateMe");
-  const changePassword = useOp(profileOps, "changePassword");
   const [detailsFlash, setDetailsFlash] = useState(false);
-  const [passwordFlash, setPasswordFlash] = useState(false);
   const [detailsError, setDetailsError] = useState<string | null>(null);
-  const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [passwordFormKey, setPasswordFormKey] = useState(0);
 
   useEffect(() => {
     if (!detailsFlash) return;
@@ -30,17 +24,7 @@ export function ProfilePage() {
     return () => window.clearTimeout(id);
   }, [detailsFlash]);
 
-  useEffect(() => {
-    if (!passwordFlash) return;
-    const id = window.setTimeout(() => setPasswordFlash(false), 2000);
-    return () => window.clearTimeout(id);
-  }, [passwordFlash]);
-
-  if (
-    myProfile.kind !== "query" ||
-    updateMe.kind !== "mutation" ||
-    changePassword.kind !== "mutation"
-  ) {
+  if (myProfile.kind !== "query" || updateMe.kind !== "mutation") {
     return null;
   }
 
@@ -93,49 +77,6 @@ export function ProfilePage() {
           ) : null}
           {detailsError ? (
             <p className="mt-3 text-sm text-destructive">{detailsError}</p>
-          ) : null}
-        </CardPanel>
-
-        <CardPanel
-          title={t("profile.passwordTitle")}
-          description={t("profile.passwordDescription")}
-        >
-          <SchemaForm
-            key={passwordFormKey}
-            schema={changePasswordSchema}
-            defaultValues={{
-              currentPassword: "",
-              newPassword: "",
-              confirmPassword: "",
-            }}
-            submitLabel={t("profile.savePassword")}
-            onSubmit={async (values) => {
-              setPasswordError(null);
-              const body = values as TChangePasswordData;
-              if (body.newPassword !== body.confirmPassword) {
-                setPasswordError(t("profile.mismatch"));
-                return;
-              }
-              try {
-                await changePassword.run(body);
-                setPasswordFlash(true);
-                setPasswordFormKey((key) => key + 1);
-              } catch (err) {
-                setPasswordError(
-                  err instanceof Error
-                    ? err.message
-                    : t("profile.passwordFailed"),
-                );
-              }
-            }}
-          />
-          {passwordFlash ? (
-            <p className="mt-3 text-sm text-muted-foreground">
-              {t("profile.passwordSaved")}
-            </p>
-          ) : null}
-          {passwordError ? (
-            <p className="mt-3 text-sm text-destructive">{passwordError}</p>
           ) : null}
         </CardPanel>
       </div>

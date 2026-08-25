@@ -28,9 +28,6 @@ export function LoginForm({
     >
       <SchemaForm
         schema={loginSchema}
-        fieldConfig={{
-          deviceId: { hidden: true },
-        }}
         submitLabel={isPending ? t("auth.signingIn") : t("auth.signIn")}
         onSubmit={async (values) => {
           await submit(values, undefined, {

@@ -1,3 +1,4 @@
+import { matchPath } from "react-router";
 import {
   EPermissionAction,
   EResource,
@@ -6,7 +7,7 @@ import {
 } from "@moon-tailors/contracts";
 // Relative on purpose: routes.ts is loaded by vite-node, which does not apply
 // the `~` alias, so an aliased import here crashes the dev server at startup.
-import { hasPermission } from "../lib/permissions";
+import { hasPermission, hasWildcardAccess } from "../lib/permissions";
 
 /**
  * Single source of truth for URLs.
@@ -15,38 +16,43 @@ import { hasPermission } from "../lib/permissions";
 
 export const ROOT_ROUTE = "/" as const;
 
-/** Reachable without a session. Login lives at `/` (`/login` redirects there). */
+/** Reachable without a session. Login lives at `/`. */
 export const PUBLIC_ROUTES = {
   LOGIN: ROOT_ROUTE,
-  /** Leftover URL — redirects to login. */
-  VERIFY_OTP: "/verify-otp",
-  /** Leftover URL — redirects to login. */
-  FORGOT_PASSWORD: "/forgot-password",
-  /** Leftover URL — redirects to login. */
-  RESET_PASSWORD: "/reset-password",
 } as const;
 export type PublicRoute = (typeof PUBLIC_ROUTES)[keyof typeof PUBLIC_ROUTES];
 
-/** Behind the app shell (session required). */
+/** Behind the app shell (session required). `:id` patterns are registered in `routes.ts`. */
 export const APP_ROUTES = {
   DASHBOARD: "/dashboard",
   CUSTOMERS: "/customers",
+  CUSTOMER: "/customers/:id",
+  CUSTOMER_NEW_ORDER: "/customers/:id/orders/new",
   ORDERS: "/orders",
+  ORDER: "/orders/:id",
   PROFILE: "/profile",
+  RESET_PASSWORD: "/reset-password",
   SETTINGS: "/settings",
 } as const;
 export type AppRoute = (typeof APP_ROUTES)[keyof typeof APP_ROUTES];
 
+function fillPath(pattern: string, params: Record<string, string>) {
+  return Object.entries(params).reduce(
+    (next, [key, value]) => next.replace(`:${key}`, value),
+    pattern,
+  );
+}
+
 export function customerPath(id: string) {
-  return `${APP_ROUTES.CUSTOMERS}/${id}`;
+  return fillPath(APP_ROUTES.CUSTOMER, { id });
 }
 
 export function customerNewOrderPath(customerId: string) {
-  return `${APP_ROUTES.CUSTOMERS}/${customerId}/orders/new`;
+  return fillPath(APP_ROUTES.CUSTOMER_NEW_ORDER, { id: customerId });
 }
 
 export function orderPath(id: string) {
-  return `${APP_ROUTES.ORDERS}/${id}`;
+  return fillPath(APP_ROUTES.ORDER, { id });
 }
 
 export const COMMON_ROUTES = {
@@ -61,6 +67,7 @@ export const ROUTE_TITLES: Record<string, string> = {
   [APP_ROUTES.CUSTOMERS]: "Customers",
   [APP_ROUTES.ORDERS]: "Orders",
   [APP_ROUTES.PROFILE]: "Profile",
+  [APP_ROUTES.RESET_PASSWORD]: "Reset password",
   [APP_ROUTES.SETTINGS]: "Settings",
   [COMMON_ROUTES.UNAUTHORIZED]: "Unauthorized",
 };
@@ -82,7 +89,19 @@ export const ROUTE_PERMISSIONS: Partial<
     resource: EResource.CUSTOMERS,
     action: EPermissionAction.READ,
   },
+  [APP_ROUTES.CUSTOMER]: {
+    resource: EResource.CUSTOMERS,
+    action: EPermissionAction.READ,
+  },
+  [APP_ROUTES.CUSTOMER_NEW_ORDER]: {
+    resource: EResource.ORDERS,
+    action: EPermissionAction.CREATE,
+  },
   [APP_ROUTES.ORDERS]: {
+    resource: EResource.ORDERS,
+    action: EPermissionAction.READ,
+  },
+  [APP_ROUTES.ORDER]: {
     resource: EResource.ORDERS,
     action: EPermissionAction.READ,
   },
@@ -104,10 +123,24 @@ export function canAccessRoute(pathname: string, user?: IAuthUser): boolean {
   const levels = ROUTE_LEVELS[pathname];
   if (levels && (!user || !levels.includes(user.level))) return false;
 
-  const permission = ROUTE_PERMISSIONS[pathname];
+  if (hasWildcardAccess(user)) return true;
+
+  const permission = matchRoutePermission(pathname);
   if (!permission) return true;
   return hasPermission(user, permission.resource, [
     permission.action,
     EPermissionAction.MANAGE,
   ]);
+}
+
+function matchRoutePermission(pathname: string) {
+  const exact = ROUTE_PERMISSIONS[pathname];
+  if (exact) return exact;
+
+  for (const [pattern, permission] of Object.entries(ROUTE_PERMISSIONS)) {
+    if (pattern.includes(":") && matchPath({ path: pattern, end: true }, pathname)) {
+      return permission;
+    }
+  }
+  return undefined;
 }

@@ -1,22 +1,16 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  Post,
-  Query,
-} from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import type {
   ICustomer,
   IPaginatedResponse,
+  TCopyCustomerMeasurementData,
   TCreateCustomerData,
   TCustomerListQuery,
   TMeasurementValues,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import {
+  copyCustomerMeasurementSchema,
   createCustomerSchema,
   customerListQuerySchema,
   EPermissionAction,
@@ -79,16 +73,30 @@ export class CustomersController {
     return this.customersService.update(id, body);
   }
 
-  @Patch(":id/default-measurements")
+  @Patch(":id/measurements/:garmentTypeId")
   @RequirePermissions({
     resource: EResource.MEASUREMENTS,
     action: EPermissionAction.UPDATE,
   })
-  updateDefaultMeasurements(
+  upsertMeasurement(
     @Param("id") id: string,
+    @Param("garmentTypeId") garmentTypeId: string,
     @Body(new ZodValidationPipe(updateMeasurementSchema))
     body: TMeasurementValues,
   ): Promise<ICustomer> {
-    return this.customersService.updateDefaultMeasurements(id, body);
+    return this.customersService.upsertMeasurement(id, garmentTypeId, body);
+  }
+
+  @Post(":id/measurements/copy")
+  @RequirePermissions({
+    resource: EResource.MEASUREMENTS,
+    action: EPermissionAction.UPDATE,
+  })
+  copyMeasurement(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(copyCustomerMeasurementSchema))
+    body: TCopyCustomerMeasurementData,
+  ): Promise<ICustomer> {
+    return this.customersService.copyMeasurement(id, body);
   }
 }
