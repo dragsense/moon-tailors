@@ -1,10 +1,9 @@
 import type {
   ICustomer,
+  IMessageResponse,
   IPaginatedResponse,
-  TCopyCustomerMeasurementData,
   TCreateCustomerData,
   TCustomerListQuery,
-  TMeasurementValues,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
@@ -18,45 +17,21 @@ class CustomersService extends BaseService<
     super("/customers");
   }
 
-  list(query: Partial<TCustomerListQuery> = {}) {
-    const { page = 1, limit = 20, ...rest } = query;
-    return this.get<ICustomer>({
-      page,
-      limit,
-      ...rest,
-    }) as Promise<IPaginatedResponse<ICustomer>>;
+  /** Page/limit/search come from the parsed list query (ops / schema). */
+  list(query: TCustomerListQuery) {
+    return this.get<IPaginatedResponse<ICustomer>>(query);
   }
 
   getOne(id: string) {
-    return this.getSingle<ICustomer>(id);
+    return this.getSingle(id);
   }
 
   create(body: TCreateCustomerData) {
-    return this.post<ICustomer>(body);
+    return this.post<IMessageResponse>(body);
   }
 
   update(id: string, body: TUpdateCustomerData) {
-    return this.patch<ICustomer>(id)(body);
-  }
-
-  upsertMeasurement(
-    id: string,
-    garmentTypeId: string,
-    body: TMeasurementValues,
-  ) {
-    return this.patch<ICustomer>()(
-      body as TUpdateCustomerData,
-      undefined,
-      `/${id}/measurements/${garmentTypeId}`,
-    );
-  }
-
-  copyMeasurement(id: string, body: TCopyCustomerMeasurementData) {
-    return this.post<ICustomer>(
-      body as unknown as TCreateCustomerData,
-      undefined,
-      `/${id}/measurements/copy`,
-    );
+    return this.patch<IMessageResponse>(id)(body);
   }
 }
 

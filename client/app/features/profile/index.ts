@@ -1,3 +1,3 @@
-export { ProfilePage } from "./profile-page";
-export { ResetPasswordPage } from "./reset-password-page";
+export { profileService } from "./api";
+export { profileKeys } from "./query-keys";
 export { profileOps, resetPasswordOps } from "./ops";

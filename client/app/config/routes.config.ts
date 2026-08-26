@@ -27,7 +27,6 @@ export const APP_ROUTES = {
   DASHBOARD: "/dashboard",
   CUSTOMERS: "/customers",
   CUSTOMER: "/customers/:id",
-  CUSTOMER_NEW_ORDER: "/customers/:id/orders/new",
   ORDERS: "/orders",
   ORDER: "/orders/:id",
   PROFILE: "/profile",
@@ -45,10 +44,6 @@ function fillPath(pattern: string, params: Record<string, string>) {
 
 export function customerPath(id: string) {
   return fillPath(APP_ROUTES.CUSTOMER, { id });
-}
-
-export function customerNewOrderPath(customerId: string) {
-  return fillPath(APP_ROUTES.CUSTOMER_NEW_ORDER, { id: customerId });
 }
 
 export function orderPath(id: string) {
@@ -92,10 +87,6 @@ export const ROUTE_PERMISSIONS: Partial<
   [APP_ROUTES.CUSTOMER]: {
     resource: EResource.CUSTOMERS,
     action: EPermissionAction.READ,
-  },
-  [APP_ROUTES.CUSTOMER_NEW_ORDER]: {
-    resource: EResource.ORDERS,
-    action: EPermissionAction.CREATE,
   },
   [APP_ROUTES.ORDERS]: {
     resource: EResource.ORDERS,

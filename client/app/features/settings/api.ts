@@ -5,7 +5,7 @@ import type {
 } from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
 
-class UserSettingsService extends BaseService<
+class SettingsService extends BaseService<
   IUserSettingsResponse,
   TSaveUserSettingsData,
   TSaveUserSettingsData
@@ -14,17 +14,15 @@ class UserSettingsService extends BaseService<
     super("/user-settings");
   }
 
-  getMine() {
-    return this.getSingle<IUserSettingsResponse>(
-      undefined,
-      undefined,
-      "/me",
-    );
+  getMe() {
+    return this.getSingle<IUserSettingsResponse>(undefined, undefined, "/me");
   }
 
-  saveMine(body: TSaveUserSettingsData) {
+  updateMe(body: TSaveUserSettingsData) {
     return this.put<TSaveUserSettingsResponse>()(body, undefined, "/me");
   }
 }
 
-export const userSettingsService = new UserSettingsService();
+export const settingsService = new SettingsService();
+/** @deprecated use settingsService */
+export const userSettingsService = settingsService;

@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { Link, Outlet, useLocation } from "react-router";
+import { Link, Outlet } from "react-router";
 import type { IAuthUser } from "@moon-tailors/contracts";
 import { GlobalHeader, UserMenu } from "./header";
 import { ThemeToggle } from "~/components/layout-ui/theme-toggle";
 import { LanguageToggle } from "~/components/layout-ui/language-toggle";
-import { APP_ROUTES, getRouteTitle } from "~/config";
+import { APP_ROUTES } from "~/config";
 import { useSession } from "~/features/auth/hooks";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
@@ -24,12 +24,9 @@ export function AppShell({
   children,
   className,
 }: AppShellProps) {
-  const location = useLocation();
   const { t } = useI18n();
-  const title = getRouteTitle(location.pathname);
   const appName = t("app.name");
   const year = new Date().getFullYear();
-  const isHome = location.pathname === APP_ROUTES.DASHBOARD;
 
   return (
     <div
@@ -53,7 +50,6 @@ export function AppShell({
             </span>
           </Link>
         }
-        title={isHome ? undefined : (title ?? appName)}
         actions={
           <>
             <LanguageToggle />

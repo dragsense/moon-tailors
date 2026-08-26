@@ -61,6 +61,8 @@ services:
       # Prod: SPA bind-mounted at /app/client-static (nest serves it; nginx/ssr ignore /app on Nest).
       CLIENT_STATIC_DIR: ${CLIENT_STATIC_DIR:-}
       FORCE_COLOR: "1"
+      CLICOLOR_FORCE: "1"
+      TERM: xterm-256color
       # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
@@ -89,6 +91,7 @@ services:
       redis:
         condition: service_healthy
     restart: ${SERVER_RESTART:-${RESTART_POLICY:-no}}
+    tty: true
     networks:
       - app
 
@@ -110,6 +113,9 @@ services:
       VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
       # From env/client.env (Vite) or forced true when clientMode=ssr — see react-router.config.ts
       CLIENT_SSR: ${CLIENT_SSR:-false}
+      FORCE_COLOR: "1"
+      CLICOLOR_FORCE: "1"
+      TERM: xterm-256color
       # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
@@ -126,6 +132,7 @@ services:
       - ${V_CLIENT_8}
       - ${V_CLIENT_9}
       - ${V_CLIENT_10}
+    tty: true
     restart: ${CLIENT_RESTART:-${RESTART_POLICY:-no}}
     networks:
       - app
@@ -145,6 +152,9 @@ services:
       NODE_ENV: ${WEBSITE_NODE_ENV:-${NODE_ENV:-production}}
       # Browser HMR websocket must use the published gateway port, not :4321.
       GATEWAY_EXPOSE: ${GATEWAY_EXPOSE:-8088}
+      FORCE_COLOR: "1"
+      CLICOLOR_FORCE: "1"
+      TERM: xterm-256color
       # Bind mounts (esp. Docker Desktop / WSL) drop inotify — poll so deletes/edits rebuild.
       WATCHPACK_POLLING: ${WATCHPACK_POLLING:-true}
       CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-true}
@@ -159,6 +169,7 @@ services:
       - ${V_WEBSITE_6}
       - ${V_WEBSITE_7}
       - ${V_WEBSITE_8}
+    tty: true
     restart: ${WEBSITE_RESTART:-${RESTART_POLICY:-no}}
     networks:
       - app
@@ -191,14 +202,6 @@ volumes:
     name: ${POSTGRES_VOLUME_NAME:-moon_tailors_postgres_data}
   server_logs:
     name: ${LOGS_VOLUME_NAME:-moon_tailors_server_logs}
-  server_nm:
-  server_pkg_nm:
-  server_contracts_nm:
-  client_nm:
-  client_pkg_nm:
-  client_contracts_nm:
-  website_nm:
-  website_pkg_nm:
 
 networks:
   app:

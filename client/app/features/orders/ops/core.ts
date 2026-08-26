@@ -1,50 +1,41 @@
 import type {
   TCreateOrderData,
   TUpdateOrderData,
-  TUpdateOrderMeasurementData,
 } from "@moon-tailors/contracts";
-import { EPermissionAction, EResource } from "@moon-tailors/contracts";
+import {
+  EPermissionAction,
+  EResource,
+  orderListQuerySchema,
+} from "@moon-tailors/contracts";
 import {
   invalidateQueriesKey,
   refetchOp,
   type OpConfig,
   type OpsBag,
 } from "~/ops";
-import { customersService } from "~/features/customers/api";
-import { customerKeys } from "~/features/customers/query-keys";
 import { ordersService } from "../api";
+import { CreateOrderModal } from "../form/create-order-modal";
 import { OrderList } from "../list/order-list";
 import { orderKeys } from "../query-keys";
-import { CreateOrderView } from "../view/create-order-view";
-import { OrderDetail } from "../view/order-detail";
+import { ViewOrderModal } from "../view/view-order-modal";
 
-const refreshOrders = (_r: unknown, _v: unknown, ops: OpsBag) => {
+export const refreshOrders = (_r: unknown, _v: unknown, ops: OpsBag) => {
   refetchOp(ops, "listOrders");
   refetchOp(ops, "getOrder");
-  invalidateQueriesKey(orderKeys.lists());
-  invalidateQueriesKey(orderKeys.details());
-  invalidateQueriesKey(customerKeys.details());
+  invalidateQueriesKey(orderKeys.list());
+  invalidateQueriesKey(orderKeys.detail());
 };
 
+/** Prefixed op names so packs can compose with customers/measurements safely. */
 export const orderOpsCore = {
   listOrders: {
     kind: "query" as const,
     permission: { resource: EResource.ORDERS, action: EPermissionAction.READ },
     initialParams: { page: 1, limit: 20 },
-    queryKey: orderKeys.list,
-    invalidateKey: orderKeys.lists(),
+    queryKey: orderKeys.listWithParams,
+    invalidateKey: orderKeys.list(),
     fetch: (params: Record<string, unknown>) =>
-      ordersService.list({
-        page: Number(params.page ?? 1),
-        limit: Number(params.limit ?? 20),
-        search: typeof params.search === "string" ? params.search : undefined,
-        status:
-          typeof params.status === "string" ? params.status : undefined,
-        customerId:
-          typeof params.customerId === "string"
-            ? params.customerId
-            : undefined,
-      } as never),
+      ordersService.list(orderListQuerySchema.parse(params)),
     component: OrderList,
     auto: false,
     onError: (error: Error) => {
@@ -55,35 +46,39 @@ export const orderOpsCore = {
     kind: "query" as const,
     permission: { resource: EResource.ORDERS, action: EPermissionAction.READ },
     initialParams: { id: "" },
-    queryKey: orderKeys.detail,
-    invalidateKey: orderKeys.details(),
+    queryKey: orderKeys.detailWithParams,
+    invalidateKey: orderKeys.detail(),
     fetch: (params: Record<string, unknown>) => {
       const id = typeof params.id === "string" ? params.id : "";
       if (!id) return Promise.resolve(null);
       return ordersService.getOne(id);
     },
-    component: OrderDetail,
     auto: false,
     onError: (error: Error) => {
       console.error("[orders.getOrder]", error.message);
     },
   },
-  createOrderPage: {
-    kind: "query" as const,
-    permission: {
-      resource: EResource.ORDERS,
-      action: EPermissionAction.CREATE,
+  viewOrder: {
+    kind: "mutation" as const,
+    permission: { resource: EResource.ORDERS, action: EPermissionAction.READ },
+    mutate: async (vars: unknown) => {
+      const id =
+        typeof vars === "string"
+          ? vars
+          : vars &&
+              typeof vars === "object" &&
+              "id" in vars &&
+              typeof (vars as { id: unknown }).id === "string"
+            ? (vars as { id: string }).id
+            : "";
+      if (!id) return null;
+      return ordersService.getOne(id);
     },
-    initialParams: { id: "" },
-    queryKey: customerKeys.detail,
-    invalidateKey: customerKeys.details(),
-    fetch: (params: Record<string, unknown>) => {
-      const id = typeof params.id === "string" ? params.id : "";
-      if (!id) return Promise.resolve(null);
-      return customersService.getOne(id);
+    component: ViewOrderModal,
+    auto: true,
+    onError: (error: Error) => {
+      console.error("[orders.viewOrder]", error.message);
     },
-    component: CreateOrderView,
-    auto: false,
   },
   createOrder: {
     kind: "mutation" as const,
@@ -92,7 +87,8 @@ export const orderOpsCore = {
       action: EPermissionAction.CREATE,
     },
     mutate: (body: unknown) => ordersService.create(body as TCreateOrderData),
-    auto: false,
+    component: CreateOrderModal,
+    auto: true,
     onSuccess: refreshOrders,
     onError: (error: Error) => {
       console.error("[orders.createOrder]", error.message);
@@ -113,39 +109,6 @@ export const orderOpsCore = {
       console.error("[orders.updateOrder]", error.message);
     },
   },
-  updateOrderMeasurements: {
-    kind: "mutation" as const,
-    permission: {
-      resource: EResource.MEASUREMENTS,
-      action: EPermissionAction.UPDATE,
-    },
-    mutate: (vars: unknown) => {
-      const { id, ...body } = vars as TUpdateOrderMeasurementData & {
-        id: string;
-      };
-      return ordersService.updateMeasurements(id, body);
-    },
-    onSuccess: refreshOrders,
-    onError: (error: Error) => {
-      console.error("[orders.updateOrderMeasurements]", error.message);
-    },
-  },
-  applyMeasurementsToDefault: {
-    kind: "mutation" as const,
-    permission: {
-      resource: EResource.MEASUREMENTS,
-      action: EPermissionAction.UPDATE,
-    },
-    mutate: (vars: unknown) => {
-      const { id, garmentTypeId } = vars as {
-        id: string;
-        garmentTypeId: string;
-      };
-      return ordersService.applyMeasurementsToDefault(id, garmentTypeId);
-    },
-    onSuccess: refreshOrders,
-    onError: (error: Error) => {
-      console.error("[orders.applyMeasurementsToDefault]", error.message);
-    },
-  },
 } satisfies Record<string, OpConfig>;
+
+export type OrderOpsCore = typeof orderOpsCore;

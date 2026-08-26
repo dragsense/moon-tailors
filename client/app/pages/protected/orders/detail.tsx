@@ -1,15 +1,12 @@
-import { OpsProvider } from "~/ops";
-import { orderDetailOps } from "~/features/orders/ops";
+import { Navigate } from "react-router";
+import { APP_ROUTES } from "~/config/routes.config";
 import type { Route } from "./+types/detail";
 
 export function meta(_args: Route.MetaArgs) {
-  return [{ title: "Order · Moon Tailors" }];
+  return [{ title: "Orders · Moon Tailors" }];
 }
 
-export default function OrderDetailPage() {
-  return (
-    <OpsProvider store={orderDetailOps}>
-      {({ components }) => components.getOrder}
-    </OpsProvider>
-  );
+/** Order detail is a modal — old URLs redirect to the orders list. */
+export default function OrderDetailRedirect() {
+  return <Navigate to={APP_ROUTES.ORDERS} replace />;
 }

@@ -93,16 +93,32 @@ export function OpsProvider({ store, children }: OpsProviderProps) {
         bag[name] = {
           kind: "query",
           get data() {
-            return store.getState().query[name]?.data;
+            const params = store.getState().params[name] ?? {};
+            return qc.getQueryData(
+              resolveOpQueryKey(store.id, name, def, params),
+            );
           },
           get error() {
-            return store.getState().query[name]?.error ?? null;
+            const params = store.getState().params[name] ?? {};
+            const st = qc.getQueryState(
+              resolveOpQueryKey(store.id, name, def, params),
+            );
+            return st?.error instanceof Error ? st.error : null;
           },
           get isPending() {
-            return store.getState().query[name]?.isPending ?? false;
+            const params = store.getState().params[name] ?? {};
+            const st = qc.getQueryState(
+              resolveOpQueryKey(store.id, name, def, params),
+            );
+            if (!st) return true;
+            return st.status === "pending";
           },
           get isError() {
-            return store.getState().query[name]?.isError ?? false;
+            const params = store.getState().params[name] ?? {};
+            const st = qc.getQueryState(
+              resolveOpQueryKey(store.id, name, def, params),
+            );
+            return st?.status === "error";
           },
           get params() {
             return store.getState().params[name] ?? {};
@@ -378,7 +394,7 @@ function QueryBridge({
     [store.id, name, op, params],
   );
 
-  const query = useApiQueryKeyed(
+  useApiQueryKeyed(
     cacheKey,
     async () => {
       try {
@@ -397,15 +413,6 @@ function QueryBridge({
         isOpAllowed(qc, op) && (op.queryOptions?.enabled ?? true),
     },
   );
-
-  useEffect(() => {
-    store.getState()._patchQuery(name, {
-      data: query.data,
-      error: query.error instanceof Error ? query.error : null,
-      isPending: query.isPending,
-      isError: query.isError,
-    });
-  }, [store, name, query.data, query.error, query.isPending, query.isError]);
 
   return null;
 }

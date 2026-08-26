@@ -7,10 +7,7 @@ export const dashboardPageOps = createOps({
   scope: "page",
   ops: {
     ...dashboardOpsCore,
-    ...pickOps(customerOpsCore, [
-      "listCustomers",
-      "createCustomer",
-    ]),
+    ...pickOps(customerOpsCore, ["listCustomers", "createCustomer"]),
   },
 });
 

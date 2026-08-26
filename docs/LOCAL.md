@@ -24,7 +24,7 @@ pnpm bootstrap --fresh
 
 Local Docker uses the **local** block in `docker/environments.json` and `docker/compose.yml` (postgres + redis via `server.needs`; bind mounts + `dev` build target).
 
-**Watch (server / client / website):** compose sets `WATCHPACK_POLLING` + `CHOKIDAR_USEPOLLING` so create/edit/**delete** on the host rebuild under Docker Desktop / WSL (inotify is often dropped). Server, client, and website `dev` scripts clear package caches (`.cache` / `.vite` / Nest `dist`) so stale deleted modules cannot linger.
+**Watch (server / client / website):** compose sets `WATCHPACK_POLLING` + `CHOKIDAR_USEPOLLING` so create/edit/**delete** on the host rebuild under Docker Desktop / WSL (inotify is often dropped). If a delete leaves a stale module, use **Clear cache** (local or remote) — caches are **not** wiped on every `dev` start. App containers use `tty: true` + `FORCE_COLOR` so Nest / Vite / Astro keep ANSI colors in `pnpm logs` (`docker compose --ansi always`).
 
 Website HMR talks to the **gateway** (`:8088`), not Astro’s internal `:4321`. Recreate `website` + `gateway` after changing `astro.config.mjs` or the nginx template so the browser websocket can refresh the page.
 
@@ -33,7 +33,7 @@ Website HMR talks to the **gateway** (`:8088`), not Astro’s internal `:4321`. 
 | Command | Behavior |
 |---|---|
 | **Start** | `docker compose up -d`, print URLs, **exit**. Containers keep running if you close the terminal. |
-| **Logs** | Multi-select services, follow with `logs -f`. **Ctrl+C only detaches** — never stops containers. |
+| **Logs** | Multi-select services, follow with `logs -f` (ANSI colors preserved). **Ctrl+C only detaches** — never stops containers. |
 | **Stop** | Multi-select which apps to **stop** (containers kept). `all` stops every running service including postgres/redis. Does **not** remove containers — use **Clean** for that. |
 
 ```bash
@@ -103,19 +103,24 @@ pnpm add-pkg                 # interactive
 pnpm add-pkg client axios    # non-interactive
 ```
 
-Installs on the **host**, then syncs the Docker **named** `node_modules` volume
-(`website_pkg_nm`, `client_pkg_nm`, `server_pkg_nm`, …).
-
-**Why a second install?** Compose already uses volumes — but two different kinds:
+Installs **once on the host**. Local/dev bind-mounts `node_modules` into containers, so the IDE and Docker share the same tree — no second install inside Docker.
 
 | Mount | What | Syncs from host? |
 |---|---|---|
-| Bind | Source (`website/`, `package.json`, …) | Yes — edit on the laptop, container sees it |
-| Named volume | `node_modules` (`website_nm`, `website_pkg_nm`) | **No** — that tree lives only inside Docker |
+| Bind | Source (`client/`, `server/`, …) + root `node_modules` | Yes |
+| Named | Postgres / logs only | N/A |
 
-`node_modules` is a named volume on purpose so the host install (WSL/macOS) and the Linux container install do not overwrite each other (different `pnpm` store paths, optional native binaries). The lockfile is **not** bind-mounted either: Docker Desktop + WSL often serves a stale file after `pnpm` rewrites it.
+`pnpm install` / `pnpm bootstrap` / `pnpm add-pkg` on the host (WSL Linux path) is enough. Reload a running app after adding a package: `pnpm reload client`.
 
-So: `pnpm add lucide-react` on the host updates bind-mounted `package.json`, but the container’s volume still has yesterday’s packages until something runs `pnpm install` **inside** Docker. `pnpm add-pkg website lucide-react` does both.
+### Clear cache (optional)
+
+```bash
+pnpm clear-cache            # menu / pick apps
+pnpm clear-cache client
+pnpm remote                 # → Clear cache
+```
+
+Wipes Vite / Nest / Astro caches when something looks stale after deletes. Not run automatically on start.
 
 ### Bootstrap
 

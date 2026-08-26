@@ -159,6 +159,9 @@ function volumeSlots(cfg) {
     : null;
 
   if (isDevMode(cfg)) {
+    // Bind-mount host node_modules (and package trees include their own nm).
+    // One install on the host → IDE + containers share the same tree.
+    // Do not use named nm volumes — they hide host node_modules from the IDE.
     return {
       server: padVolumes(
         [
@@ -169,12 +172,10 @@ function volumeSlots(cfg) {
           // Lockfile omitted: Docker Desktop+WSL file binds go stale when pnpm rewrites it.
           "../.npmrc:/app/.npmrc:ro",
           `${serverEnv}:/app/env/server.env:ro`,
-          "server_nm:/app/node_modules",
-          "server_pkg_nm:/app/server/node_modules",
-          "server_contracts_nm:/app/contracts/node_modules",
+          "../node_modules:/app/node_modules",
         ],
         11,
-        "server_nm:/app/node_modules",
+        pad,
       ),
       client: padVolumes(
         [
@@ -184,12 +185,10 @@ function volumeSlots(cfg) {
           "../pnpm-workspace.yaml:/app/pnpm-workspace.yaml",
           "../.npmrc:/app/.npmrc:ro",
           `${clientEnv}:/app/env/client.env:ro`,
-          "client_nm:/app/node_modules",
-          "client_pkg_nm:/app/client/node_modules",
-          "client_contracts_nm:/app/contracts/node_modules",
+          "../node_modules:/app/node_modules",
         ],
         10,
-        "client_nm:/app/node_modules",
+        pad,
       ),
       website: padVolumes(
         [
@@ -198,11 +197,10 @@ function volumeSlots(cfg) {
           "../pnpm-workspace.yaml:/app/pnpm-workspace.yaml",
           "../.npmrc:/app/.npmrc:ro",
           `${websiteEnv}:/app/env/website.env:ro`,
-          "website_nm:/app/node_modules",
-          "website_pkg_nm:/app/website/node_modules",
+          "../node_modules:/app/node_modules",
         ],
         8,
-        "website_nm:/app/node_modules",
+        pad,
       ),
     };
   }
@@ -472,6 +470,8 @@ export function composeArgs(cfg) {
   const publishFile = writePublishPortsCompose(cfg, cfg.root || root);
   return [
     "compose",
+    "--ansi",
+    "always",
     "--env-file",
     cfg.dockerEnv,
     "-f",

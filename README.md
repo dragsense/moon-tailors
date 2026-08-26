@@ -89,7 +89,7 @@ pnpm remote                # deploy + SSH host control
 
 ## Server — `src/modules/` (features)
 
-`auth` · `users` · `customers` · `orders` · `measurements` · `garment-types` · `business` · `user-settings` · `dashboard`
+`auth` · `users` · `customers` · `orders` · `measurements` · `business` · `user-settings` · `dashboard`
 
 Query model: clients may request any real `_select` / `_relations` path; secrets use `restrictedFields`. Nested searchable/filters/sort supported (`sender.firstName`, `participants.user.email`).
 

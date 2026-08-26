@@ -4,6 +4,7 @@ import { BreadcrumbCompact } from "~/components/layout-ui/breadcrumb";
 import {
   buildBreadcrumbs,
   shouldShowBreadcrumbs,
+  type BreadcrumbItem,
 } from "~/config/breadcrumb.config";
 import { APP_ROUTES } from "~/config/routes.config";
 import { useI18n } from "~/hooks/use-i18n";
@@ -13,6 +14,8 @@ export type StackHeaderProps = {
   title?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Override auto breadcrumbs from the route. */
+  breadcrumbItems?: BreadcrumbItem[];
   className?: string;
 };
 
@@ -21,11 +24,12 @@ export function StackHeader({
   title,
   description,
   actions,
+  breadcrumbItems,
   className,
 }: StackHeaderProps) {
   const location = useLocation();
   const { t } = useI18n();
-  const items = buildBreadcrumbs(location.pathname, t);
+  const items = breadcrumbItems ?? buildBreadcrumbs(location.pathname, t);
   const breadcrumb = shouldShowBreadcrumbs(items) ? (
     <BreadcrumbCompact
       items={items}

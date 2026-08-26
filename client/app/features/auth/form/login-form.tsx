@@ -5,8 +5,6 @@ import { SchemaForm } from "~/components/form-ui";
 import { SurfaceCard } from "~/components/layout-ui";
 import { LEVEL_HOME } from "~/config";
 import type { MutationOpComponentProps } from "~/ops";
-import { isLoginResponse } from "~/features/auth/api";
-import { writeSession } from "~/features/auth/session";
 import { useI18n } from "~/hooks/use-i18n";
 
 /** loginPageOps.login component. */
@@ -32,10 +30,8 @@ export function LoginForm({
         onSubmit={async (values) => {
           await submit(values, undefined, {
             onSuccess: (res) => {
-              if (isLoginResponse(res)) {
-                writeSession(res as ILoginResponse);
-                navigate(LEVEL_HOME[res.user.level], { replace: true });
-              }
+              const { user } = res as ILoginResponse;
+              navigate(LEVEL_HOME[user.level], { replace: true });
             },
           });
         }}

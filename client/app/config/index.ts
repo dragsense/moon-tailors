@@ -19,7 +19,6 @@ export {
   ROUTE_PERMISSIONS,
   ROUTE_TITLES,
   canAccessRoute,
-  customerNewOrderPath,
   customerPath,
   getRouteTitle,
   orderPath,

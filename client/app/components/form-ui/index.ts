@@ -10,9 +10,7 @@
  * lib/form/
  *   field-config         FieldUiConfig types
  *   schema-field         hide/disable/options/render
- *   use-schema-form
- *   use-schema-fields
- *   use-schema-filters   debounced list-param sync
+ *   hooks/               useSchemaForm / Fields / Filters
  * ```
  *
  * @example

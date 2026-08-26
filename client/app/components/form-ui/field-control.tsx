@@ -17,6 +17,7 @@ import {
 } from "~/components/ui/select";
 import { Switch } from "~/components/ui/switch";
 import { Textarea } from "~/components/ui/textarea";
+import { useI18n } from "~/hooks/use-i18n";
 import { FieldError } from "./field-error";
 
 export type FieldControlProps<TFieldValues extends FieldValues> = {
@@ -37,7 +38,10 @@ export function FieldControl<TFieldValues extends FieldValues>({
   error,
   disabled = false,
 }: FieldControlProps<TFieldValues>) {
+  const { t } = useI18n();
   const label = meta.label ?? String(name);
+  const selectPlaceholder =
+    meta.placeholder ?? t("common.actions.select");
 
   if (meta.type === "hidden") {
     return <input type="hidden" {...register(name)} />;
@@ -89,7 +93,11 @@ export function FieldControl<TFieldValues extends FieldValues>({
           control={control}
           render={({ field }) => (
             <Select
-              value={field.value != null && field.value !== "" ? String(field.value) : undefined}
+              value={
+                field.value != null && field.value !== ""
+                  ? String(field.value)
+                  : undefined
+              }
               onValueChange={field.onChange}
               disabled={disabled}
             >
@@ -98,7 +106,7 @@ export function FieldControl<TFieldValues extends FieldValues>({
                 className="w-full"
                 aria-invalid={Boolean(error)}
               >
-                <SelectValue placeholder={meta.placeholder ?? "Select…"} />
+                <SelectValue placeholder={selectPlaceholder} />
               </SelectTrigger>
               <SelectContent>
                 {(meta.options ?? []).map((opt) => (

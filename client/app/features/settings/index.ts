@@ -1,7 +1,12 @@
-export { userSettingsService } from "./api";
-export { UserSettingsPage } from "./user-settings-page";
+export { settingsService, userSettingsService } from "./api";
 export { SettingsPrefsSync } from "./components/settings-prefs-sync";
-export { settingsOps, settingsKeys } from "./ops";
+export { useSettings, useSettingsState, fetchPreferences } from "./hooks";
+export {
+  settingsOps,
+  settingsPageOps,
+  settingsOpsCore,
+  settingsKeys,
+} from "./ops";
 export {
   formatDateTimeWithSettings,
   formatDateWithSettings,
@@ -9,6 +14,6 @@ export {
 } from "./lib/format";
 export {
   parsePreferences,
-  readCachedPreferences,
   resolvePreferences,
+  mergePreferences,
 } from "./lib/preferences";

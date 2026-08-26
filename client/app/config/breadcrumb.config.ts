@@ -10,8 +10,6 @@ const ID_SEGMENT =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ROUTE_CRUMB_KEYS: Record<string, TranslationKey> = {
-  [APP_ROUTES.DASHBOARD]: "nav.items.dashboard",
-  [APP_ROUTES.CUSTOMERS]: "nav.items.customers",
   [APP_ROUTES.ORDERS]: "nav.items.orders",
   [APP_ROUTES.PROFILE]: "nav.items.profile",
   [APP_ROUTES.RESET_PASSWORD]: "nav.items.resetPassword",
@@ -20,12 +18,18 @@ const ROUTE_CRUMB_KEYS: Record<string, TranslationKey> = {
 
 type Translate = (key: TranslationKey) => string;
 
-/** Build breadcrumb trail from pathname. Never shows raw IDs. */
+/**
+ * Build breadcrumb trail from pathname.
+ * Home is prepended by BreadcrumbCompact — never include dashboard here.
+ * Never shows raw IDs.
+ */
 export function buildBreadcrumbs(
   pathname: string,
   t: Translate,
 ): BreadcrumbItem[] {
-  if (pathname === ROOT_ROUTE) return [];
+  if (pathname === ROOT_ROUTE || pathname === APP_ROUTES.DASHBOARD) {
+    return [];
+  }
 
   const items: BreadcrumbItem[] = [];
   const parts = pathname.split("/").filter(Boolean);
@@ -34,10 +38,15 @@ export function buildBreadcrumbs(
 
   for (const part of parts) {
     current += `/${part}`;
+
+    if (current === APP_ROUTES.CUSTOMERS) {
+      resource = "customers";
+      continue;
+    }
+
     const knownKey = ROUTE_CRUMB_KEYS[current];
     if (knownKey) {
       items.push({ label: t(knownKey), href: current });
-      if (current === APP_ROUTES.CUSTOMERS) resource = "customers";
       if (current === APP_ROUTES.ORDERS) resource = "orders";
       continue;
     }
@@ -53,7 +62,7 @@ export function buildBreadcrumbs(
 
     if (part === "new") {
       items.push({
-        label: resource === "customers" ? t("orders.new") : t("customers.new"),
+        label: t("orders.new"),
         href: current,
       });
     }
@@ -62,7 +71,7 @@ export function buildBreadcrumbs(
   return items;
 }
 
-/** Hide breadcrumb on shallow routes (single segment). */
+/** Show trail on any page that produced crumbs (Home is always added in UI). */
 export function shouldShowBreadcrumbs(items: BreadcrumbItem[]): boolean {
-  return items.length > 1;
+  return items.length > 0;
 }

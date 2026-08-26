@@ -21,7 +21,6 @@ const STAFF_PERMS = [
     EResource.CUSTOMERS,
     EResource.MEASUREMENTS,
     EResource.ORDERS,
-    EResource.GARMENT_TYPES,
   ),
   `${EResource.SETTINGS}:${EPermissionAction.READ}`,
   `${EResource.SETTINGS}:${EPermissionAction.UPDATE}`,

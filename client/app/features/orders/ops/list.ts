@@ -1,30 +1,29 @@
-import { createOps } from "~/ops";
-import { orderOpsCore } from "./core";
+import { composeSuccess, createOps, pickOps } from "~/ops";
+import {
+  measurementOpsCore,
+  refreshMeasurements,
+} from "~/features/measurements/ops";
+import { orderOpsCore, refreshOrders } from "./core";
 
 export const ordersListOps = createOps({
   id: "orders-list",
   scope: "page",
   ops: {
-    listOrders: orderOpsCore.listOrders,
-  },
-});
-
-export const orderDetailOps = createOps({
-  id: "order-detail",
-  scope: "page",
-  ops: {
-    getOrder: orderOpsCore.getOrder,
-    updateOrder: orderOpsCore.updateOrder,
-    updateOrderMeasurements: orderOpsCore.updateOrderMeasurements,
-    applyMeasurementsToDefault: orderOpsCore.applyMeasurementsToDefault,
-  },
-});
-
-export const createOrderOps = createOps({
-  id: "create-order",
-  scope: "page",
-  ops: {
-    createOrderPage: orderOpsCore.createOrderPage,
-    createOrder: orderOpsCore.createOrder,
+    ...pickOps(orderOpsCore, [
+      "listOrders",
+      "getOrder",
+      "viewOrder",
+      "createOrder",
+      "updateOrder",
+    ]),
+    ...pickOps(measurementOpsCore, {
+      getMeasurement: true,
+      updateMeasurement: {
+        onSuccess: composeSuccess(refreshMeasurements, refreshOrders),
+      },
+      applyMeasurementsToDefault: {
+        onSuccess: composeSuccess(refreshMeasurements, refreshOrders),
+      },
+    }),
   },
 });

@@ -23,11 +23,18 @@ export type SchemaFormProps<TSchema extends AnyZodObject> =
   UseSchemaFormOptions<TSchema> & {
     onSubmit: (values: z.infer<TSchema>) => void | Promise<void>;
     /**
-     * Custom body. You own layout + submit UI.
-     * If omitted, all fields stack vertically with a submit button.
+     * Custom body. You own field layout.
+     * If omitted, all fields stack vertically.
      */
     children?: (ctx: SchemaFormRenderCtx<TSchema>) => ReactNode;
-    /** Auto-layout only: submit button label. */
+    /**
+     * Open footer (buttons, notes, …). Receives the same ctx as children.
+     * When omitted and there is no custom `children`, a default submit button is shown.
+     */
+    footer?:
+      | ReactNode
+      | ((ctx: SchemaFormRenderCtx<TSchema>) => ReactNode);
+    /** Default submit button label when `footer` is omitted (auto-layout only). */
     submitLabel?: string;
     className?: string;
   };
@@ -70,6 +77,7 @@ export function SchemaForm<TSchema extends AnyZodObject>({
   mode,
   fieldConfig,
   children,
+  footer,
   submitLabel = "Submit",
   className,
 }: SchemaFormProps<TSchema>) {
@@ -87,6 +95,20 @@ export function SchemaForm<TSchema extends AnyZodObject>({
     isValid,
   };
 
+  const resolvedFooter =
+    footer === undefined
+      ? null
+      : typeof footer === "function"
+        ? footer(ctx)
+        : footer;
+
+  const defaultSubmit =
+    !children && footer === undefined ? (
+      <Button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? "Saving…" : submitLabel}
+      </Button>
+    ) : null;
+
   return (
     <form
       className={cn(!children && "space-y-4", className)}
@@ -94,16 +116,9 @@ export function SchemaForm<TSchema extends AnyZodObject>({
         await onSubmit(values);
       })}
     >
-      {children ? (
-        children(ctx)
-      ) : (
-        <>
-          {Object.values(fields)}
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving…" : submitLabel}
-          </Button>
-        </>
-      )}
+      {children ? children(ctx) : Object.values(fields)}
+      {resolvedFooter}
+      {defaultSubmit}
     </form>
   );
 }

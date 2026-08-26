@@ -13,7 +13,6 @@ src/
     auth/       login + session (schema + types + interfaces)
     user/       profile / me / password
     customer/   customers + measurements
-    garment-type/ garment catalog (gents / ladies)
     order/      shop orders
     settings/   user preferences
     business/   tenant businesses

@@ -1,13 +1,12 @@
-import { useState, type ReactNode } from "react";
 import type { ICustomer, IPaginatedResponse } from "@moon-tailors/contracts";
 import { Link } from "react-router";
 import { Alert, ListPagination } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import { useI18n } from "~/hooks/use-i18n";
 import { useOp, type QueryOpComponentProps } from "~/ops";
 import { customerPath } from "~/config/routes.config";
 import { CustomerAvatar } from "../components/customer-avatar";
+import { CustomerFilters } from "./customer-filters";
 
 export function CustomerDirectory({
   data,
@@ -17,12 +16,8 @@ export function CustomerDirectory({
   store,
   params,
   setParams,
-  afterSearch,
-}: QueryOpComponentProps & { afterSearch?: ReactNode }) {
+}: QueryOpComponentProps) {
   const { t } = useI18n();
-  const [search, setSearch] = useState(
-    typeof params.search === "string" ? params.search : "",
-  );
   const createCustomer = useOp(store, "createCustomer");
   if (createCustomer.kind !== "mutation") return null;
 
@@ -37,38 +32,28 @@ export function CustomerDirectory({
 
   return (
     <section className="flex flex-col gap-4">
-      <form
-        className="flex flex-col gap-3 sm:flex-row"
-        onSubmit={(event) => {
-          event.preventDefault();
+      <CustomerFilters
+        values={params}
+        onChange={(filters) =>
           setParams({
-            ...params,
             page: 1,
-            search,
-          });
-        }}
-      >
-        <Input
-          className="h-11 text-base"
-          placeholder={t("customers.searchPlaceholder")}
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <Button type="submit" size="lg">
-          {t("common.actions.search")}
-        </Button>
-        {createCustomer.allowed ? (
-          <Button
-            type="button"
-            size="lg"
-            onClick={() => createCustomer.open()}
-          >
-            {t("customers.new")}
-          </Button>
-        ) : null}
-      </form>
-
-      {afterSearch}
+            limit: params.limit ?? 20,
+            ...filters,
+          })
+        }
+        actions={
+          createCustomer.allowed ? (
+            <Button
+              type="button"
+              size="lg"
+              className="shrink-0"
+              onClick={() => createCustomer.open()}
+            >
+              {t("customers.new")}
+            </Button>
+          ) : null
+        }
+      />
 
       {isPending ? (
         <p className="text-muted-foreground text-base">
@@ -102,9 +87,9 @@ export function CustomerDirectory({
                 <p className="text-muted-foreground truncate text-sm">
                   {customer.phone}
                 </p>
-                {customer.whatsapp ? (
+                {customer.alternative ? (
                   <p className="text-muted-foreground truncate text-sm">
-                    {customer.whatsapp}
+                    {customer.alternative}
                   </p>
                 ) : null}
               </div>

@@ -1,9 +1,9 @@
 export const orderKeys = {
   all: ["orders"] as const,
-  lists: () => [...orderKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...orderKeys.lists(), params] as const,
-  details: () => [...orderKeys.all, "detail"] as const,
-  detail: (params: Record<string, unknown>) =>
-    [...orderKeys.details(), params] as const,
+  list: () => [...orderKeys.all, "list"] as const,
+  listWithParams: (params: Record<string, unknown>) =>
+    [...orderKeys.list(), params] as const,
+  detail: () => [...orderKeys.all, "detail"] as const,
+  detailWithParams: (params: Record<string, unknown>) =>
+    [...orderKeys.detail(), params] as const,
 };

@@ -1,9 +1,9 @@
 export const customerKeys = {
   all: ["customers"] as const,
-  lists: () => [...customerKeys.all, "list"] as const,
-  list: (params: Record<string, unknown>) =>
-    [...customerKeys.lists(), params] as const,
-  details: () => [...customerKeys.all, "detail"] as const,
-  detail: (params: Record<string, unknown>) =>
-    [...customerKeys.details(), params] as const,
+  list: () => [...customerKeys.all, "list"] as const,
+  listWithParams: (params: Record<string, unknown>) =>
+    [...customerKeys.list(), params] as const,
+  detail: () => [...customerKeys.all, "detail"] as const,
+  detailWithParams: (params: Record<string, unknown>) =>
+    [...customerKeys.detail(), params] as const,
 };

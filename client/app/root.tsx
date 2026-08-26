@@ -7,16 +7,13 @@ import {
 } from "react-router";
 import { useEffect, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import type { Route } from "./+types/root";
 import { AppErrorScreen, AppLoader } from "~/components/layout-ui";
 import { TooltipProvider } from "~/components/ui/tooltip";
-import {
-  clearSession,
-} from "~/features/auth/session";
-import {
-  ensureCsrfToken,
-  setApiUnauthorizedHandler,
-} from "~/lib/api";
+import { clearAuthCache } from "~/features/auth/ops";
+import { PUBLIC_ROUTES } from "~/config";
+import { setApiUnauthorizedHandler } from "~/lib/api";
 import { stripAppBasename, withAppBasename } from "~/lib/app-base";
 import { queryClient } from "~/lib/query";
 import { ThemeProvider, THEME_STORAGE_KEY, I18nProvider } from "~/hooks";
@@ -67,17 +64,14 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 }
 
-const PUBLIC_AUTH_PATHS = new Set(["/"]);
-
 export default function App() {
   useEffect(() => {
     setApiUnauthorizedHandler(() => {
-      clearSession();
+      clearAuthCache();
       const path = stripAppBasename(window.location.pathname);
-      if (PUBLIC_AUTH_PATHS.has(path)) return;
-      window.location.assign(withAppBasename("/"));
+      if (path === PUBLIC_ROUTES.LOGIN) return;
+      window.location.assign(withAppBasename(PUBLIC_ROUTES.LOGIN));
     });
-    void ensureCsrfToken();
     return () => {
       setApiUnauthorizedHandler(null);
     };
@@ -96,6 +90,12 @@ export default function App() {
                 </>
               )}
             </OpsProvider>
+            {import.meta.env.DEV ? (
+              <ReactQueryDevtools
+                initialIsOpen={false}
+                buttonPosition="bottom-left"
+              />
+            ) : null}
           </QueryClientProvider>
         </TooltipProvider>
       </I18nProvider>

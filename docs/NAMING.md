@@ -20,6 +20,7 @@ contracts/src/
   features/
     auth/
     user/
+    measurement/   enum N/A — schema, types, interface
     customer/
     order/    enum.ts, schema.ts, types.ts, interface.ts
   lib/

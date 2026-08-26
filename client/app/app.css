@@ -46,7 +46,7 @@
   --foreground: oklch(0.96 0.015 80);
   --card: oklch(0.23 0.025 20);
   --card-foreground: oklch(0.96 0.015 80);
-  --popover: oklch(0.23 0.025 20);
+  --popover: oklch(0.26 0.025 20);
   --popover-foreground: oklch(0.96 0.015 80);
   --primary: oklch(0.78 0.08 80);
   --primary-foreground: oklch(0.22 0.04 30);
@@ -150,6 +150,15 @@
   a {
     color: inherit;
     text-decoration: none;
+  }
+
+  /* Native selects (fallback): keep options readable in dark mode */
+  select {
+    @apply bg-background text-foreground;
+  }
+
+  select option {
+    @apply bg-popover text-popover-foreground;
   }
 }
 

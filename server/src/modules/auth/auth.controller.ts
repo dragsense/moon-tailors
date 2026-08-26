@@ -61,12 +61,10 @@ export class AuthController {
   async login(
     @Body(new ZodValidationPipe(loginSchema)) body: TLoginData,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<ILoginResponse & ICsrfTokenResponse> {
+  ): Promise<ILoginResponse> {
     const session = await this.authService.login(body);
     this.setAccessCookie(res, session.accessToken);
-    const csrfToken = createCsrfToken();
-    this.issueCsrf(res, csrfToken);
-    return { ...session.response, csrfToken };
+    return session.response;
   }
 
   @Get("me")

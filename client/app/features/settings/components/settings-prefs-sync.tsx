@@ -1,27 +1,23 @@
 import { useEffect, useRef } from "react";
 import { useTheme, type Theme } from "~/hooks/use-theme";
 import { useI18n } from "~/hooks/use-i18n";
-import { useOp } from "~/ops";
-import { resolvePreferences } from "../lib/preferences";
-import { settingsOps } from "../ops";
+import { useSettingsState } from "../hooks/use-settings";
 
-/** Applies theme + language from the mySettings op (once per distinct value). */
+/** Applies theme + language from settings RQ cache (once per distinct value). */
 export function SettingsPrefsSync() {
-  const settings = useOp(settingsOps, "mySettings");
+  const { preferences, data } = useSettingsState();
   const { setTheme } = useTheme();
   const { setLanguage } = useI18n();
-  const prefs = settings.kind === "query" ? settings.data : undefined;
   const appliedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!prefs) return;
-    const resolved = resolvePreferences(prefs);
-    const key = `${resolved.theme.theme}|${resolved.language}`;
+    if (!data) return;
+    const key = `${preferences.theme.theme}|${preferences.language}`;
     if (appliedKeyRef.current === key) return;
     appliedKeyRef.current = key;
-    setTheme(resolved.theme.theme as Theme);
-    setLanguage(resolved.language);
-  }, [prefs, setLanguage, setTheme]);
+    setTheme(preferences.theme.theme as Theme);
+    setLanguage(preferences.language);
+  }, [data, preferences, setLanguage, setTheme]);
 
   return null;
 }

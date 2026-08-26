@@ -2,7 +2,6 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { PermissionsModule } from "../../common/base";
 import { CustomersModule } from "../customers/customers.module";
-import { GarmentTypesModule } from "../garment-types/garment-types.module";
 import { MeasurementsModule } from "../measurements/measurements.module";
 import { OrderEntity } from "./entities/order.entity";
 import { OrdersController } from "./orders.controller";
@@ -14,7 +13,6 @@ import { OrdersService } from "./orders.service";
     PermissionsModule,
     CustomersModule,
     MeasurementsModule,
-    GarmentTypesModule,
   ],
   controllers: [OrdersController],
   providers: [OrdersService],

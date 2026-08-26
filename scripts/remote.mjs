@@ -78,6 +78,7 @@ Compose actions (SSH → docker compose on host):
   stop            stop only (containers kept — use clean to remove)
   logs            follow logs (Ctrl+C detaches)
   clean           deep clean: containers / volumes / images / builds / deps (env/ kept)
+  clear-cache     wipe Vite / Nest / Astro caches for selected apps
 
 Host sync actions (from your laptop):
   pull            git sync only (reset --hard origin/<branch>, keep env/)
@@ -92,6 +93,7 @@ Flags:
 Examples:
   node scripts/remote.mjs --host staging --action pull
   node scripts/remote.mjs --host staging --action env
+  node scripts/remote.mjs --host staging --action clear-cache client
   node scripts/remote.mjs --host staging --action reload gateway
   node scripts/remote.mjs --host staging --action stop server
 `);
@@ -986,6 +988,44 @@ function runLocalAction(args) {
       return;
     }
 
+    case "clear-cache": {
+      const CACHE = {
+        server: [
+          "node_modules/.cache",
+          "server/node_modules/.cache",
+          "contracts/node_modules/.cache",
+        ],
+        client: [
+          "node_modules/.cache",
+          "node_modules/.vite",
+          "client/node_modules/.cache",
+          "client/node_modules/.vite",
+          "client/.vite",
+          "contracts/node_modules/.cache",
+        ],
+        website: [
+          "node_modules/.cache",
+          "website/node_modules/.cache",
+          "website/.astro",
+        ],
+      };
+      const apps = args.all
+        ? DOCKER_APPS
+        : args.services.filter((s) => DOCKER_APPS.includes(s));
+      const list = apps.length ? apps : DOCKER_APPS;
+      const paths = new Set();
+      for (const a of list) {
+        for (const p of CACHE[a] ?? []) paths.add(p);
+      }
+      console.log(`▸ clear-cache: ${list.join(", ")}`);
+      for (const rel of paths) {
+        const r = spawnSync("rm", ["-rf", rel], { cwd: root, encoding: "utf8" });
+        if ((r.status ?? 1) === 0) console.log(`✓ removed ${rel}`);
+      }
+      console.log("✓ cache cleared");
+      return;
+    }
+
     default:
       die(`Unknown action: ${args.action}`);
   }
@@ -998,7 +1038,7 @@ if (args.help) {
 }
 if (!args.action) {
   help();
-  die("Need --action (status|start|reload|stop|logs|clean|env|pull)");
+  die("Need --action (status|start|reload|stop|logs|clean|clear-cache|env|pull)");
 }
 if (args.clientMode && !CLIENT_MODES.includes(normalizeClientMode(args.clientMode))) {
   die(`Invalid --client-mode (want ${CLIENT_MODES.join("|")})`);

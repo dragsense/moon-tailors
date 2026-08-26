@@ -12,13 +12,13 @@ export class CustomerEntity extends GeneralBaseEntity {
   @Column({ type: "varchar", length: 16, nullable: true })
   gender!: EGender | null;
 
-  @Index()
+  @Index({ unique: true })
   @Column({ type: "varchar", length: 40 })
   phone!: string;
 
   @Index()
-  @Column({ type: "varchar", length: 40, nullable: true })
-  whatsapp!: string | null;
+  @Column({ name: "whatsapp", type: "varchar", length: 40, nullable: true })
+  alternative!: string | null;
 
   @Column({ type: "varchar", length: 255, nullable: true })
   email!: string | null;

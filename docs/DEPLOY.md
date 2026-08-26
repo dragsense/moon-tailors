@@ -200,6 +200,7 @@ Gateway nginx configs are **bind-mounted** from `docker/nginx-gateway.*.conf.tem
 | **pull** | git sync only (keep `env/`) |
 | **stop** | stop only (containers kept) |
 | **logs** | follow logs |
+| **clear-cache** | wipe Vite / Nest / Astro caches for selected apps |
 | **clean** | pick apps + layers (`env/` never removed) |
 
 Push to GitHub before Deploy. Host resets to origin; **`env/` is kept**.

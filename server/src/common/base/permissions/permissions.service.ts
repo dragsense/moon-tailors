@@ -4,7 +4,7 @@ import {
   EResource,
   EUserLevel,
 } from "@moon-tailors/contracts";
-import { In } from "typeorm";
+import { In, type EntityManager } from "typeorm";
 import {
   EntityService,
   type IBoundEntityService,
@@ -89,22 +89,44 @@ export class PermissionsService implements OnModuleInit {
   }
 
   /** Attach permissions to a user by name; there is no Role entity. */
-  async assignToUser(userId: string, names: string[]): Promise<void> {
+  async assignToUser(
+    userId: string,
+    names: string[],
+    manager?: EntityManager,
+  ): Promise<void> {
     if (names.length === 0) return;
 
-    const perms = await this.permissions.getRepository().find({
+    const permRepo = manager
+      ? manager.getRepository(PermissionEntity)
+      : this.permissions.getRepository();
+    const grantRepo = manager
+      ? manager.getRepository(UserPermissionEntity)
+      : this.userPermissions.getRepository();
+
+    const perms = await permRepo.find({
       where: { name: In(names) },
     });
+
     for (const permission of perms) {
-      const exists = await this.userPermissions.get({
-        userId,
-        permissionId: permission.id,
-      });
+      const exists = manager
+        ? await grantRepo.findOne({
+            where: { userId, permissionId: permission.id },
+          })
+        : await this.userPermissions.get({
+            userId,
+            permissionId: permission.id,
+          });
       if (!exists) {
-        await this.userPermissions.create({
-          userId,
-          permissionId: permission.id,
-        });
+        if (manager) {
+          await grantRepo.save(
+            grantRepo.create({ userId, permissionId: permission.id }),
+          );
+        } else {
+          await this.userPermissions.create({
+            userId,
+            permissionId: permission.id,
+          });
+        }
       }
     }
   }

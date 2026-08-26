@@ -3,6 +3,3 @@ export const authKeys = {
   all: ["auth"] as const,
   session: () => [...authKeys.all, "me"] as const,
 };
-
-/** @deprecated use authKeys.session() */
-export const AUTH_SESSION_QUERY_KEY = authKeys.session();

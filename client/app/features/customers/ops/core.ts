@@ -1,10 +1,12 @@
 import type {
-  TCopyCustomerMeasurementData,
   TCreateCustomerData,
-  TMeasurementValues,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
-import { EPermissionAction, EResource } from "@moon-tailors/contracts";
+import {
+  customerListQuerySchema,
+  EPermissionAction,
+  EResource,
+} from "@moon-tailors/contracts";
 import {
   invalidateQueriesKey,
   refetchOp,
@@ -13,18 +15,18 @@ import {
 } from "~/ops";
 import { customersService } from "../api";
 import { CreateCustomerModal } from "../form/create-customer-modal";
+import { CustomerDirectory } from "../list/customer-directory";
 import { customerKeys } from "../query-keys";
 import { CustomerDetail } from "../view/customer-detail";
-import { ordersService } from "~/features/orders/api";
-import { orderKeys } from "~/features/orders/query-keys";
 
-const refreshCustomers = (_r: unknown, _v: unknown, ops: OpsBag) => {
+export const refreshCustomers = (_r: unknown, _v: unknown, ops: OpsBag) => {
   refetchOp(ops, "listCustomers");
   refetchOp(ops, "getCustomer");
-  invalidateQueriesKey(customerKeys.lists());
-  invalidateQueriesKey(customerKeys.details());
+  invalidateQueriesKey(customerKeys.list());
+  invalidateQueriesKey(customerKeys.detail());
 };
 
+/** Prefixed op names so packs can compose with orders/measurements safely. */
 export const customerOpsCore = {
   listCustomers: {
     kind: "query" as const,
@@ -33,14 +35,11 @@ export const customerOpsCore = {
       action: EPermissionAction.READ,
     },
     initialParams: { page: 1, limit: 20 },
-    queryKey: customerKeys.list,
-    invalidateKey: customerKeys.lists(),
+    queryKey: customerKeys.listWithParams,
+    invalidateKey: customerKeys.list(),
     fetch: (params: Record<string, unknown>) =>
-      customersService.list({
-        page: Number(params.page ?? 1),
-        limit: Number(params.limit ?? 20),
-        search: typeof params.search === "string" ? params.search : undefined,
-      }),
+      customersService.list(customerListQuerySchema.parse(params)),
+    component: CustomerDirectory,
     auto: false,
     onError: (error: Error) => {
       console.error("[customers.listCustomers]", error.message);
@@ -53,8 +52,8 @@ export const customerOpsCore = {
       action: EPermissionAction.READ,
     },
     initialParams: { id: "" },
-    queryKey: customerKeys.detail,
-    invalidateKey: customerKeys.details(),
+    queryKey: customerKeys.detailWithParams,
+    invalidateKey: customerKeys.detail(),
     fetch: (params: Record<string, unknown>) => {
       const id = typeof params.id === "string" ? params.id : "";
       if (!id) return Promise.resolve(null);
@@ -64,38 +63,6 @@ export const customerOpsCore = {
     auto: false,
     onError: (error: Error) => {
       console.error("[customers.getCustomer]", error.message);
-    },
-  },
-  listCustomerOrders: {
-    kind: "query" as const,
-    permission: { resource: EResource.ORDERS, action: EPermissionAction.READ },
-    initialParams: { page: 1, limit: 20, customerId: "" },
-    queryKey: orderKeys.list,
-    invalidateKey: orderKeys.lists(),
-    fetch: (params: Record<string, unknown>) => {
-      const customerId =
-        typeof params.customerId === "string" ? params.customerId : "";
-      if (!customerId) {
-        return Promise.resolve({
-          data: [],
-          page: 1,
-          limit: 20,
-          total: 0,
-          lastPage: 1,
-          hasNextPage: false,
-          hasPrevPage: false,
-        });
-      }
-      return ordersService.list({
-        page: Number(params.page ?? 1),
-        limit: Number(params.limit ?? 20),
-        customerId,
-        search: typeof params.search === "string" ? params.search : undefined,
-      });
-    },
-    auto: false,
-    onError: (error: Error) => {
-      console.error("[customers.listCustomerOrders]", error.message);
     },
   },
   createCustomer: {
@@ -126,41 +93,6 @@ export const customerOpsCore = {
     onSuccess: refreshCustomers,
     onError: (error: Error) => {
       console.error("[customers.updateCustomer]", error.message);
-    },
-  },
-  updateDefaultMeasurements: {
-    kind: "mutation" as const,
-    permission: {
-      resource: EResource.MEASUREMENTS,
-      action: EPermissionAction.UPDATE,
-    },
-    mutate: (vars: unknown) => {
-      const { id, garmentTypeId, ...body } = vars as TMeasurementValues & {
-        id: string;
-        garmentTypeId: string;
-      };
-      return customersService.upsertMeasurement(id, garmentTypeId, body);
-    },
-    onSuccess: refreshCustomers,
-    onError: (error: Error) => {
-      console.error("[customers.updateDefaultMeasurements]", error.message);
-    },
-  },
-  copyMeasurement: {
-    kind: "mutation" as const,
-    permission: {
-      resource: EResource.MEASUREMENTS,
-      action: EPermissionAction.UPDATE,
-    },
-    mutate: (vars: unknown) => {
-      const { id, ...body } = vars as TCopyCustomerMeasurementData & {
-        id: string;
-      };
-      return customersService.copyMeasurement(id, body);
-    },
-    onSuccess: refreshCustomers,
-    onError: (error: Error) => {
-      console.error("[customers.copyMeasurement]", error.message);
     },
   },
 } satisfies Record<string, OpConfig>;

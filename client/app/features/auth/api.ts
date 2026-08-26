@@ -3,33 +3,25 @@ import type {
   ILoginResponse,
   IAuthUser,
   TLoginData,
+  IMessageResponse,
 } from "@moon-tailors/contracts";
-import { BaseService, ensureCsrfToken } from "~/lib/api";
+import { BaseService } from "~/lib/api";
 
-class AuthService extends BaseService<
-  IAuthUser,
-  Record<string, unknown>,
-  Record<string, unknown>
-> {
+class AuthService extends BaseService<IAuthUser, TLoginData> {
   constructor() {
     super("/auth");
   }
 
   login(body: TLoginData) {
-    return this.post<ILoginResponse & ICsrfTokenResponse>(
-      body as Record<string, unknown>,
-      undefined,
-      "/login",
-    );
+    return this.post<ILoginResponse>(body, undefined, "/login");
   }
 
   me() {
-    return this.getSingle<IAuthUser>(undefined, undefined, "/me");
+    return this.getSingle(undefined, undefined, "/me");
   }
 
-  async logout() {
-    await ensureCsrfToken();
-    return this.post<{ message: string }>({}, undefined, "/logout");
+  logout() {
+    return this.post<IMessageResponse>({}, undefined, "/logout");
   }
 
   fetchCsrfToken() {
@@ -38,18 +30,3 @@ class AuthService extends BaseService<
 }
 
 export const authService = new AuthService();
-
-/** @deprecated Prefer `authService` — thin aliases for existing call sites. */
-export const login = (body: TLoginData) => authService.login(body);
-export const getMe = () => authService.me();
-export const logout = () => authService.logout();
-export const fetchCsrfToken = () => authService.fetchCsrfToken();
-
-export function isLoginResponse(value: unknown): value is ILoginResponse {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "user" in value &&
-    "message" in value
-  );
-}

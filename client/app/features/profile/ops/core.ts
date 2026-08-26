@@ -2,22 +2,25 @@ import type {
   TChangePasswordData,
   TUpdateMeData,
 } from "@moon-tailors/contracts";
-import { AUTH_SESSION_QUERY_KEY } from "~/features/auth/session/session-store";
-import { usersService } from "~/features/users/api";
-import { userKeys } from "~/features/users/query-keys";
 import {
-  invalidateQueriesKey,
+  createOps,
+  pickOps,
   refetchOp,
   type OpConfig,
   type OpsBag,
 } from "~/ops";
+import { profileService } from "../api";
+import { ChangePasswordForm } from "../form/change-password-form";
+import { ProfileForm } from "../form/profile-form";
+import { profileKeys } from "../query-keys";
 
 export const profileOpsCore = {
   myProfile: {
     kind: "query" as const,
-    fetch: () => usersService.getMe(),
-    queryKey: () => userKeys.me(),
-    invalidateKey: userKeys.me(),
+    fetch: () => profileService.getMe(),
+    queryKey: () => profileKeys.me(),
+    invalidateKey: profileKeys.me(),
+    auto: true,
     queryOptions: {
       staleTime: 30_000,
     },
@@ -27,10 +30,11 @@ export const profileOpsCore = {
   },
   updateMe: {
     kind: "mutation" as const,
-    mutate: (vars: unknown) => usersService.updateMe(vars as TUpdateMeData),
+    mutate: (vars: unknown) => profileService.updateMe(vars as TUpdateMeData),
+    component: ProfileForm,
+    auto: true,
     onSuccess: (_result: unknown, _vars: unknown, ops: OpsBag) => {
       refetchOp(ops, "myProfile");
-      invalidateQueriesKey(AUTH_SESSION_QUERY_KEY);
     },
     onError: (error: Error) => {
       console.error("[profile.updateMe]", error.message);
@@ -39,9 +43,32 @@ export const profileOpsCore = {
   changePassword: {
     kind: "mutation" as const,
     mutate: (vars: unknown) =>
-      usersService.changePassword(vars as TChangePasswordData),
+      profileService.changePassword(vars as TChangePasswordData),
+    component: ChangePasswordForm,
+    auto: true,
     onError: (error: Error) => {
       console.error("[profile.changePassword]", error.message);
     },
   },
 } satisfies Record<string, OpConfig>;
+
+export type ProfileOpsCore = typeof profileOpsCore;
+
+/** `/profile` */
+export const profileOps = createOps({
+  id: "profile",
+  scope: "page",
+  ops: pickOps(profileOpsCore, {
+    myProfile: true,
+    updateMe: true,
+  }),
+});
+
+/** `/reset-password` */
+export const resetPasswordOps = createOps({
+  id: "reset-password",
+  scope: "page",
+  ops: pickOps(profileOpsCore, {
+    changePassword: true,
+  }),
+});

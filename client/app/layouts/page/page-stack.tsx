@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { BreadcrumbItem } from "~/config/breadcrumb.config";
 import { cn } from "~/lib/utils";
 import { PageFooter } from "./footer";
 import { PageHeader } from "./header";
@@ -7,6 +8,8 @@ export type PageStackProps = {
   title?: ReactNode;
   description?: ReactNode;
   actions?: ReactNode;
+  /** Override auto breadcrumbs from the route. */
+  breadcrumbItems?: BreadcrumbItem[];
   /** Replace the default header entirely. */
   header?: ReactNode;
   footer?: ReactNode;
@@ -23,6 +26,7 @@ export function PageStack({
   title,
   description,
   actions,
+  breadcrumbItems,
   header,
   footer,
   children,
@@ -32,7 +36,12 @@ export function PageStack({
   return (
     <section className={cn("flex min-h-full flex-col gap-6", className)}>
       {header ?? (
-        <PageHeader title={title} description={description} actions={actions} />
+        <PageHeader
+          title={title}
+          description={description}
+          actions={actions}
+          breadcrumbItems={breadcrumbItems}
+        />
       )}
       <div className={cn("min-h-0 flex-1", contentClassName)}>{children}</div>
       {footer ? <PageFooter>{footer}</PageFooter> : null}

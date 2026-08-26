@@ -1,42 +1,40 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import type {
   ICustomer,
-  IGarmentType,
   IOrder,
   IPaginatedResponse,
   TMeasurementValues,
 } from "@moon-tailors/contracts";
 import {
-  EGarmentAudience,
   EGender,
-  garmentAudienceForGender,
-  hasMeasurementValues,
+  EOrderStatus,
   pickMeasurementValues,
   updateCustomerSchema,
   type TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import { SchemaForm } from "~/components/form-ui";
-import { Alert, CardRow, List } from "~/components/layout-ui";
+import { Alert, CardRow, List, Modal } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { useI18n } from "~/hooks/use-i18n";
 import { Page } from "~/layouts";
-import { useOp, type QueryOpComponentProps } from "~/ops";
-import {
-  APP_ROUTES,
-  customerNewOrderPath,
-  orderPath,
-} from "~/config/routes.config";
+import { customerPath } from "~/config/routes.config";
 import type { TranslationKey } from "~/locales";
-import { useGarmentTypes } from "~/features/garment-types/use-garment-types";
-import { GarmentTypeField } from "~/features/garment-types/components/garment-type-field";
-import { CustomerAvatar } from "../components/customer-avatar";
 import {
-  CopyFromRow,
-  MeasurementForm,
-  MeasurementReadout,
-} from "../components/measurement-fields";
+  ORDER_WORKSPACE_MODAL_BODY_CLASS,
+  ORDER_WORKSPACE_MODAL_CLASS,
+} from "~/features/orders/order-modal";
+import { MeasurementForm } from "~/features/measurements";
+import { CustomerAvatar } from "../components/customer-avatar";
+import { OpsComponent, useOp, type QueryOpComponentProps } from "~/ops";
 
 export function CustomerDetail({
   data,
@@ -50,35 +48,49 @@ export function CustomerDetail({
   const { t } = useI18n();
   const { id } = useParams<{ id: string }>();
   const [editing, setEditing] = useState(false);
+  const [ordersOpen, setOrdersOpen] = useState(false);
   const [orderSearch, setOrderSearch] = useState("");
   const updateCustomer = useOp(store, "updateCustomer");
   const updateDefaultMeasurements = useOp(store, "updateDefaultMeasurements");
-  const copyMeasurement = useOp(store, "copyMeasurement");
-  const listCustomerOrders = useOp(store, "listCustomerOrders");
-  const { types: allTypes, isPending: typesPending } = useGarmentTypes();
+  const getMeasurement = useOp(store, "getMeasurement");
+  const listOrders = useOp(store, "listOrders");
+  const createOrder = useOp(store, "createOrder");
+  const updateOrder = useOp(store, "updateOrder");
+  const viewOrder = useOp(store, "viewOrder");
+  const [statusBusyId, setStatusBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (id && params.id !== id) setParams({ id });
   }, [id, params.id, setParams]);
 
   useEffect(() => {
+    if (getMeasurement.kind !== "query") return;
+    const measurementId = (data as ICustomer | undefined)?.measurement?.id ?? "";
+    if (getMeasurement.params.id !== measurementId) {
+      getMeasurement.setParams({ id: measurementId });
+    }
+  }, [data, getMeasurement]);
+
+  useEffect(() => {
     if (
-      listCustomerOrders.kind === "query" &&
+      ordersOpen &&
+      listOrders.kind === "query" &&
       id &&
-      listCustomerOrders.params.customerId !== id
+      listOrders.params.customerId !== id
     ) {
-      listCustomerOrders.setParams({
+      listOrders.setParams({
         customerId: id,
         page: 1,
         limit: 20,
         search: "",
       });
     }
-  }, [id, listCustomerOrders]);
+  }, [ordersOpen, id, listOrders]);
 
   if (updateCustomer.kind !== "mutation") return null;
   if (updateDefaultMeasurements.kind !== "mutation") return null;
-  if (copyMeasurement.kind !== "mutation") return null;
+  if (createOrder.kind !== "mutation") return null;
+  if (updateOrder.kind !== "mutation") return null;
 
   const customer = data as ICustomer | undefined;
   const errorMessage =
@@ -88,35 +100,74 @@ export function CustomerDetail({
         ? t("customers.loadFailed")
         : null;
   const ordersPage =
-    listCustomerOrders.kind === "query"
-      ? (listCustomerOrders.data as IPaginatedResponse<IOrder> | undefined)
+    listOrders.kind === "query"
+      ? (listOrders.data as IPaginatedResponse<IOrder> | undefined)
       : undefined;
   const orders = ordersPage?.data ?? [];
-  const types = allTypes.filter((type) => {
-    const audience = garmentAudienceForGender(customer?.gender);
-    return audience ? type.audience === audience : true;
-  });
-  const savedByType = new Map(
-    (customer?.measurements ?? []).map((row) => [row.garmentTypeId, row]),
-  );
-  const filledTypes = types.filter((type) =>
-    hasMeasurementValues(savedByType.get(type.id)),
-  );
+
+  function openOrders() {
+    setOrderSearch("");
+    if (listOrders.kind === "query" && customer) {
+      listOrders.setParams({
+        customerId: customer.id,
+        page: 1,
+        limit: 20,
+        search: "",
+      });
+    }
+    setOrdersOpen(true);
+  }
+
+  async function changeOrderStatus(order: IOrder, status: EOrderStatus) {
+    if (status === order.status) return;
+    if (order.isLocked && !window.confirm(t("orders.forceEditConfirm"))) {
+      return;
+    }
+    if (updateOrder.kind !== "mutation") return;
+    const runUpdate = updateOrder.run;
+    setStatusBusyId(order.id);
+    try {
+      await runUpdate({
+        id: order.id,
+        status,
+        forceEdit: order.isLocked || undefined,
+      });
+      if (listOrders.kind === "query") {
+        await listOrders.refetch();
+      }
+    } finally {
+      setStatusBusyId(null);
+    }
+  }
 
   return (
     <Page
       title={customer?.name ?? t("customers.title")}
       description={t("customers.profile")}
+      breadcrumbItems={
+        customer
+          ? [
+              {
+                label: customer.name,
+                href: customerPath(customer.id),
+              },
+            ]
+          : undefined
+      }
       actions={
         <>
-          <Button asChild size="lg" variant="outline">
-            <Link to={APP_ROUTES.DASHBOARD}>{t("nav.items.dashboard")}</Link>
-          </Button>
           {customer ? (
-            <Button asChild size="lg">
-              <Link to={customerNewOrderPath(customer.id)}>
-                {t("customers.startOrder")}
-              </Link>
+            <Button type="button" size="lg" variant="outline" onClick={openOrders}>
+              {t("customers.viewOrders")}
+            </Button>
+          ) : null}
+          {customer && createOrder.allowed ? (
+            <Button
+              type="button"
+              size="lg"
+              onClick={() => createOrder.open(customer)}
+            >
+              {t("customers.startOrder")}
             </Button>
           ) : null}
         </>
@@ -134,11 +185,10 @@ export function CustomerDetail({
       ) : null}
 
       {customer ? (
-        <div className="flex flex-col gap-8">
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-            <section className="rounded-xl border border-border/60 p-4">
+        <div className="grid gap-6 lg:grid-cols-[minmax(20rem,32rem)_minmax(0,1fr)] lg:items-start">
+          <section className="rounded-xl border border-border/60 p-4">
             <div className="mb-4">
-              <CustomerAvatar customer={customer} className="size-24 text-lg" />
+              <CustomerAvatar customer={customer} className="size-16 text-base" />
             </div>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h2 className="font-heading text-base font-semibold">
@@ -161,7 +211,27 @@ export function CustomerDetail({
               <SchemaForm
                 schema={updateCustomerSchema}
                 defaultValues={customer}
-                fieldConfig={{ email: { hidden: true } }}
+                fieldConfig={{
+                  email: { hidden: true },
+                  phone: {
+                    label: t("customers.phone"),
+                    placeholder: t("customers.phonePlaceholder"),
+                  },
+                  alternative: { label: t("customers.alternative") },
+                  name: {
+                    label: t("customers.name"),
+                    placeholder: t("customers.namePlaceholder"),
+                  },
+                  gender: {
+                    label: t("customers.gender"),
+                    options: [
+                      { label: t("customers.male"), value: EGender.MALE },
+                      { label: t("customers.female"), value: EGender.FEMALE },
+                    ],
+                  },
+                  address: { label: t("customers.address") },
+                  notes: { label: t("customers.notes") },
+                }}
                 submitLabel={t("common.actions.save")}
                 onSubmit={async (values) => {
                   await updateCustomer.run({
@@ -172,7 +242,7 @@ export function CustomerDetail({
                 }}
               />
             ) : (
-              <dl className="grid gap-2 text-sm sm:grid-cols-2">
+              <dl className="grid gap-2 text-sm">
                 <div>
                   <dt className="text-muted-foreground text-xs">
                     {t("customers.gender")}
@@ -191,9 +261,9 @@ export function CustomerDetail({
                 </div>
                 <div>
                   <dt className="text-muted-foreground text-xs">
-                    {t("customers.whatsapp")}
+                    {t("customers.alternative")}
                   </dt>
-                  <dd>{customer.whatsapp || "—"}</dd>
+                  <dd>{customer.alternative || "—"}</dd>
                 </div>
                 <div>
                   <dt className="text-muted-foreground text-xs">
@@ -202,7 +272,7 @@ export function CustomerDetail({
                   <dd>{customer.address || "—"}</dd>
                 </div>
                 {customer.notes ? (
-                  <div className="sm:col-span-2">
+                  <div>
                     <dt className="text-muted-foreground text-xs">
                       {t("customers.notes")}
                     </dt>
@@ -213,69 +283,74 @@ export function CustomerDetail({
             )}
           </section>
 
-          <CustomerMeasurementsColumn
-            types={types}
-            typesPending={typesPending}
-            audience={
-              garmentAudienceForGender(customer.gender) ??
-              EGarmentAudience.GENTS
-            }
-            savedByType={savedByType}
-            filledTypes={filledTypes}
-            canEdit={updateDefaultMeasurements.allowed}
-            canCopy={copyMeasurement.allowed}
-            onSave={async (garmentTypeId, values) => {
-              await updateDefaultMeasurements.run({
-                id: customer.id,
-                garmentTypeId,
-                ...values,
-              });
-            }}
-            onCopy={async (toId, fromId) => {
-              await copyMeasurement.run({
-                id: customer.id,
-                fromGarmentTypeId: fromId,
-                toGarmentTypeId: toId,
-              });
-            }}
-          />
-          </div>
-
-          <section>
-            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <section className="rounded-xl border border-border/60 p-4">
+            <div className="mb-3 space-y-1">
               <h2 className="font-heading text-base font-semibold">
-                {t("customers.orderHistory")}
+                {t("customers.defaultMeasurements")}
               </h2>
-              <Button asChild size="lg">
-                <Link to={customerNewOrderPath(customer.id)}>
-                  {t("customers.startOrder")}
-                </Link>
-              </Button>
+              <p className="text-muted-foreground text-sm">
+                {t("customers.measurementsHint")}
+              </p>
             </div>
-            {listCustomerOrders.kind === "query" ? (
-              <form
-                className="mb-4 flex flex-col gap-3 sm:flex-row"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  listCustomerOrders.setParams({
-                    ...listCustomerOrders.params,
-                    customerId: customer.id,
-                    page: 1,
-                    search: orderSearch,
+            {updateDefaultMeasurements.allowed ? (
+              <MeasurementForm
+                key={customer.measurement?.updatedAt ?? "empty-default"}
+                measurement={customer.measurement ?? pickMeasurementValues()}
+                submitLabel={t("common.actions.save")}
+                onSubmit={async (values: TMeasurementValues) => {
+                  await updateDefaultMeasurements.run({
+                    id: customer.id,
+                    measurementId: customer.measurement?.id,
+                    ...values,
                   });
                 }}
-              >
-                <Input
-                  className="h-11 text-base"
-                  placeholder={t("orders.searchPlaceholder")}
-                  value={orderSearch}
-                  onChange={(event) => setOrderSearch(event.target.value)}
-                />
-                <Button type="submit" size="lg">
-                  {t("common.actions.search")}
-                </Button>
-              </form>
-            ) : null}
+              />
+            ) : (
+              <OpsComponent store={store} name="getMeasurement" />
+            )}
+          </section>
+        </div>
+      ) : null}
+
+      {ordersOpen && customer ? (
+        <Modal
+          title={t("customers.orderHistory")}
+          description={customer.name}
+          onClose={() => setOrdersOpen(false)}
+          className={ORDER_WORKSPACE_MODAL_CLASS}
+          contentClassName={ORDER_WORKSPACE_MODAL_BODY_CLASS}
+        >
+          {listOrders.kind === "query" ? (
+            <form
+              className="mb-4 flex flex-col gap-3 sm:flex-row"
+              onSubmit={(event) => {
+                event.preventDefault();
+                listOrders.setParams({
+                  ...listOrders.params,
+                  customerId: customer.id,
+                  page: 1,
+                  search: orderSearch,
+                });
+              }}
+            >
+              <Input
+                className="h-11 text-base"
+                placeholder={t("orders.searchPlaceholder")}
+                value={orderSearch}
+                onChange={(event) => setOrderSearch(event.target.value)}
+              />
+              <Button type="submit" size="lg">
+                {t("common.actions.search")}
+              </Button>
+            </form>
+          ) : null}
+          {listOrders.kind === "query" &&
+          listOrders.isPending &&
+          orders.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              {t("common.actions.loading")}
+            </p>
+          ) : (
             <List
               items={orders}
               getItemKey={(row: IOrder) => row.id}
@@ -288,108 +363,59 @@ export function CustomerDetail({
                 <CardRow
                   title={order.orderNumber}
                   actions={
-                    <Button asChild size="sm" variant="outline">
-                      <Link to={orderPath(order.id)}>
-                        {t("common.actions.open")}
-                      </Link>
-                    </Button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {updateOrder.allowed ? (
+                        <Select
+                          value={order.status}
+                          disabled={statusBusyId === order.id}
+                          onValueChange={(value) => {
+                            void changeOrderStatus(
+                              order,
+                              value as EOrderStatus,
+                            );
+                          }}
+                        >
+                          <SelectTrigger
+                            className="h-9 max-w-[11rem]"
+                            aria-label={t("orders.updateStatus")}
+                          >
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.values(EOrderStatus).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {t(
+                                  `orders.status.${status}` as TranslationKey,
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : null}
+                      {viewOrder.kind === "mutation" && viewOrder.allowed ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => viewOrder.open(order)}
+                        >
+                          {t("orders.view")}
+                        </Button>
+                      ) : null}
+                    </div>
                   }
                 >
                   <p className="text-muted-foreground text-sm">
-                    {t(`orders.status.${order.status}` as TranslationKey)}
-                    {order.isDelayed ? ` · ${t("orders.delayed")}` : ""}
-                    {order.isLocked ? ` · ${t("orders.locked")}` : ""}
+                    {order.garmentType ? `${order.garmentType} · ` : ""}
+                    {order.isDelayed ? `${t("orders.delayed")} · ` : ""}
+                    {order.isLocked ? t("orders.locked") : ""}
                   </p>
                 </CardRow>
               )}
             />
-          </section>
-        </div>
+          )}
+        </Modal>
       ) : null}
     </Page>
-  );
-}
-
-function CustomerMeasurementsColumn({
-  types,
-  typesPending,
-  audience,
-  savedByType,
-  filledTypes,
-  canEdit,
-  canCopy,
-  onSave,
-  onCopy,
-}: {
-  types: IGarmentType[];
-  typesPending: boolean;
-  audience: EGarmentAudience;
-  savedByType: Map<string, ICustomer["measurements"][number]>;
-  filledTypes: IGarmentType[];
-  canEdit: boolean;
-  canCopy: boolean;
-  onSave: (garmentTypeId: string, values: TMeasurementValues) => Promise<void>;
-  onCopy: (toId: string, fromId: string) => Promise<void>;
-}) {
-  const { t } = useI18n();
-  const [selectedId, setSelectedId] = useState("");
-  const selected =
-    types.find((type) => type.id === selectedId) ?? types[0] ?? null;
-  const measurement = selected ? savedByType.get(selected.id) : undefined;
-  const filledIds = new Set(filledTypes.map((type) => type.id));
-  const typeKey = types.map((type) => type.id).join(",");
-
-  useEffect(() => {
-    const ids = typeKey ? typeKey.split(",") : [];
-    setSelectedId((current) => {
-      if (ids.length === 0) return "";
-      return ids.includes(current) ? current : ids[0];
-    });
-  }, [typeKey]);
-
-  return (
-    <section className="rounded-xl border border-border/60 p-4">
-      <div className="mb-3 space-y-1">
-        <h2 className="font-heading text-base font-semibold">
-          {t("customers.defaultMeasurements")}
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          {t("customers.measurementsHint")}
-        </p>
-      </div>
-      {typesPending ? (
-        <p className="text-muted-foreground text-sm">
-          {t("common.actions.loading")}
-        </p>
-      ) : (
-        <div className="space-y-4">
-          <GarmentTypeField
-            types={types}
-            value={selected?.id ?? ""}
-            audience={audience}
-            filledIds={filledIds}
-            onChange={setSelectedId}
-          />
-          {selected && canCopy ? (
-            <CopyFromRow
-              types={filledTypes.filter((item) => item.id !== selected.id)}
-              onCopy={(fromId) => {
-                void onCopy(selected.id, fromId);
-              }}
-            />
-          ) : null}
-          {selected && canEdit ? (
-            <MeasurementForm
-              key={measurement?.updatedAt ?? `${selected.id}-empty`}
-              measurement={measurement ?? pickMeasurementValues()}
-              submitLabel={t("common.actions.save")}
-              onSubmit={(values) => onSave(selected.id, values)}
-            />
-          ) : selected ? (
-            <MeasurementReadout measurement={measurement ?? null} />
-          ) : null}
-        </div>
-      )}
-    </section>
   );
 }

@@ -17,7 +17,6 @@ import {
   EOrderStatus,
   EResource,
   filtersFromListSchema,
-  garmentAudienceForGender,
   orderListQuerySchema,
 } from "@moon-tailors/contracts";
 import { ActivityLogRegistry } from "../../common/activity-logs";
@@ -29,13 +28,18 @@ import {
 import { DomainEventRegistry } from "../../common/events";
 import type { EntityKey, EntityQueryConfig } from "../../common/query";
 import { CustomersService } from "../customers/customers.service";
-import { GarmentTypesService } from "../garment-types/garment-types.service";
 import { MeasurementsService } from "../measurements/measurements.service";
 import { OrderEntity } from "./entities/order.entity";
 
 export const ORDER_QUERY: EntityQueryConfig = {
   alias: "order",
-  searchable: ["orderNumber", "notes", "customer.name", "customer.phone"],
+  searchable: [
+    "orderNumber",
+    "notes",
+    "garmentType",
+    "customer.name",
+    "customer.phone",
+  ],
   sortable: [
     "createdAt",
     "updatedAt",
@@ -48,7 +52,7 @@ export const ORDER_QUERY: EntityQueryConfig = {
   filters: filtersFromListSchema(orderListQuerySchema),
 };
 
-const RELATIONS = ["customer", "measurement", "measurement.garmentType"] as const;
+const RELATIONS = ["customer", "measurement"] as const;
 
 @Injectable()
 export class OrdersService implements OnModuleInit {
@@ -59,7 +63,6 @@ export class OrdersService implements OnModuleInit {
     private readonly permissions: PermissionsService,
     private readonly customers: CustomersService,
     private readonly measurements: MeasurementsService,
-    private readonly garmentTypes: GarmentTypesService,
   ) {
     this.entity = this.entityService.bind(OrderEntity, ORDER_QUERY);
   }
@@ -79,18 +82,17 @@ export class OrdersService implements OnModuleInit {
 
   async create(input: TCreateOrderData): Promise<IOrder> {
     const customer = await this.customers.get(input.customerId);
-    await this.assertTypeForCustomer(customer.gender, input.garmentTypeId);
 
     const snapshot = await this.measurements.createOrderSnapshot(
       customer.id,
-      input.garmentTypeId,
       input.measurement,
     );
 
     const order = await this.entity.create({
-      orderNumber: nextOrderNumber(),
+      orderNumber: await this.nextOrderNumber(),
       customerId: customer.id,
       measurementId: snapshot.id,
+      garmentType: input.garmentType.trim(),
       orderDate: input.orderDate,
       expectedCompletionDate: input.expectedCompletionDate,
       status: input.status ?? EOrderStatus.NEW,
@@ -102,13 +104,9 @@ export class OrdersService implements OnModuleInit {
     await this.measurements.attachToOrder(snapshot.id, order.id);
 
     if (input.replaceDefault) {
-      const targetTypeId =
-        input.replaceDefaultGarmentTypeId ?? input.garmentTypeId;
-      await this.assertTypeForCustomer(customer.gender, targetTypeId);
       const latest = await this.measurements.get(snapshot.id);
-      await this.customers.upsertMeasurement(
+      await this.measurements.upsertDefault(
         customer.id,
-        targetTypeId,
         this.measurements.pickValues(latest),
       );
     }
@@ -139,35 +137,21 @@ export class OrdersService implements OnModuleInit {
     if (input.totalCost !== undefined) patch.totalCost = String(input.totalCost);
     if (input.paidAmount !== undefined) patch.paidAmount = String(input.paidAmount);
     if (input.notes !== undefined) patch.notes = emptyToNull(input.notes);
+    if (input.garmentType !== undefined) {
+      patch.garmentType = input.garmentType.trim();
+    }
 
     await this.entity.update(key, patch);
     return this.get(key);
   }
 
-  async updateMeasurements(
-    orderId: string,
-    input: TMeasurementValues,
-    forceEdit?: boolean,
-  ): Promise<IOrder> {
-    const order = await this.entity.require(orderId);
-    this.assertWritable(order, forceEdit);
-    await this.measurements.updateValues(order.measurementId, input);
-    return this.get(orderId);
-  }
-
-  async applyMeasurementsToDefault(
-    orderId: string,
-    garmentTypeId: string,
-  ): Promise<IOrder> {
+  async applyMeasurementsToDefault(orderId: string): Promise<IOrder> {
     const order = await this.get(orderId);
     if (!order.measurement) {
       throw new BadRequestException("Order has no measurements");
     }
-    const gender = order.customer?.gender ?? EGender.MALE;
-    await this.assertTypeForCustomer(gender, garmentTypeId);
-    await this.customers.upsertMeasurement(
+    await this.measurements.upsertDefault(
       order.customerId,
-      garmentTypeId,
       this.measurements.pickValues(order.measurement),
     );
     return this.get(orderId);
@@ -198,19 +182,6 @@ export class OrdersService implements OnModuleInit {
     return { total, active, delayed };
   }
 
-  private async assertTypeForCustomer(
-    gender: EGender | null | undefined,
-    garmentTypeId: string,
-  ) {
-    const type = await this.garmentTypes.require(garmentTypeId);
-    const expected = garmentAudienceForGender(gender);
-    if (expected && type.audience !== expected) {
-      throw new BadRequestException(
-        "That garment does not match this customer’s gents/ladies type",
-      );
-    }
-  }
-
   private assertWritable(order: OrderEntity, forceEdit?: boolean) {
     if (order.status === EOrderStatus.DELIVERED && !forceEdit) {
       throw new ForbiddenException(
@@ -227,6 +198,7 @@ export class OrdersService implements OnModuleInit {
       customerId: row.customerId,
       orderNumber: row.orderNumber,
       measurementId: row.measurementId,
+      garmentType: row.garmentType,
       orderDate: dateOnly(row.orderDate),
       expectedCompletionDate: dateOnly(row.expectedCompletionDate),
       status: row.status,
@@ -238,7 +210,7 @@ export class OrdersService implements OnModuleInit {
             id: row.customer.id,
             name: row.customer.name,
             phone: row.customer.phone,
-            whatsapp: row.customer.whatsapp ?? undefined,
+            alternative: row.customer.alternative ?? undefined,
             gender:
               row.customer.gender === EGender.FEMALE
                 ? EGender.FEMALE
@@ -255,12 +227,20 @@ export class OrdersService implements OnModuleInit {
       updatedAt: toIso(row.updatedAt),
     };
   }
-}
-
-function nextOrderNumber() {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
-  return `MT-${stamp}-${rand}`;
+  private async nextOrderNumber(): Promise<string> {
+    for (let attempt = 0; attempt < 20; attempt++) {
+      // 6-digit random code, e.g. 482917
+      const candidate = String(Math.floor(100000 + Math.random() * 900000));
+      const taken = await this.entity
+        .getRepository()
+        .createQueryBuilder("order")
+        .where("order.orderNumber = :candidate", { candidate })
+        .andWhere("order.deletedAt IS NULL")
+        .getExists();
+      if (!taken) return candidate;
+    }
+    throw new BadRequestException("Could not assign a unique order number");
+  }
 }
 
 function isDelayed(order: OrderEntity) {

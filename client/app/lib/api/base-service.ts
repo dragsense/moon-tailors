@@ -8,7 +8,7 @@ import {
   buildApiUrl,
   downloadFile,
   downloadFileWithName,
-} from "./api";
+} from "./http";
 
 export type TListQueryParams = {
   page?: number;

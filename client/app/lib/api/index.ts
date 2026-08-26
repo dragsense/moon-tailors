@@ -1,12 +1,15 @@
 /**
- * HTTP client + resource service helpers.
+ * Shared HTTP client + resource service helpers.
  *
  * ```txt
  * lib/api/
- *   api.ts           apiRequest, buildApiUrl, downloads
+ *   http.ts          Axios client, apiRequest, downloads
  *   query-params.ts  query string builders
  *   base-service.ts  BaseService CRUD base class
+ *   csrf.ts / timezone.ts
  * ```
+ *
+ * Feature modules keep their own `features/<name>/api.ts` (domain services).
  */
 export {
   api,
@@ -17,11 +20,10 @@ export {
   buildApiUrl,
   downloadFile,
   downloadFileWithName,
-  ensureCsrfToken,
   isUnauthorizedError,
   setApiUnauthorizedHandler,
   type THttpMethod,
-} from "./api";
+} from "./http";
 export { getCsrfToken, setCsrfToken } from "./csrf";
 export {
   getBrowserTimezone,

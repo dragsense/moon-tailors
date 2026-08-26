@@ -8,8 +8,6 @@ export function meta(_args: Route.MetaArgs) {
 
 export default function LoginPage() {
   return (
-    <OpsProvider store={loginPageOps}>
-      {({ components }) => components.login}
-    </OpsProvider>
+    <OpsProvider store={loginPageOps} />
   );
 }

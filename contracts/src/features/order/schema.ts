@@ -4,12 +4,12 @@ import {
   listQuerySchema,
 } from "../../common/schema.js";
 import { field } from "../../lib/field-meta.js";
+import { customerSchema } from "../customer/schema.js";
 import {
-  customerSchema,
   measurementSchema,
   measurementValuesSchema,
   updateMeasurementSchema,
-} from "../customer/schema.js";
+} from "../measurement/schema.js";
 import { EOrderStatus } from "./enum.js";
 
 export const orderStatusSchema = z.nativeEnum(EOrderStatus);
@@ -67,61 +67,48 @@ export const createOrderSchema = z.object({
     label: "Notes",
     order: 7,
   }),
-  garmentTypeId: field(z.string().uuid(), {
-    type: "hidden",
-    label: "Garment",
-    required: true,
-    order: 8,
-  }),
+  garmentType: field(
+    z.string().trim().min(1, "Garment type is required").max(120),
+    {
+      type: "text",
+      label: "Garment type",
+      placeholder: "e.g. Shalwar kameez, Pant shirt",
+      required: true,
+      order: 8,
+    },
+  ),
   measurement: measurementValuesSchema.optional(),
   replaceDefault: field(z.boolean().optional().default(false), {
-    type: "switch",
+    type: "hidden",
     label: "Replace usual measurements",
     order: 9,
   }),
-  replaceDefaultGarmentTypeId: field(
-    z.preprocess(
-      (value) => (value === "" || value === undefined ? undefined : value),
-      z.string().uuid().optional(),
-    ),
-    {
-      type: "hidden",
-      label: "Update usual measurements for",
-      order: 10,
-    },
-  ),
 });
 
 export const updateOrderSchema = createOrderSchema
   .omit({
     customerId: true,
-    garmentTypeId: true,
     measurement: true,
     replaceDefault: true,
-    replaceDefaultGarmentTypeId: true,
   })
   .partial()
   .extend({
     forceEdit: z.boolean().optional(),
   });
 
-export const applyMeasurementsToDefaultSchema = z.object({
-  garmentTypeId: z.string().uuid(),
-});
+export const applyMeasurementsToDefaultSchema = z.object({});
 
 const orderCustomerSchema = customerSchema.pick({
   id: true,
   name: true,
   phone: true,
-  whatsapp: true,
+  alternative: true,
   gender: true,
 });
 
 export const orderSchema = createOrderSchema
   .omit({
     replaceDefault: true,
-    replaceDefaultGarmentTypeId: true,
-    garmentTypeId: true,
   })
   .extend({
     id: z.string().uuid(),
@@ -136,23 +123,23 @@ export const orderSchema = createOrderSchema
     updatedAt: z.string().datetime(),
   });
 
-export const updateOrderMeasurementSchema = updateMeasurementSchema.extend({
-  forceEdit: z.boolean().optional(),
-});
+export const updateOrderMeasurementSchema = updateMeasurementSchema;
 
 export const orderListQuerySchema = listQuerySchema.extend({
   status: field(
     z.preprocess(
       (v) => (v === "" || v === "__any__" ? undefined : v),
       orderStatusSchema.optional(),
-    ), {
-    type: "select",
-    label: "Status",
-    placeholder: "All statuses",
-    order: 2,
-    filter: "eq",
-    options: [{ label: "Any", value: "__any__" }, ...ORDER_STATUS_OPTIONS],
-  }),
+    ),
+    {
+      type: "select",
+      label: "Status",
+      placeholder: "All statuses",
+      order: 2,
+      filter: "eq",
+      options: [{ label: "Any", value: "__any__" }, ...ORDER_STATUS_OPTIONS],
+    },
+  ),
   customerId: field(
     z.preprocess(
       (v) => (v === "" || v === "__any__" ? undefined : v),

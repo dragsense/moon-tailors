@@ -38,12 +38,18 @@ const CLEAN_META = {
     infra: ["postgres", "redis"],
     imageSuffix: "server-dev",
     volumes: [
+      "postgres_data",
+      // legacy named nm volumes (pre bind-mount era)
       "server_nm",
       "server_pkg_nm",
       "server_contracts_nm",
-      "postgres_data",
     ],
     builds: ["server/dist"],
+    caches: [
+      "node_modules/.cache",
+      "server/node_modules/.cache",
+      "contracts/node_modules/.cache",
+    ],
     nodeModules: ["server/node_modules"],
     env: ["server.env"],
     needsContracts: true,
@@ -52,8 +58,20 @@ const CLEAN_META = {
     compose: ["client"],
     infra: [],
     imageSuffix: "client-dev",
-    volumes: ["client_nm", "client_pkg_nm", "client_contracts_nm"],
+    volumes: [
+      "client_nm",
+      "client_pkg_nm",
+      "client_contracts_nm",
+    ],
     builds: ["client/build", "client/.react-router"],
+    caches: [
+      "node_modules/.cache",
+      "node_modules/.vite",
+      "client/node_modules/.cache",
+      "client/node_modules/.vite",
+      "client/.vite",
+      "contracts/node_modules/.cache",
+    ],
     nodeModules: ["client/node_modules"],
     env: ["client.env"],
     needsContracts: true,
@@ -64,6 +82,11 @@ const CLEAN_META = {
     imageSuffix: "-website",
     volumes: ["website_nm", "website_pkg_nm"],
     builds: ["website/dist", "website/.astro"],
+    caches: [
+      "node_modules/.cache",
+      "website/node_modules/.cache",
+      "website/.astro",
+    ],
     nodeModules: ["website/node_modules"],
     env: ["website.env"],
     needsContracts: false,
@@ -74,6 +97,7 @@ const CLEAN_META = {
     imageSuffix: "",
     volumes: [],
     builds: [],
+    caches: [],
     nodeModules: [],
     env: [],
     needsContracts: false,
@@ -98,35 +122,6 @@ const c = {
   red: "\x1b[31m",
 };
 
-const logColor = {
-  server: c.magenta,
-  client: c.cyan,
-  website: c.yellow,
-  gateway: c.cyan,
-  postgres: c.green,
-  redis: c.red,
-};
-
-/**
- * Tint compose service prefix only — Nest ConsoleLogger already colors levels.
- * Match container name (`moon-tailors-server`), never the message body.
- */
-function colorizeComposeLogLine(raw) {
-  const m = String(raw).match(/^(\S+)\s+\|\s?(.*)$/);
-  if (!m) return raw;
-
-  const container = m[1].toLowerCase();
-  let svcColor;
-  for (const [svc, color] of Object.entries(logColor)) {
-    if (container === svc || container.endsWith(`-${svc}`)) {
-      svcColor = color;
-      break;
-    }
-  }
-  if (!svcColor) return raw;
-  return `${svcColor}${m[1]}${c.reset}  | ${m[2]}`;
-}
-
 /** Preset menus for setup / start profile — use pickApps (same as run/restart/deploy) */
 
 const DEPLOY_TARGETS = ["server", "client", "website"];
@@ -143,7 +138,8 @@ const ACTION_PRESETS = [
   { key: "7", label: "Add npm package", cmd: "pkg" },
   { key: "8", label: "Migrate", cmd: "migrate" },
   { key: "9", label: "Remote (SSH: deploy / control host)", cmd: "remote" },
-  { key: "10", label: "Clean", cmd: "clean" },
+  { key: "10", label: "Clear cache (Vite / Nest / Astro)", cmd: "clear-cache" },
+  { key: "11", label: "Clean", cmd: "clean" },
 ];
 
 const REMOTE_ACTION_PRESETS = [
@@ -153,9 +149,10 @@ const REMOTE_ACTION_PRESETS = [
   { key: "4", label: "Reload (sync env + recreate — same images)", cmd: "env" },
   { key: "5", label: "Stop (keep containers)", cmd: "stop" },
   { key: "6", label: "Logs", cmd: "logs" },
-  { key: "7", label: "Clean", cmd: "clean" },
+  { key: "7", label: "Clear cache", cmd: "clear-cache" },
+  { key: "8", label: "Clean", cmd: "clean" },
   {
-    key: "8",
+    key: "9",
     label: "Pull (git sync only — scripts/workspace, keep env)",
     cmd: "pull",
   },
@@ -166,13 +163,13 @@ function help() {
 ${c.cyan}${c.bold}moon-tailors${c.reset} — one menu, or direct scripts
 
   ${c.cyan}pnpm tpl${c.reset}                 ask what to do
-  ${c.cyan}pnpm bootstrap|start|reload|stop|logs|build|add-pkg|migrate|remote|clean${c.reset}
+  ${c.cyan}pnpm bootstrap|start|reload|stop|logs|build|add-pkg|migrate|remote|clear-cache|clean${c.reset}
 
 ${c.dim}Do not use \`pnpm setup\`, \`pnpm restart\`, \`pnpm pkg\`, or \`pnpm deploy\` — reserved by pnpm/npm. Use bootstrap / reload / add-pkg / remote.${c.reset}
 
 Config: ${c.dim}deploy/hosts.json${c.reset} · Profile: ${c.dim}.profile${c.reset}
   Start detaches · Logs follow (Ctrl+C keeps containers) · Stop keeps containers
-  Remote menu: deploy / status / start / reload / stop / logs / clean / pull
+  Remote menu: deploy / status / start / reload / stop / logs / clear-cache / clean / pull
 Docs: docs/LOCAL.md · docs/ENV.md · docs/DEPLOY.md
 `);
 }
@@ -418,16 +415,18 @@ function followLogs(services = ["server"]) {
     const child = spawn(
       "docker",
       [...composeDev, "logs", "-f", "--tail", "100", ...services],
-      { cwd: root, env: { ...process.env, FORCE_COLOR: "1", ...composeEnv() } },
+      {
+        cwd: root,
+        env: {
+          ...process.env,
+          FORCE_COLOR: "1",
+          CLICOLOR_FORCE: "1",
+          ...composeEnv(),
+        },
+        // inherit keeps Nest/Vite/Astro ANSI sequences intact in the terminal
+        stdio: ["ignore", "inherit", "inherit"],
+      },
     );
-
-    const paint = (buf) => {
-      for (const raw of String(buf).split(/\r?\n/).filter(Boolean)) {
-        console.log(colorizeComposeLogLine(raw));
-      }
-    };
-    child.stdout.on("data", paint);
-    child.stderr.on("data", paint);
 
     const finish = async () => {
       if (done) return;
@@ -590,63 +589,48 @@ async function installForServices(services) {
 }
 
 /**
- * Host `pnpm add` updates bind-mounted package.json/lockfile, but Docker
- * named volumes (`*_pkg_nm`) still hold the old node_modules. Re-run install
- * inside the service container / compose run so those volumes catch up.
+ * Dev uses bind-mounted host node_modules — host install is enough.
+ * (Legacy hook removed; kept comment for git history.)
  */
-async function syncDockerNodeModules(serviceKey) {
-  if (!DOCKER_APPS.includes(serviceKey)) return false;
-  const filter = PNPM_FILTER[serviceKey];
-  if (!filter) return false;
 
-  try {
-    await requireDocker();
-  } catch {
-    console.log(
-      `${c.dim}Docker not running — skipped volume sync (host install only)${c.reset}`,
-    );
-    return false;
+/** Wipe Vite / Nest / Astro caches on the host (shared with containers via binds). */
+async function clearCacheCmd(argv) {
+  let services = appsFromArgv(argv).filter((s) => DOCKER_APPS.includes(s));
+  if (!services.length) {
+    const presets = [
+      ...DOCKER_APPS.map((s, i) => ({
+        key: String(i + 1),
+        label: s,
+        service: s,
+      })),
+      { key: String(DOCKER_APPS.length + 1), label: "all apps", service: "all" },
+    ];
+    const picked = await pickPreset("Clear cache for which apps?", presets);
+    services =
+      picked.service === "all" ? [...DOCKER_APPS] : [picked.service];
   }
 
-  const running = runningComposeServices();
+  const paths = new Set();
+  for (const s of services) {
+    for (const rel of CLEAN_META[s]?.caches ?? []) paths.add(rel);
+  }
+
   console.log(
-    `\n${c.green}▸ Syncing Docker node_modules volume…${c.reset} ${c.dim}${serviceKey}${c.reset}`,
+    `\n${c.green}▸ Clearing cache…${c.reset} ${c.dim}${[...paths].join(", ") || "(nothing)"}${c.reset}`,
   );
-
-  try {
-    if (running.includes(serviceKey)) {
-      await runDocker(
-        ["exec", "-T", serviceKey, "pnpm", "install", "--filter", filter],
-        "docker-sync",
-      );
-    } else {
-      // Attach the same named volumes even if the app isn't running.
-      await runDocker(
-        [
-          "run",
-          "--rm",
-          "--no-deps",
-          "--entrypoint",
-          "pnpm",
-          serviceKey,
-          "install",
-          "--filter",
-          filter,
-        ],
-        "docker-sync",
-      );
+  let n = 0;
+  for (const rel of paths) {
+    const ok = await removePathForce(rel);
+    if (ok) {
+      n += 1;
+      console.log(`${c.green}✓ removed${c.reset}  ${rel}`);
     }
-    console.log(`${c.green}✓ Docker node_modules synced${c.reset}`);
-    return true;
-  } catch (err) {
-    console.log(
-      `${c.yellow}⚠ Docker volume sync failed${c.reset} — ${err.message}`,
-    );
-    console.log(
-      `${c.dim}Retry with:${c.reset} ${c.cyan}pnpm bootstrap --add ${serviceKey}${c.reset}`,
-    );
-    return false;
   }
+  console.log(
+    n
+      ? `\n${c.green}✓ cache cleared${c.reset} (${n} path(s)). Reload services if they are running.`
+      : `\n${c.dim}Nothing to clear${c.reset}`,
+  );
 }
 
 function ensureDockerEnvForCompose() {
@@ -1174,10 +1158,6 @@ async function setupCmd(argv) {
     if (dockerBuild.length) {
       console.log(`\n${c.green}▸ Building Docker images…${c.reset}`);
       await runDocker(["build", ...dockerBuild]);
-      // Named node_modules volumes are not replaced by image rebuild — refresh them.
-      for (const s of dockerBuild) {
-        await syncDockerNodeModules(s);
-      }
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -1210,6 +1190,7 @@ ${c.green}${c.bold}✓ Bootstrap complete${c.reset}  (nothing is running yet)
   Profile: ${services.join(", ")}
 
   ${c.cyan}pnpm start${c.reset}                 start from profile
+  ${c.cyan}pnpm clear-cache${c.reset}           optional Vite/Nest/Astro wipe
   ${c.cyan}pnpm bootstrap${c.reset}             add more / replace profile
   ${c.cyan}pnpm clean${c.reset}                 remove services (+ optional wipe)
 `);
@@ -1265,24 +1246,10 @@ async function addNpmPackageCmd(argv) {
   );
   await run("pnpm", args, "pnpm");
 
-  // contracts has no Docker app; sync Docker volumes for runnable apps
-  let synced = false;
-  if (DOCKER_APPS.includes(target.key)) {
-    synced = await syncDockerNodeModules(target.key);
-  } else if (target.key === "contracts") {
-    // contracts is mounted into server + client volumes
-    const profile = readProfile() ?? [];
-    for (const s of ["server", "client"].filter((x) => profile.includes(x))) {
-      synced = (await syncDockerNodeModules(s)) || synced;
-    }
-  }
-
   console.log(`
 ${c.green}✓ added ${pkgName}${c.reset} → ${target.filter}
-${synced ? `${c.green}✓ Docker volumes updated${c.reset}` : ""}
-
-${c.dim}From root you can also run:${c.reset}
-  ${c.cyan}pnpm --filter ${target.filter} add ${pkgName}${c.reset}
+${c.dim}Host node_modules are bind-mounted into Docker — no second install needed.${c.reset}
+${c.dim}Reload the app if it is already running:${c.reset} ${c.cyan}pnpm reload ${target.key}${c.reset}
 `);
 }
 
@@ -1809,6 +1776,7 @@ const REMOTE_ACTIONS = [
   "stop",
   "logs",
   "clean",
+  "clear-cache",
   "env",
   "pull",
   "deploy",
@@ -2411,6 +2379,11 @@ async function dispatch(cmd, argv) {
     case "pkg":
     case "add-pkg":
       await addNpmPackageCmd(argv);
+      return;
+
+    case "clear-cache":
+    case "cache":
+      await clearCacheCmd(argv);
       return;
 
     case "logs":

@@ -1,13 +1,18 @@
 import { OpsProvider } from "~/ops";
-import { ProfilePage } from "~/features/profile/profile-page";
 import { profileOps } from "~/features/profile/ops";
+import { useI18n } from "~/hooks/use-i18n";
+import { Page } from "~/layouts";
 
 export function meta() {
   return [{ title: "Profile" }];
 }
 
 export default function ProfileRoute() {
+  const { t } = useI18n();
+
   return (
-    <OpsProvider store={profileOps}>{() => <ProfilePage />}</OpsProvider>
+    <Page title={t("profile.title")} description={t("profile.description")}>
+      <OpsProvider store={profileOps} />
+    </Page>
   );
 }

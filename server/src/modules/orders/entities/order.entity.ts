@@ -7,7 +7,7 @@ import { MeasurementEntity } from "../../measurements/entities/measurement.entit
 @Entity("orders")
 export class OrderEntity extends GeneralBaseEntity {
   @Index({ unique: true })
-  @Column({ type: "varchar", length: 32 })
+  @Column({ type: "varchar", length: 64 })
   orderNumber!: string;
 
   @Index()
@@ -26,6 +26,10 @@ export class OrderEntity extends GeneralBaseEntity {
   @ManyToOne(() => MeasurementEntity, { onDelete: "RESTRICT" })
   @JoinColumn({ name: "measurementId" })
   measurement?: MeasurementEntity;
+
+  /** Free-text description of what this order is sewing. */
+  @Column({ type: "varchar", length: 120, default: "" })
+  garmentType!: string;
 
   @Column({ type: "date" })
   orderDate!: string;

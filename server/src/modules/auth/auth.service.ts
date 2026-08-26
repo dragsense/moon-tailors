@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { type IAuthUser } from "@moon-tailors/contracts";
 import { UserEntity } from "../../common/base";
@@ -20,7 +20,7 @@ export class AuthService {
   async login(input: { email: string; password: string }): Promise<AuthSession> {
     const user = await this.users.findByEmail(input.email);
     if (!user || !user.isActive) {
-      throw new UnauthorizedException("Invalid credentials");
+      throw new BadRequestException("Invalid credentials");
     }
 
     const passwordOk = await this.users.verifyPassword(user, input.password);
@@ -28,7 +28,7 @@ export class AuthService {
       return this.tokens.issueSession(user);
     }
 
-    throw new UnauthorizedException("Invalid credentials");
+    throw new BadRequestException("Invalid credentials");
   }
 
   async getAuthenticatedUser(user: UserEntity): Promise<IAuthUser> {

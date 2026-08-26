@@ -20,10 +20,6 @@ export default [
         layout("layouts/global/app-shell.tsx", [
           route(path(APP_ROUTES.DASHBOARD), "pages/protected/dashboard.tsx"),
           route(path(APP_ROUTES.CUSTOMERS), "pages/protected/customers/list.tsx"),
-          route(
-            path(APP_ROUTES.CUSTOMER_NEW_ORDER),
-            "pages/protected/customers/new-order.tsx",
-          ),
           route(path(APP_ROUTES.CUSTOMER), "pages/protected/customers/detail.tsx"),
           route(path(APP_ROUTES.ORDERS), "pages/protected/orders/list.tsx"),
           route(path(APP_ROUTES.ORDER), "pages/protected/orders/detail.tsx"),

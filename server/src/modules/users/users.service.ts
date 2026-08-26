@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import type { EntityManager } from "typeorm";
 
 import {
   DEFAULT_USER_PREFERENCES,
@@ -96,7 +97,7 @@ export class UsersService implements OnModuleInit {
     lastName: string;
   }): Promise<IMessageResponse> {
     const user = await this.baseUsers.createPlatformOwner(input, {
-      afterCreate: (user) => this.afterCreateUser(user),
+      afterCreate: (user, manager) => this.afterCreateUser(user, manager),
     });
 
     this.logger.log(`Platform owner created: ${user.email}`);
@@ -106,11 +107,15 @@ export class UsersService implements OnModuleInit {
 
 
 
-  /** afterCreate: level permissions + default preference settings. */
-  private async afterCreateUser(user: UserEntity): Promise<void> {
+  /** afterCreate: level permissions + default preference settings (same TX as user insert). */
+  private async afterCreateUser(
+    user: UserEntity,
+    manager: EntityManager,
+  ): Promise<void> {
     await this.permissions.assignToUser(
       user.id,
       defaultPermissionsForLevel(user.level),
+      manager,
     );
     await this.settings.saveSettings(user.id, {
       ...DEFAULT_USER_PREFERENCES,

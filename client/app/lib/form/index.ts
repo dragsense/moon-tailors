@@ -1,6 +1,13 @@
 /**
  * Form logic (RHF + Zod schema → field map).
  * UI lives in `~/components/form-ui`.
+ *
+ * ```txt
+ * lib/form/
+ *   field-config.ts
+ *   schema-field.tsx
+ *   hooks/           useSchemaForm / Fields / Filters
+ * ```
  */
 export {
   type FieldConfigMap,
@@ -14,18 +21,14 @@ export {
 export { SchemaField, FieldShell, type SchemaFieldProps } from "./schema-field";
 export {
   useSchemaFields,
-  type SchemaFieldMap,
-  type UseSchemaFieldsArgs,
-} from "./use-schema-fields";
-export {
   useSchemaForm,
-  type UseSchemaFormOptions,
-  type UseSchemaFormResult,
-} from "./use-schema-form";
-export {
   useSchemaFilters,
   cleanFilterValues,
   FILTER_ANY_VALUE,
+  type SchemaFieldMap,
+  type UseSchemaFieldsArgs,
+  type UseSchemaFormOptions,
+  type UseSchemaFormResult,
   type UseSchemaFiltersOptions,
   type UseSchemaFiltersResult,
-} from "./use-schema-filters";
+} from "./hooks";

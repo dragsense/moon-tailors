@@ -1,16 +1,14 @@
 import { randomUUID } from "node:crypto";
 import {
-  BadRequestException,
+  ConflictException,
   Injectable,
   OnModuleInit,
 } from "@nestjs/common";
 import type {
   ICustomer,
   IPaginatedResponse,
-  TCopyCustomerMeasurementData,
   TCreateCustomerData,
   TCustomerListQuery,
-  TMeasurementValues,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import {
@@ -18,7 +16,6 @@ import {
   EGender,
   EResource,
   filtersFromListSchema,
-  garmentAudienceForGender,
 } from "@moon-tailors/contracts";
 import { ActivityLogRegistry } from "../../common/activity-logs";
 import { PermissionsService } from "../../common/base";
@@ -28,7 +25,6 @@ import {
 } from "../../common/database";
 import { DomainEventRegistry } from "../../common/events";
 import type { EntityKey, EntityQueryConfig } from "../../common/query";
-import { GarmentTypesService } from "../garment-types/garment-types.service";
 import { MeasurementsService } from "../measurements/measurements.service";
 import { CustomerEntity } from "./entities/customer.entity";
 
@@ -48,7 +44,6 @@ export class CustomersService implements OnModuleInit {
     private readonly entityService: EntityService,
     private readonly permissions: PermissionsService,
     private readonly measurements: MeasurementsService,
-    private readonly garmentTypes: GarmentTypesService,
   ) {
     this.entity = this.entityService.bind(CustomerEntity, CUSTOMER_QUERY);
   }
@@ -67,23 +62,21 @@ export class CustomersService implements OnModuleInit {
   }
 
   async create(input: TCreateCustomerData): Promise<ICustomer> {
+    const phone = input.phone.trim();
+    await this.assertPhoneAvailable(phone);
+
     const customer = await this.entity.create({
       name: input.name.trim(),
       gender: input.gender,
-      phone: input.phone.trim(),
-      whatsapp: emptyToNull(input.whatsapp),
+      phone,
+      alternative: emptyToNull(input.alternative),
       email: uniqueCustomerEmail(),
       address: emptyToNull(input.address),
       notes: emptyToNull(input.notes),
     });
 
-    for (const row of input.measurements ?? []) {
-      await this.assertTypeForCustomer(customer.gender, row.garmentTypeId);
-      await this.measurements.upsertDefault(
-        customer.id,
-        row.garmentTypeId,
-        row,
-      );
+    if (input.measurement) {
+      await this.measurements.upsertDefault(customer.id, input.measurement);
     }
 
     return this.get(customer.id);
@@ -93,12 +86,12 @@ export class CustomersService implements OnModuleInit {
     query: TCustomerListQuery,
   ): Promise<IPaginatedResponse<ICustomer>> {
     const page = await this.entity.list(query);
-    return { ...page, data: page.data.map((row) => this.toPayload(row, [])) };
+    return { ...page, data: page.data.map((row) => this.toPayload(row, null)) };
   }
 
   async get(key: EntityKey): Promise<ICustomer> {
     const row = await this.entity.require(key);
-    const defaults = await this.measurements.listDefaults(row.id);
+    const defaults = await this.measurements.findDefault(row.id);
     return this.toPayload(row, defaults);
   }
 
@@ -106,42 +99,24 @@ export class CustomersService implements OnModuleInit {
     key: EntityKey,
     input: TUpdateCustomerData,
   ): Promise<ICustomer> {
+    const existing = await this.entity.require(key);
     const patch: Partial<CustomerEntity> = {};
     if (input.name !== undefined) patch.name = input.name.trim();
     if (input.gender !== undefined) patch.gender = input.gender;
-    if (input.phone !== undefined) patch.phone = input.phone.trim();
-    if (input.whatsapp !== undefined) patch.whatsapp = emptyToNull(input.whatsapp);
+    if (input.phone !== undefined) {
+      const phone = input.phone.trim();
+      await this.assertPhoneAvailable(phone, existing.id);
+      patch.phone = phone;
+    }
+    if (input.alternative !== undefined) {
+      patch.alternative = emptyToNull(input.alternative);
+    }
     if (input.address !== undefined) patch.address = emptyToNull(input.address);
     if (input.notes !== undefined) patch.notes = emptyToNull(input.notes);
     if (Object.keys(patch).length > 0) {
       await this.entity.update(key, patch);
     }
     return this.get(key);
-  }
-
-  async upsertMeasurement(
-    customerId: string,
-    garmentTypeId: string,
-    input: TMeasurementValues,
-  ): Promise<ICustomer> {
-    const customer = await this.entity.require(customerId);
-    await this.assertTypeForCustomer(customer.gender, garmentTypeId);
-    await this.measurements.upsertDefault(customer.id, garmentTypeId, input);
-    return this.get(customer.id);
-  }
-
-  async copyMeasurement(
-    customerId: string,
-    input: TCopyCustomerMeasurementData,
-  ): Promise<ICustomer> {
-    const customer = await this.entity.require(customerId);
-    await this.assertTypeForCustomer(customer.gender, input.toGarmentTypeId);
-    await this.measurements.copyDefault(
-      customer.id,
-      input.fromGarmentTypeId,
-      input.toGarmentTypeId,
-    );
-    return this.get(customer.id);
   }
 
   count(): Promise<number> {
@@ -152,33 +127,35 @@ export class CustomersService implements OnModuleInit {
       .getCount();
   }
 
-  private async assertTypeForCustomer(
-    gender: EGender | null,
-    garmentTypeId: string,
-  ) {
-    const type = await this.garmentTypes.require(garmentTypeId);
-    const expected = garmentAudienceForGender(gender);
-    if (expected && type.audience !== expected) {
-      throw new BadRequestException(
-        "That garment does not match this customer’s gents/ladies type",
-      );
+  private async assertPhoneAvailable(phone: string, excludeId?: string) {
+    const qb = this.entity
+      .getRepository()
+      .createQueryBuilder("customer")
+      .where("customer.deletedAt IS NULL")
+      .andWhere("customer.phone = :phone", { phone });
+    if (excludeId) {
+      qb.andWhere("customer.id != :excludeId", { excludeId });
+    }
+    const taken = await qb.getOne();
+    if (taken) {
+      throw new ConflictException("A customer with this phone already exists");
     }
   }
 
   private toPayload(
     row: CustomerEntity,
-    defaults: Awaited<ReturnType<MeasurementsService["listDefaults"]>>,
+    defaults: Awaited<ReturnType<MeasurementsService["findDefault"]>>,
   ): ICustomer {
     return {
       id: row.id,
       name: row.name,
       gender: row.gender === EGender.FEMALE ? EGender.FEMALE : EGender.MALE,
       phone: row.phone,
-      whatsapp: row.whatsapp ?? undefined,
+      alternative: row.alternative ?? undefined,
       email: row.email ?? undefined,
       address: row.address ?? undefined,
       notes: row.notes ?? undefined,
-      measurements: defaults.map((item) => this.measurements.toPayload(item)),
+      measurement: defaults ? this.measurements.toPayload(defaults) : null,
       createdAt: toIso(row.createdAt),
       updatedAt: toIso(row.updatedAt),
     };

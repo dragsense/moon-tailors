@@ -5,5 +5,7 @@ import { authOpsCore } from "./core";
 export const loginPageOps = createOps({
   id: "auth-login",
   scope: "page",
-  ops: pickOps(authOpsCore, { login: true }),
+  ops: pickOps(authOpsCore, { login: {
+    auto: true,
+  } }),
 });

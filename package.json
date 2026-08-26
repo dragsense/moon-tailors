@@ -11,6 +11,7 @@
     "logs": "node ./cli/index.mjs logs",
     "build": "node ./cli/index.mjs build",
     "add-pkg": "node ./cli/index.mjs pkg",
+    "clear-cache": "node ./cli/index.mjs clear-cache",
     "migrate": "node ./cli/index.mjs migrate",
     "remote": "node ./cli/index.mjs remote",
     "clean": "node ./cli/index.mjs clean",

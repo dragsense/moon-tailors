@@ -1,2 +1,2 @@
-export { orderOpsCore } from "./core";
-export { ordersListOps, orderDetailOps, createOrderOps } from "./list";
+export { orderOpsCore, refreshOrders } from "./core";
+export { ordersListOps } from "./list";

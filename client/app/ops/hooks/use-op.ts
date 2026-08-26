@@ -1,12 +1,31 @@
+import type { IAuthUser } from "@moon-tailors/contracts";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSyncExternalStore } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { authKeys } from "~/features/auth/query-keys";
 import { canRunOpConfig } from "~/lib/permissions";
-import { useSession } from "~/features/auth/hooks";
-import type {
-  MutationOpHandle,
-  OpsBag,
-  OpsStore,
-  QueryOpHandle,
+import {
+  resolveOpQueryKey,
+  type MutationOpHandle,
+  type OpsBag,
+  type OpsStore,
+  type QueryOpConfig,
+  type QueryOpHandle,
 } from "../create-ops";
+
+/** Reactive session user for op permission checks (avoids hooks ↔ useOp cycle). */
+function useCachedAuthUser(): IAuthUser | null {
+  const qc = useQueryClient();
+  return useSyncExternalStore(
+    (onChange) =>
+      qc.getQueryCache().subscribe((event) => {
+        const key = event?.query?.queryKey;
+        if (key?.[0] === authKeys.all[0]) onChange();
+      }),
+    () => qc.getQueryData<IAuthUser | null>(authKeys.session()) ?? null,
+    () => null,
+  );
+}
 
 /** Full ops bag from the Zustand store (stable controllers). */
 export function useOps(store: OpsStore): OpsBag {
@@ -42,22 +61,58 @@ type MutationOpView = {
 
 export type OpView = QueryOpView | MutationOpView;
 
-function readOpView(store: OpsStore, name: string, allowed: boolean): OpView {
-  const def = store.config.ops[name]!;
-  const ops = store.getState().ops;
-  const handle = ops[name];
+/**
+ * Live state for one op. Throws if the name is not on this pack.
+ * Query data comes from React Query (same key as OpsProvider) — not Zustand.
+ * For optional siblings (e.g. Edit on view modal), use `useMaybeOp`.
+ */
+export function useOp(store: OpsStore, name: string): OpView {
+  const def = store.config.ops[name];
+  if (!def) {
+    throw new Error(`Unknown op "${name}" on ops pack "${store.id}"`);
+  }
+
+  const user = useCachedAuthUser();
+  const allowed = canRunOpConfig(user, def);
+
+  const params = store(
+    useShallow((s) => s.params[name] ?? {}),
+  );
+  const mutationUi = store(
+    useShallow((s) => ({
+      handle: s.ops[name],
+      mPending: s.mutation[name]?.isPending ?? false,
+      mIsError: s.mutation[name]?.isError ?? false,
+      mError: s.mutation[name]?.error ?? null,
+      isOpen: s.ui.open === name,
+      payload: s.ui.open === name ? s.ui.payload : null,
+    })),
+  );
+
+  const queryKey =
+    def.kind === "query"
+      ? resolveOpQueryKey(store.id, name, def, params)
+      : (["ops", store.id, name, "mutation-placeholder"] as const);
+
+  // Shared cache with OpsProvider QueryBridge — enabled:false = observe only.
+  const query = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (def.kind !== "query") return null;
+      return (def as QueryOpConfig).fetch(params);
+    },
+    enabled: false,
+  });
 
   if (def.kind === "query") {
-    const slot = store.getState().query[name];
-    const params = store.getState().params[name] ?? {};
-    const q = handle as QueryOpHandle | undefined;
+    const q = mutationUi.handle as QueryOpHandle | undefined;
     return {
       kind: "query",
       allowed,
-      data: slot?.data,
-      error: slot?.error ?? null,
-      isPending: slot?.isPending ?? true,
-      isError: slot?.isError ?? false,
+      data: query.data,
+      error: query.error instanceof Error ? query.error : null,
+      isPending: query.isPending,
+      isError: query.isError,
       params,
       setParams: (patch) => store.getState().setParams(name, patch),
       refetch:
@@ -68,9 +123,7 @@ function readOpView(store: OpsStore, name: string, allowed: boolean): OpView {
     };
   }
 
-  const slot = store.getState().mutation[name];
-  const ui = store.getState().ui;
-  const m = handle as MutationOpHandle | undefined;
+  const m = mutationUi.handle as MutationOpHandle | undefined;
   const run =
     m?.run ??
     (async () => {
@@ -80,11 +133,11 @@ function readOpView(store: OpsStore, name: string, allowed: boolean): OpView {
   return {
     kind: "mutation",
     allowed,
-    isPending: slot?.isPending ?? false,
-    isError: slot?.isError ?? false,
-    error: slot?.error ?? null,
-    isOpen: ui.open === name,
-    payload: ui.open === name ? ui.payload : null,
+    isPending: mutationUi.mPending,
+    isError: mutationUi.mIsError,
+    error: mutationUi.mError,
+    isOpen: mutationUi.isOpen,
+    payload: mutationUi.payload,
     open: (payload) => store.getState().open(name, payload),
     close: () => {
       if (store.getState().ui.open === name) store.getState().close();
@@ -94,56 +147,84 @@ function readOpView(store: OpsStore, name: string, allowed: boolean): OpView {
   };
 }
 
-/** One shallow subscription for slices that affect this op’s view. */
-function useOpSubscription(store: OpsStore, name: string) {
-  store(
-    useShallow((s) => {
-      const q = s.query[name];
-      const m = s.mutation[name];
-      return {
-        handle: s.ops[name],
-        qData: q?.data,
-        qError: q?.error,
-        qPending: q?.isPending,
-        qIsError: q?.isError,
-        mPending: m?.isPending,
-        mIsError: m?.isError,
-        mError: m?.error,
-        isOpen: s.ui.open === name,
-        payload: s.ui.open === name ? s.ui.payload : null,
-        params: s.params[name],
-      };
-    }),
-  );
-}
-
-/**
- * Live state for one op. Throws if the name is not on this pack.
- * For optional siblings (e.g. Edit on view modal), use `useMaybeOp`.
- */
-export function useOp(store: OpsStore, name: string): OpView {
-  const def = store.config.ops[name];
-  if (!def) {
-    throw new Error(`Unknown op "${name}" on ops pack "${store.id}"`);
-  }
-
-  const session = useSession();
-  const allowed = canRunOpConfig(session?.user, def);
-
-  useOpSubscription(store, name);
-  return readOpView(store, name, allowed);
-}
-
 /**
  * Like `useOp`, but `null` when the op is not on this pack.
  * Safe for foreign packs that only pick a subset of another core.
  */
 export function useMaybeOp(store: OpsStore, name: string): OpView | null {
   const def = store.config.ops[name];
-  const session = useSession();
-  const allowed = def ? canRunOpConfig(session?.user, def) : false;
+  const user = useCachedAuthUser();
+  const allowed = def ? canRunOpConfig(user, def) : false;
 
-  useOpSubscription(store, name);
+  const params = store(
+    useShallow((s) => s.params[name] ?? {}),
+  );
+  const mutationUi = store(
+    useShallow((s) => ({
+      handle: s.ops[name],
+      mPending: s.mutation[name]?.isPending ?? false,
+      mIsError: s.mutation[name]?.isError ?? false,
+      mError: s.mutation[name]?.error ?? null,
+      isOpen: s.ui.open === name,
+      payload: s.ui.open === name ? s.ui.payload : null,
+    })),
+  );
+
+  const queryKey =
+    def?.kind === "query"
+      ? resolveOpQueryKey(store.id, name, def, params)
+      : (["ops", store.id, name, "mutation-placeholder"] as const);
+
+  const query = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!def || def.kind !== "query") return null;
+      return def.fetch(params);
+    },
+    enabled: false,
+  });
+
   if (!def) return null;
-  return readOpView(store, name, allowed);
+
+  if (def.kind === "query") {
+    const q = mutationUi.handle as QueryOpHandle | undefined;
+    return {
+      kind: "query",
+      allowed,
+      data: query.data,
+      error: query.error instanceof Error ? query.error : null,
+      isPending: query.isPending,
+      isError: query.isError,
+      params,
+      setParams: (patch) => store.getState().setParams(name, patch),
+      refetch:
+        q?.refetch ??
+        (async () => {
+          /* host not ready */
+        }),
+    };
+  }
+
+  const m = mutationUi.handle as MutationOpHandle | undefined;
+  const run =
+    m?.run ??
+    (async () => {
+      throw new Error(`OpsProvider not mounted for "${name}"`);
+    });
+
+  return {
+    kind: "mutation",
+    allowed,
+    isPending: mutationUi.mPending,
+    isError: mutationUi.mIsError,
+    error: mutationUi.mError,
+    isOpen: mutationUi.isOpen,
+    payload: mutationUi.payload,
+    open: (payload) => store.getState().open(name, payload),
+    close: () => {
+      if (store.getState().ui.open === name) store.getState().close();
+    },
+    run,
+    submit: run,
+  };
 }

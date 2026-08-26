@@ -11,11 +11,9 @@ import { ApiTags } from "@nestjs/swagger";
 import type {
   IOrder,
   IPaginatedResponse,
-  TApplyMeasurementsToDefaultData,
   TCreateOrderData,
   TOrderListQuery,
   TUpdateOrderData,
-  TUpdateOrderMeasurementData,
 } from "@moon-tailors/contracts";
 import {
   applyMeasurementsToDefaultSchema,
@@ -23,7 +21,6 @@ import {
   EPermissionAction,
   EResource,
   orderListQuerySchema,
-  updateOrderMeasurementSchema,
   updateOrderSchema,
 } from "@moon-tailors/contracts";
 import { RequirePermissions } from "../../common/auth";
@@ -81,20 +78,6 @@ export class OrdersController {
     return this.ordersService.update(id, body);
   }
 
-  @Patch(":id/measurements")
-  @RequirePermissions({
-    resource: EResource.MEASUREMENTS,
-    action: EPermissionAction.UPDATE,
-  })
-  updateMeasurements(
-    @Param("id") id: string,
-    @Body(new ZodValidationPipe(updateOrderMeasurementSchema))
-    body: TUpdateOrderMeasurementData,
-  ): Promise<IOrder> {
-    const { forceEdit, ...values } = body;
-    return this.ordersService.updateMeasurements(id, values, forceEdit);
-  }
-
   @Post(":id/apply-measurements-to-default")
   @RequirePermissions({
     resource: EResource.MEASUREMENTS,
@@ -103,11 +86,8 @@ export class OrdersController {
   applyMeasurementsToDefault(
     @Param("id") id: string,
     @Body(new ZodValidationPipe(applyMeasurementsToDefaultSchema))
-    body: TApplyMeasurementsToDefaultData,
+    _body: Record<string, never>,
   ): Promise<IOrder> {
-    return this.ordersService.applyMeasurementsToDefault(
-      id,
-      body.garmentTypeId,
-    );
+    return this.ordersService.applyMeasurementsToDefault(id);
   }
 }
