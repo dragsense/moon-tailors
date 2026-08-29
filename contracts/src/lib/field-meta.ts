@@ -37,6 +37,15 @@ function unwrap(schema: z.ZodTypeAny): z.ZodTypeAny {
   return current;
 }
 
+/** Peel `.refine()` / `.superRefine()` wrappers so forms still read `.shape`. */
+function unwrapObject(schema: z.ZodTypeAny): z.ZodObject<z.ZodRawShape> {
+  let current: z.ZodTypeAny = schema;
+  while (current._def?.typeName === "ZodEffects") {
+    current = (current as z.ZodEffects<z.ZodTypeAny>)._def.schema;
+  }
+  return current as z.ZodObject<z.ZodRawShape>;
+}
+
 function inferMeta(schema: z.ZodTypeAny): IFieldMeta {
   const attached = getFieldMeta(schema) ?? getFieldMeta(unwrap(schema));
   if (attached) return attached;
@@ -69,9 +78,9 @@ function inferMeta(schema: z.ZodTypeAny): IFieldMeta {
 
 /** Build form field configs from a Zod object schema for auto-rendered forms. */
 export function getFormFields(
-  schema: z.ZodObject<z.ZodRawShape>,
+  schema: z.ZodTypeAny,
 ): IFormFieldConfig[] {
-  const shape = schema.shape;
+  const shape = unwrapObject(schema).shape;
   const fields = Object.entries(shape).map(([name, fieldSchema]) => {
     const zodField = fieldSchema as z.ZodTypeAny;
     return {

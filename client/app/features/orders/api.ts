@@ -1,7 +1,9 @@
 import type {
+  IMessageResponse,
   IOrder,
   IPaginatedResponse,
   TCreateOrderData,
+  TGetQuery,
   TOrderListQuery,
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
@@ -18,19 +20,19 @@ class OrdersService extends BaseService<
 
   /** Page/limit/filters come from the parsed list query (ops / schema). */
   list(query: TOrderListQuery) {
-    return this.get<IOrder>(query) as Promise<IPaginatedResponse<IOrder>>;
+    return this.get<IPaginatedResponse<IOrder>>(query);
   }
 
-  getOne(id: string) {
-    return this.getSingle<IOrder>(id);
+  getOne(id: string, query: TGetQuery = {}) {
+    return this.getSingle(id, query);
   }
 
   create(body: TCreateOrderData) {
-    return this.post<IOrder>(body);
+    return this.post<IMessageResponse>(body);
   }
 
   update(id: string, body: TUpdateOrderData) {
-    return this.patch<IOrder>(id)(body);
+    return this.patch<IMessageResponse>(id)(body);
   }
 }
 

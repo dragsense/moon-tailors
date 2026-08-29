@@ -28,29 +28,29 @@
         "restart": "no"
       }
     },
-    "staging": {
-      "projectName": "moon-tailors-staging",
-      "dockerEnv": "env/staging/docker.env",
+    "production": {
+      "projectName": "moon-tailors-production",
+      "dockerEnv": "env/production/docker.env",
       "server": {
         "buildTarget": "runtime",
-        "nodeEnv": "staging",
+        "nodeEnv": "production",
         "restart": "unless-stopped",
-        "env": "env/staging/server.env",
+        "env": "env/production/server.env",
         "needs": ["postgres", "redis"]
       },
       "client": {
         "clientMode": "nginx",
         "buildTarget": "runtime",
-        "nodeEnv": "staging",
+        "nodeEnv": "production",
         "restart": "unless-stopped",
-        "env": "env/staging/client.env"
+        "env": "env/production/client.env"
       },
       "website": {
         "buildTarget": "runtime",
-        "nodeEnv": "staging",
+        "nodeEnv": "production",
         "restart": "unless-stopped",
         "mode": "docker",
-        "env": "env/staging/website.env"
+        "env": "env/production/website.env"
       },
       "gateway": {
         "restart": "unless-stopped"

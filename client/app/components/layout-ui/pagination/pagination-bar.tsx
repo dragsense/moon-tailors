@@ -61,12 +61,12 @@ export function PaginationBar({
 
   return (
     <div
-      className={`flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${className ?? ""}`}
+      className={`flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${className ?? ""}`}
       data-component-id={componentId}
     >
       <p className="text-sm text-muted-foreground">{summary}</p>
 
-      <div className="flex flex-wrap items-center gap-6 lg:gap-8">
+      <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-6 lg:gap-8">
         <div className="flex items-center gap-2">
           <p className="text-sm font-medium">Rows per page</p>
           <Select

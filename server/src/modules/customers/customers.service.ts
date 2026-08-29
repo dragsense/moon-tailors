@@ -6,9 +6,11 @@ import {
 } from "@nestjs/common";
 import type {
   ICustomer,
+  IMessageResponse,
   IPaginatedResponse,
   TCreateCustomerData,
   TCustomerListQuery,
+  TGetQuery,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import {
@@ -30,7 +32,7 @@ import { CustomerEntity } from "./entities/customer.entity";
 
 export const CUSTOMER_QUERY: EntityQueryConfig = {
   alias: "customer",
-  searchable: ["name", "phone", "whatsapp", "email", "id"],
+  searchable: ["name", "phone", "alternative", "email"],
   sortable: ["createdAt", "updatedAt", "name", "phone"],
   defaultSort: { field: "createdAt", order: "DESC" },
   filters: filtersFromListSchema(customerListQuerySchema),
@@ -61,44 +63,56 @@ export class CustomersService implements OnModuleInit {
     });
   }
 
-  async create(input: TCreateCustomerData): Promise<ICustomer> {
+  async create(input: TCreateCustomerData): Promise<IMessageResponse> {
     const phone = input.phone.trim();
     await this.assertPhoneAvailable(phone);
 
-    const customer = await this.entity.create({
-      name: input.name.trim(),
-      gender: input.gender,
-      phone,
-      alternative: emptyToNull(input.alternative),
-      email: uniqueCustomerEmail(),
-      address: emptyToNull(input.address),
-      notes: emptyToNull(input.notes),
-    });
+    await this.entity.create(
+      {
+        name: input.name.trim(),
+        gender: input.gender,
+        phone,
+        alternative: emptyToNull(input.alternative),
+        email: uniqueCustomerEmail(),
+        address: emptyToNull(input.address),
+        notes: emptyToNull(input.notes),
+        measurementId: null,
+      },
+      {
+        afterCreate: async (customer, manager) => {
+          const measurement = await this.measurements.createForCustomer(
+            customer.id,
+            input.measurement,
+            manager,
+          );
+          customer.measurementId = measurement.id;
+          await manager.save(customer);
+        },
+      },
+    );
 
-    if (input.measurement) {
-      await this.measurements.upsertDefault(customer.id, input.measurement);
-    }
-
-    return this.get(customer.id);
+    return { message: "Customer created successfully" };
   }
 
   async list(
     query: TCustomerListQuery,
   ): Promise<IPaginatedResponse<ICustomer>> {
     const page = await this.entity.list(query);
-    return { ...page, data: page.data.map((row) => this.toPayload(row, null)) };
+    return { ...page, data: page.data.map((row) => this.toPayload(row)) };
   }
 
-  async get(key: EntityKey): Promise<ICustomer> {
-    const row = await this.entity.require(key);
-    const defaults = await this.measurements.findDefault(row.id);
-    return this.toPayload(row, defaults);
+  async get(key: EntityKey, query: TGetQuery = {}): Promise<ICustomer> {
+    const row = await this.entity.require(key, {
+      _relations: query._relations,
+      _select: query._select,
+    });
+    return this.toPayload(row);
   }
 
   async update(
     key: EntityKey,
     input: TUpdateCustomerData,
-  ): Promise<ICustomer> {
+  ): Promise<IMessageResponse> {
     const existing = await this.entity.require(key);
     const patch: Partial<CustomerEntity> = {};
     if (input.name !== undefined) patch.name = input.name.trim();
@@ -116,7 +130,7 @@ export class CustomersService implements OnModuleInit {
     if (Object.keys(patch).length > 0) {
       await this.entity.update(key, patch);
     }
-    return this.get(key);
+    return { message: "Customer updated successfully" };
   }
 
   count(): Promise<number> {
@@ -142,10 +156,7 @@ export class CustomersService implements OnModuleInit {
     }
   }
 
-  private toPayload(
-    row: CustomerEntity,
-    defaults: Awaited<ReturnType<MeasurementsService["findDefault"]>>,
-  ): ICustomer {
+  private toPayload(row: CustomerEntity): ICustomer {
     return {
       id: row.id,
       name: row.name,
@@ -155,7 +166,9 @@ export class CustomersService implements OnModuleInit {
       email: row.email ?? undefined,
       address: row.address ?? undefined,
       notes: row.notes ?? undefined,
-      measurement: defaults ? this.measurements.toPayload(defaults) : null,
+      measurement: row.measurement
+        ? this.measurements.toPayload(row.measurement)
+        : null,
       createdAt: toIso(row.createdAt),
       updatedAt: toIso(row.updatedAt),
     };
@@ -172,5 +185,7 @@ function emptyToNull(value?: string | null) {
 }
 
 function toIso(value: Date | string): string {
-  return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
+  return value instanceof Date
+    ? value.toISOString()
+    : new Date(value).toISOString();
 }

@@ -29,6 +29,12 @@
  * <OpsProvider store={tasksOps}>
  *   {({ components }) => components.listTasks}
  * </OpsProvider>
+ *
+ * Seed query params from the route (applied before first fetch):
+ * <OpsProvider
+ *   store={customerDetailOps}
+ *   initialParams={{ getCustomer: { id }, listOrders: { customerId: id } }}
+ * />
  */
 export {
   createOps,

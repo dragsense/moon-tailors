@@ -9,9 +9,9 @@ import {
 } from "~/lib/form";
 import { cn } from "~/lib/utils";
 
-type AnyZodObject = z.ZodObject<z.ZodRawShape>;
+type AnyZodSchema = z.ZodTypeAny;
 
-export type SchemaFormRenderCtx<TSchema extends AnyZodObject> = {
+export type SchemaFormRenderCtx<TSchema extends AnyZodSchema> = {
   /** Generated controls keyed by field name — place in any layout. */
   fields: SchemaFieldMap;
   form: UseFormReturn<z.infer<TSchema>>;
@@ -19,7 +19,7 @@ export type SchemaFormRenderCtx<TSchema extends AnyZodObject> = {
   isValid: boolean;
 };
 
-export type SchemaFormProps<TSchema extends AnyZodObject> =
+export type SchemaFormProps<TSchema extends AnyZodSchema> =
   UseSchemaFormOptions<TSchema> & {
     onSubmit: (values: z.infer<TSchema>) => void | Promise<void>;
     /**
@@ -70,7 +70,7 @@ export type SchemaFormProps<TSchema extends AnyZodObject> =
  * />
  * ```
  */
-export function SchemaForm<TSchema extends AnyZodObject>({
+export function SchemaForm<TSchema extends AnyZodSchema>({
   schema,
   onSubmit,
   defaultValues,

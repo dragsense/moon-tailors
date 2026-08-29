@@ -1,7 +1,7 @@
 /**
  * Load docker/environments.json and build docker compose args.
  *
- * Environments: local (laptop) and staging. Each nests
+ * Environments: local (laptop) and production. Each nests
  *   server / client / website  — with env paths (+ server.needs for infra)
  *
  * Deploy picks one or more apps (multi-select or all) from that environment.
@@ -485,7 +485,7 @@ export function envBasename(p) {
   return String(p).replace(/^env\//, "");
 }
 
-/** Repo-relative path as in environments.json (`env/staging/server.env`, not basename). */
+/** Repo-relative path as in environments.json (`env/production/server.env`, not basename). */
 export function envRepoRel(p, envDir = "env") {
   const s = String(p || "").replace(/^\.\//, "").trim();
   if (!s) return "";

@@ -9,26 +9,26 @@
 | `env/server.env` | **ignored** | Nest API (this machine) |
 | `env/client.env` | **ignored** | Vite (this machine) |
 | `env/website.env` | **ignored** | Astro `PUBLIC_*` (this machine) |
-| `env/staging/*.env` | **ignored** | Staging VPS — uploaded by `pnpm remote` |
-| `env/staging/*.env.example` | committed | Copied to `env/staging/*.env` if missing |
-| `docker/environments.json` | **committed** | Compose profiles: **local** (laptop) and **staging** |
+| `env/production/*.env` | **ignored** | Production VPS — uploaded by `pnpm remote` |
+| `env/production/*.env.example` | committed | Copied to `env/production/*.env` if missing |
+| `docker/environments.json` | **committed** | Compose profiles: **local** (laptop) and **production** |
 
 ```bash
 pnpm tpl                   # → Bootstrap copies *.env.example if missing
 ```
 
-Laptop Docker uses **local**. The only remote environment is **staging**.
+Laptop Docker uses **local**. The only remote environment is **production**.
 
 ## Docker stack name (container group)
 
-In `env/docker.env` (local) or `env/staging/docker.env` (staging VPS):
+In `env/docker.env` (local) or `env/production/docker.env` (production VPS):
 
 ```bash
 COMPOSE_PROJECT_NAME=moon-tailors
 POSTGRES_VOLUME_NAME=moon_tailors_postgres_data
 ```
 
-Containers become `moon-tailors-server`, `moon-tailors-postgres`, `moon-tailors-redis`, … Pin **volume names** so swapping containers does not create a new empty database. Staging must use different names (`moon_tailors_staging_postgres_data`).
+Containers become `moon-tailors-server`, `moon-tailors-postgres`, `moon-tailors-redis`, … Pin **volume names** so swapping containers does not create a new empty database. Production must use different names (`moon_tailors_production_postgres_data`).
 
 Only **`GATEWAY_EXPOSE`** is published on the host. Do not set `SERVER_EXPOSE`, `CLIENT_EXPOSE`, or `WEBSITE_EXPOSE` unless you need them — traffic goes through the gateway (`/`, `/app/`, `/server/`).
 
@@ -54,23 +54,23 @@ pnpm tpl start
 Do **not** use `client/.env`, `website/.env`, or `server/.env`. One file per app under `env/`.
 
 ```txt
-Host:     env/server.env   (or env/staging/server.env)
+Host:     env/server.env   (or env/production/server.env)
             │  volume → /app/env/server.env
             │  ENV_FILE
 Nest:     process.env
 
-Host:     env/client.env   (or env/staging/client.env)
+Host:     env/client.env   (or env/production/client.env)
             │  compose mounts at /app/env/client.env
             │  client/vite.config.ts loadClientEnv()
 Browser:  import.meta.env.VITE_*
 
-Host:     env/website.env  (or env/staging/website.env)
+Host:     env/website.env  (or env/production/website.env)
             │  compose mounts at /app/env/website.env
             │  website/astro.config.mjs loadWebsiteEnv()
 Site:     import.meta.env.PUBLIC_*
 ```
 
-On the VPS, `environments.json` may say `env/staging/client.env`; compose still bind-mounts it as **`/app/env/client.env`** inside the image, so Vite/Astro keep looking at that container path. Deploy copies laptop `env/staging/server.env` → VPS `…/env/staging/server.env` (same relative path). Do not flatten to `env/server.env` on the host.
+On the VPS, `environments.json` may say `env/production/client.env`; compose still bind-mounts it as **`/app/env/client.env`** inside the image, so Vite/Astro keep looking at that container path. Deploy copies laptop `env/production/server.env` → VPS `…/env/production/server.env` (same relative path). Do not flatten to `env/server.env` on the host.
 
 ### Nest (`env/server.env`)
 
@@ -80,7 +80,7 @@ On the VPS, `environments.json` may say `env/staging/client.env`; compose still 
 | `JWT_ACCESS_TTL_SEC` | Cookie JWT lifetime in seconds (default **604800** / 7 days) |
 | `ACCESS_COOKIE_NAME` | HttpOnly cookie name (default `access_token`) |
 | `MASTER_PASSWORD` | Optional plain fallback for `PLATFORM_OWNER_EMAIL` if the stored password does not match |
-| `CSRF_ENABLED` | Cookie↔header CSRF on mutating `/api` (typically on in staging) |
+| `CSRF_ENABLED` | Cookie↔header CSRF on mutating `/api` (on in production) |
 | `COOKIE_SECRET` | Signs the CSRF cookie |
 
 Login sets an HttpOnly JWT cookie on `{SERVER_PUBLIC_PATH}/api` (e.g. `/server/api`). The JSON body is `{ user, message }` — the token is never returned to JavaScript. There is **no refresh token**. Logout clears the access cookie. Browser clients use `withCredentials`; non-browser clients may send `Authorization: Bearer`.
@@ -89,7 +89,7 @@ Login sets an HttpOnly JWT cookie on `{SERVER_PUBLIC_PATH}/api` (e.g. `/server/a
 
 | Key | Role |
 |---|---|
-| `VITE_APP_ENV` | `development` (laptop) or `staging` (VPS) — client env banner (baked at SPA build) |
+| `VITE_APP_ENV` | `development` (laptop) or `production` (VPS, no banner) — baked at SPA build |
 | `VITE_API_URL` | gateway API (`http://localhost:8088/server/api`) |
 | `CLIENT_SSR` | local Vite SSR toggle |
 
@@ -97,16 +97,16 @@ Rebuild/restart the client after changing public vars. Docker/remote: the banner
 
 ### Environment banner
 
-Non-production: top bar + `[env]` in the tab title.
+Non-production: top bar + `[env]` in the tab title. Production hides it.
 
 ```bash
 # local
 VITE_APP_ENV=development          # env/client.env
 PUBLIC_ENV=development            # env/website.env
 
-# staging VPS (copied by pnpm remote)
-VITE_APP_ENV=staging              # env/staging/client.env
-PUBLIC_ENV=staging                # env/staging/website.env
+# production VPS (copied by pnpm remote)
+VITE_APP_ENV=production           # env/production/client.env
+PUBLIC_ENV=production             # env/production/website.env
 ```
 
 Full table: [DEPLOY.md](DEPLOY.md#environment-banner-docker--deploy).
@@ -122,17 +122,17 @@ Full table: [DEPLOY.md](DEPLOY.md#environment-banner-docker--deploy).
 
 Compose also injects `DATABASE_URL` from `POSTGRES_*` in `docker.env` so DB user/password stay in one place. Redis is injected as `REDIS_URL=redis://redis:6379`.
 
-## Staging / remote
+## Production / remote
 
-Host name matches `environments.json` (`staging`). **Do not point staging at `env/docker.env`** — Deploy would upload your laptop ports and secrets.
+Host name matches `environments.json` (`production`). **Do not point production at `env/docker.env`** — Deploy would upload your laptop ports and secrets.
 
 ```txt
-env/docker.env                 local laptop only
-env/staging/docker.env         staging VPS (gitignored)
-env/staging/server.env
-env/staging/client.env
-env/staging/website.env
-env/staging/*.env.example      committed templates
+env/docker.env                    local laptop only
+env/production/docker.env         production VPS (gitignored)
+env/production/server.env
+env/production/client.env
+env/production/website.env
+env/production/*.env.example      committed templates
 ```
 
 `.gitignore`:
@@ -145,20 +145,20 @@ env/**/*.env
 ```
 
 ```json
-"staging": {
-  "projectName": "moon-tailors-staging",
-  "dockerEnv": "env/staging/docker.env",
-  "server": { "env": "env/staging/server.env", "needs": ["postgres", "redis"] },
-  "client": { "clientMode": "nginx", "env": "env/staging/client.env" },
-  "website": { "mode": "docker", "env": "env/staging/website.env" }
+"production": {
+  "projectName": "moon-tailors-production",
+  "dockerEnv": "env/production/docker.env",
+  "server": { "env": "env/production/server.env", "needs": ["postgres", "redis"] },
+  "client": { "clientMode": "nginx", "env": "env/production/client.env" },
+  "website": { "mode": "docker", "env": "env/production/website.env" }
 }
 ```
 
 Set `clientMode` on **`docker/environments.json`**, not `hosts.json` (unless you need a per-host override). Modes and what deploy starts: [DEPLOY.md](DEPLOY.md).
 
 ```bash
-nano env/staging/server.env
-pnpm remote --host staging env
+nano env/production/server.env
+pnpm remote --host production env
 ```
 
 Host nginx proxies `:80/:443` → `127.0.0.1:${GATEWAY_EXPOSE}` (often `8088`).

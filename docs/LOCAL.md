@@ -56,10 +56,10 @@ Shown on **client** and **website** (local Docker and remote).
 | Client | `env/client.env` (local) or `env/<host>/client.env` | `VITE_APP_ENV` |
 | Website | `env/website.env` or `env/<host>/website.env` | `PUBLIC_ENV` |
 
-Values: `development` (laptop) or `staging` (VPS). Local Vite/Astro default to **development** if unset. After changing a remote file, redeploy that app so the value is baked into the static build.
+Values: `development` (laptop banner) or `production` (VPS, no banner). Local Vite/Astro default to **development** if unset. After changing a remote file, redeploy that app so the value is baked into the static build.
 
-- **staging** — sticky top strip + `[STAGING]` document title
 - **development** — sticky top strip + `[DEVELOPMENT]` document title
+- **production** — no strip
 
 See [DEPLOY.md](DEPLOY.md#environment-banner-docker--deploy).
 
@@ -159,7 +159,7 @@ Asks host + apps. Auto-prepares remote (folder/git/env/Docker if missing).
 
 Remote ops: `pnpm remote` — see [DEPLOY.md](DEPLOY.md#remote-control-status--deploy--start--reload--stop--logs--clean--pull).
 
-Docker envs (local laptop + staging): [`docker/environments.json`](../docker/environments.json) — see [DEPLOY.md](DEPLOY.md).
+Docker envs (local laptop + production): [`docker/environments.json`](../docker/environments.json) — see [DEPLOY.md](DEPLOY.md).
 
 ## URLs (when running)
 

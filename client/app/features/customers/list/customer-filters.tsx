@@ -33,9 +33,11 @@ export function CustomerFilters({
       showClear={false}
     >
       {({ fields }) => (
-        <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex w-full items-end gap-2">
           <div className="min-w-0 flex-1">{fields.search}</div>
-          {actions}
+          {actions ? (
+            <div className="flex shrink-0 items-end gap-2">{actions}</div>
+          ) : null}
         </div>
       )}
     </SchemaFilters>

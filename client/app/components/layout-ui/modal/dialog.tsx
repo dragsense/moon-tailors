@@ -17,7 +17,7 @@ import { cn } from "~/lib/utils";
 
 export type ModalDialogProps = {
   open?: boolean;
-  title: string;
+  title: ReactNode;
   description?: string;
   onClose: () => void;
   /** Extra message under body (e.g. mutation error). */
@@ -28,6 +28,8 @@ export type ModalDialogProps = {
   /** When false, overlay click does not close. Default true. */
   closeOnOverlay?: boolean;
   headerActions?: ReactNode;
+  /** Keep title for assistive tech only (no visible dialog heading). */
+  hideTitle?: boolean;
 };
 
 /** Centered dialog modal — shadcn Dialog wrapper. */
@@ -42,7 +44,10 @@ export function ModalDialog({
   contentClassName,
   closeOnOverlay = true,
   headerActions,
+  hideTitle = false,
 }: ModalDialogProps) {
+  const showHeader = !hideTitle || Boolean(description) || Boolean(headerActions);
+
   return (
     <Dialog
       open={open}
@@ -59,19 +64,25 @@ export function ModalDialog({
           if (!closeOnOverlay) event.preventDefault();
         }}
       >
-        <DialogHeader className="gap-2 pr-8">
-          <div className="flex items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1">
-              <DialogTitle>{title}</DialogTitle>
-              {description ? (
-                <DialogDescription>{description}</DialogDescription>
+        {showHeader ? (
+          <DialogHeader className="gap-2 pr-8">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 space-y-1">
+                <DialogTitle className={hideTitle ? "sr-only" : undefined}>
+                  {title}
+                </DialogTitle>
+                {description ? (
+                  <DialogDescription>{description}</DialogDescription>
+                ) : null}
+              </div>
+              {headerActions ? (
+                <div className="flex shrink-0 items-center gap-1">{headerActions}</div>
               ) : null}
             </div>
-            {headerActions ? (
-              <div className="flex shrink-0 items-center gap-1">{headerActions}</div>
-            ) : null}
-          </div>
-        </DialogHeader>
+          </DialogHeader>
+        ) : (
+          <DialogTitle className="sr-only">{title}</DialogTitle>
+        )}
         <div className={cn(contentClassName)}>
           {children}
           {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
@@ -83,7 +94,7 @@ export function ModalDialog({
 
 export type ModalSheetProps = {
   open?: boolean;
-  title: string;
+  title: ReactNode;
   description?: string;
   onClose: () => void;
   error?: string | null;

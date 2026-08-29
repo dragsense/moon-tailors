@@ -76,7 +76,7 @@ export function CreateOrderModal({
       })) as IOrder | undefined;
       setPending(null);
       close();
-      if (created?.id && view.kind === "mutation") {
+      if (created?.id && view.kind === "query") {
         view.open(created);
       }
     } catch (err) {
@@ -131,8 +131,8 @@ export function CreateOrderModal({
                 value: status,
               })),
             },
-            totalCost: { label: t("orders.totalCost") },
-            paidAmount: { label: t("orders.paidAmount") },
+            totalCost: { label: `${t("orders.totalCost")} (PKR)` },
+            paidAmount: { label: `${t("orders.paidAmount")} (PKR)` },
             notes: { label: t("orders.notes") },
           }}
           defaultValues={{

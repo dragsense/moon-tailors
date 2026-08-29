@@ -4,13 +4,13 @@
  * Also: pull (git sync), env (sync env + reload).
  *
  * From laptop:
- *   node scripts/remote.mjs --host staging --action stop server
- *   node scripts/remote.mjs --host staging --action env
- *   node scripts/remote.mjs --host staging --action pull
- *   node scripts/remote.mjs --host staging --action logs server
+ *   node scripts/remote.mjs --host production --action stop server
+ *   node scripts/remote.mjs --host production --action env
+ *   node scripts/remote.mjs --host production --action pull
+ *   node scripts/remote.mjs --host production --action logs server
  *
  * On the server (invoked via SSH re-exec for compose ops):
- *   node scripts/remote.mjs --action stop --env staging server
+ *   node scripts/remote.mjs --action stop --env production server
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
@@ -69,7 +69,7 @@ function help() {
   console.log(`
 Usage:
   node scripts/remote.mjs --host <name> --action <action> [services…]
-  node scripts/remote.mjs --action <action> --env <${envs || "staging|production"}> [services…]
+  node scripts/remote.mjs --action <action> --env <${envs || "production"}> [services…]
 
 Compose actions (SSH → docker compose on host):
   status | ps     containers + volumes + images + networks + disk
@@ -91,11 +91,11 @@ Flags:
   --no-reload     with env: skip container reload after sync
 
 Examples:
-  node scripts/remote.mjs --host staging --action pull
-  node scripts/remote.mjs --host staging --action env
-  node scripts/remote.mjs --host staging --action clear-cache client
-  node scripts/remote.mjs --host staging --action reload gateway
-  node scripts/remote.mjs --host staging --action stop server
+  node scripts/remote.mjs --host production --action pull
+  node scripts/remote.mjs --host production --action env
+  node scripts/remote.mjs --host production --action clear-cache client
+  node scripts/remote.mjs --host production --action reload gateway
+  node scripts/remote.mjs --host production --action stop server
 `);
 }
 
@@ -652,7 +652,7 @@ function composeUpArgs(action, targets) {
 }
 
 function runLocalAction(args) {
-  const envName = args.env || process.env.DEPLOY_ENV || "staging";
+  const envName = args.env || process.env.DEPLOY_ENV || "production";
   const clientMode = args.clientMode
     ? normalizeClientMode(args.clientMode)
     : undefined;

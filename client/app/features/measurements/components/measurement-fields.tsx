@@ -60,11 +60,11 @@ export function MeasurementFields<TFieldValues extends FieldValues>({
           ? `${namePrefix}.${field.name}`
           : field.name;
         const wide = field.meta.type === "textarea";
+        const unit = t("measurements.unit");
         const label = t(measurementLabelKey(field.name));
         const meta = {
           ...field.meta,
-          label,
-          placeholder: label,
+          label: wide ? label : `${label} (${unit})`,
         };
         return (
           <div key={field.name} className={wide ? "col-span-2" : undefined}>

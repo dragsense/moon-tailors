@@ -8,7 +8,7 @@ import type {
   IOrder,
   IPaginatedResponse,
   TCreateOrderData,
-  TMeasurementValues,
+  TGetQuery,
   TOrderListQuery,
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
@@ -19,6 +19,7 @@ import {
   filtersFromListSchema,
   orderListQuerySchema,
 } from "@moon-tailors/contracts";
+import type { ObjectLiteral, SelectQueryBuilder } from "typeorm";
 import { ActivityLogRegistry } from "../../common/activity-logs";
 import { PermissionsService } from "../../common/base";
 import {
@@ -115,12 +116,34 @@ export class OrdersService implements OnModuleInit {
   }
 
   async list(query: TOrderListQuery): Promise<IPaginatedResponse<IOrder>> {
-    const page = await this.entity.list(query, { _relations: [...RELATIONS] });
+    const searchable = query.customerId
+      ? (ORDER_QUERY.searchable ?? []).filter(
+          (field) => !field.startsWith("customer."),
+        )
+      : ORDER_QUERY.searchable;
+    const page = await this.entityService.list(
+      OrderEntity,
+      { ...ORDER_QUERY, searchable },
+      query,
+      {
+        _relations: [...RELATIONS],
+        beforeQuery: query.delayed
+          ? (qb) => applyDelayedOnly(qb, "order")
+          : undefined,
+      },
+    );
     return { ...page, data: page.data.map((row) => this.toPayload(row)) };
   }
 
-  async get(key: EntityKey): Promise<IOrder> {
-    const row = await this.entity.require(key, { _relations: [...RELATIONS] });
+  async get(key: EntityKey, query: TGetQuery = {}): Promise<IOrder> {
+    const relations =
+      query._relations && query._relations.length > 0
+        ? query._relations
+        : [...RELATIONS];
+    const row = await this.entity.require(key, {
+      _relations: relations,
+      _select: query._select,
+    });
     return this.toPayload(row);
   }
 
@@ -167,14 +190,14 @@ export class OrdersService implements OnModuleInit {
       base.clone().getCount(),
       base
         .clone()
-        .andWhere("order.status != :delivered", {
-          delivered: EOrderStatus.DELIVERED,
+        .andWhere("order.status NOT IN (:...closed)", {
+          closed: [EOrderStatus.DELIVERED, EOrderStatus.CANCELED],
         })
         .getCount(),
       base
         .clone()
-        .andWhere("order.status != :delivered", {
-          delivered: EOrderStatus.DELIVERED,
+        .andWhere("order.status NOT IN (:...closed)", {
+          closed: [EOrderStatus.DELIVERED, EOrderStatus.CANCELED],
         })
         .andWhere("order.expectedCompletionDate < :today", { today })
         .getCount(),
@@ -243,8 +266,26 @@ export class OrdersService implements OnModuleInit {
   }
 }
 
+function applyDelayedOnly<Entity extends ObjectLiteral>(
+  qb: SelectQueryBuilder<Entity>,
+  alias: string,
+) {
+  const today = new Date().toISOString().slice(0, 10);
+  qb.andWhere(`${alias}.status NOT IN (:...delayedClosed)`, {
+    delayedClosed: [EOrderStatus.DELIVERED, EOrderStatus.CANCELED],
+  });
+  qb.andWhere(`${alias}.expectedCompletionDate < :delayedToday`, {
+    delayedToday: today,
+  });
+}
+
 function isDelayed(order: OrderEntity) {
-  if (order.status === EOrderStatus.DELIVERED) return false;
+  if (
+    order.status === EOrderStatus.DELIVERED ||
+    order.status === EOrderStatus.CANCELED
+  ) {
+    return false;
+  }
   const due = dateOnly(order.expectedCompletionDate);
   const today = new Date().toISOString().slice(0, 10);
   return due < today;

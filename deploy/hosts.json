@@ -6,12 +6,12 @@
   "sshKey": "~/.ssh/id_ed25519",
   "githubSshKey": "~/.ssh/id_ed25519",
   "gitUrl": "git@github.com:ORG/REPO.git",
-  "defaultHost": "staging",
+  "defaultHost": "production",
   "hosts": {
-    "staging": {
-      "host": "YOUR_STAGING_SERVER_IP",
+    "production": {
+      "host": "YOUR_PRODUCTION_SERVER_IP",
       "path": "/opt/projects/moon-tailors",
-      "branch": "staging"
+      "branch": "main"
     }
   }
 }

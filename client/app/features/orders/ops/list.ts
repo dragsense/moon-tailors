@@ -11,13 +11,11 @@ export const ordersListOps = createOps({
   ops: {
     ...pickOps(orderOpsCore, [
       "listOrders",
-      "getOrder",
       "viewOrder",
       "createOrder",
       "updateOrder",
     ]),
     ...pickOps(measurementOpsCore, {
-      getMeasurement: true,
       updateMeasurement: {
         onSuccess: composeSuccess(refreshMeasurements, refreshOrders),
       },

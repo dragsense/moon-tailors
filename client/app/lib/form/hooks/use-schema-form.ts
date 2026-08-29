@@ -12,9 +12,9 @@ import {
   type SchemaFieldMap,
 } from "./use-schema-fields";
 
-type AnyZodObject = z.ZodObject<z.ZodRawShape>;
+type AnyZodSchema = z.ZodTypeAny;
 
-export type UseSchemaFormOptions<TSchema extends AnyZodObject> = {
+export type UseSchemaFormOptions<TSchema extends AnyZodSchema> = {
   schema: TSchema;
   defaultValues?: Partial<z.infer<TSchema>>;
   mode?: "onChange" | "onBlur" | "onSubmit" | "onTouched" | "all";
@@ -45,7 +45,7 @@ export type UseSchemaFormResult<TFieldValues extends FieldValues> = {
  *   },
  * });
  */
-export function useSchemaForm<TSchema extends AnyZodObject>({
+export function useSchemaForm<TSchema extends AnyZodSchema>({
   schema,
   defaultValues,
   mode = "onChange",

@@ -61,3 +61,16 @@ export function resolveTranslation(
     params[name] != null ? String(params[name]) : `{{${name}}}`,
   );
 }
+
+/** Sync translate for ops confirm labels (reads current language from storage). */
+export function opT(
+  key: TranslationKey,
+  params?: Record<string, string | number>,
+): string {
+  let lang = DEFAULT_LANGUAGE;
+  if (typeof window !== "undefined") {
+    const raw = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (raw === ELanguage.EN || raw === ELanguage.UR) lang = raw;
+  }
+  return resolveTranslation(LOCALE_CATALOG[lang].dict, key, params);
+}

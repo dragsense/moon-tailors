@@ -14,7 +14,7 @@ export const dashboardOpsCore = {
     invalidateKey: dashboardKeys.summary(),
     fetch: () => dashboardService.getSummary(),
     component: DashboardView,
-    auto: true,
+    auto: false,
     onError: (error: Error) => {
       console.error("[dashboard.summary]", error.message);
     },

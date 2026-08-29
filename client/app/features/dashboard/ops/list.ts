@@ -1,5 +1,10 @@
-import { createOps, pickOps } from "~/ops";
+import { composeSuccess, createOps, pickOps } from "~/ops";
 import { customerOpsCore } from "~/features/customers/ops/core";
+import {
+  measurementOpsCore,
+  refreshMeasurements,
+} from "~/features/measurements/ops";
+import { orderOpsCore, refreshOrders } from "~/features/orders/ops/core";
 import { dashboardOpsCore } from "./core";
 
 export const dashboardPageOps = createOps({
@@ -8,6 +13,21 @@ export const dashboardPageOps = createOps({
   ops: {
     ...dashboardOpsCore,
     ...pickOps(customerOpsCore, ["listCustomers", "createCustomer"]),
+    ...pickOps(orderOpsCore, [
+      "latestOrders",
+      "listOrders",
+      "viewOrder",
+      "createOrder",
+      "updateOrder",
+    ]),
+    ...pickOps(measurementOpsCore, {
+      updateMeasurement: {
+        onSuccess: composeSuccess(refreshMeasurements, refreshOrders),
+      },
+      applyMeasurementsToDefault: {
+        onSuccess: composeSuccess(refreshMeasurements, refreshOrders),
+      },
+    }),
   },
 });
 

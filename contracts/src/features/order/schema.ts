@@ -20,9 +20,32 @@ export const ORDER_STATUS_OPTIONS = [
   { label: "Stitched", value: EOrderStatus.STITCHED },
   { label: "Ready", value: EOrderStatus.READY },
   { label: "Delivered", value: EOrderStatus.DELIVERED },
+  { label: "Canceled", value: EOrderStatus.CANCELED },
 ];
 
-export const createOrderSchema = z.object({
+function dateKey(value: string): string {
+  return value.slice(0, 10);
+}
+
+function readyByAfterOrderDate(
+  data: { orderDate?: string; expectedCompletionDate?: string },
+  ctx: z.RefinementCtx,
+): void {
+  const orderDate = data.orderDate ? dateKey(data.orderDate) : "";
+  const readyBy = data.expectedCompletionDate
+    ? dateKey(data.expectedCompletionDate)
+    : "";
+  if (!orderDate || !readyBy) return;
+  if (readyBy < orderDate) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["expectedCompletionDate"],
+      message: "Ready by must be on or after the order date",
+    });
+  }
+}
+
+const createOrderObject = z.object({
   customerId: field(z.string().uuid(), {
     type: "hidden",
     label: "Customer",
@@ -85,7 +108,10 @@ export const createOrderSchema = z.object({
   }),
 });
 
-export const updateOrderSchema = createOrderSchema
+export const createOrderSchema =
+  createOrderObject.superRefine(readyByAfterOrderDate);
+
+export const updateOrderSchema = createOrderObject
   .omit({
     customerId: true,
     measurement: true,
@@ -94,7 +120,8 @@ export const updateOrderSchema = createOrderSchema
   .partial()
   .extend({
     forceEdit: z.boolean().optional(),
-  });
+  })
+  .superRefine(readyByAfterOrderDate);
 
 export const applyMeasurementsToDefaultSchema = z.object({});
 
@@ -106,7 +133,7 @@ const orderCustomerSchema = customerSchema.pick({
   gender: true,
 });
 
-export const orderSchema = createOrderSchema
+export const orderSchema = createOrderObject
   .omit({
     replaceDefault: true,
   })
@@ -150,6 +177,17 @@ export const orderListQuerySchema = listQuerySchema.extend({
       label: "Customer",
       order: 3,
       filter: "eq",
+    },
+  ),
+  delayed: field(
+    z.preprocess((v) => {
+      if (v === true || v === "true" || v === "1" || v === 1) return true;
+      return undefined;
+    }, z.boolean().optional()),
+    {
+      type: "switch",
+      label: "Late only",
+      order: 4,
     },
   ),
 });

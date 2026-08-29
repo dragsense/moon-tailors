@@ -42,6 +42,10 @@ type QueryOpView = {
   params: Record<string, unknown>;
   setParams: (patch: Record<string, unknown>) => void;
   refetch: () => Promise<unknown>;
+  isOpen: boolean;
+  payload: unknown;
+  open: (payload?: unknown, params?: Record<string, unknown>) => void;
+  close: () => void;
 };
 
 type MutationOpView = {
@@ -91,7 +95,13 @@ export function useOp(store: OpsStore, name: string): OpView {
 
   const queryKey =
     def.kind === "query"
-      ? resolveOpQueryKey(store.id, name, def, params)
+      ? resolveOpQueryKey(
+          store.id,
+          name,
+          def,
+          params,
+          mutationUi.isOpen ? mutationUi.payload : undefined,
+        )
       : (["ops", store.id, name, "mutation-placeholder"] as const);
 
   // Shared cache with OpsProvider QueryBridge — enabled:false = observe only.
@@ -99,7 +109,10 @@ export function useOp(store: OpsStore, name: string): OpView {
     queryKey,
     queryFn: async () => {
       if (def.kind !== "query") return null;
-      return (def as QueryOpConfig).fetch(params);
+      return (def as QueryOpConfig).fetch(
+        params,
+        mutationUi.isOpen ? mutationUi.payload : undefined,
+      );
     },
     enabled: false,
   });
@@ -120,6 +133,19 @@ export function useOp(store: OpsStore, name: string): OpView {
         (async () => {
           /* host not ready */
         }),
+      isOpen: mutationUi.isOpen,
+      payload: mutationUi.payload,
+      open:
+        q?.open ??
+        ((payload?: unknown, nextParams?: Record<string, unknown>) => {
+          if (nextParams && Object.keys(nextParams).length > 0) {
+            store.getState().setParams(name, nextParams);
+          }
+          store.getState().open(name, payload);
+        }),
+      close: () => {
+        if (store.getState().ui.open === name) store.getState().close();
+      },
     };
   }
 
@@ -172,14 +198,23 @@ export function useMaybeOp(store: OpsStore, name: string): OpView | null {
 
   const queryKey =
     def?.kind === "query"
-      ? resolveOpQueryKey(store.id, name, def, params)
+      ? resolveOpQueryKey(
+          store.id,
+          name,
+          def,
+          params,
+          mutationUi.isOpen ? mutationUi.payload : undefined,
+        )
       : (["ops", store.id, name, "mutation-placeholder"] as const);
 
   const query = useQuery({
     queryKey,
     queryFn: async () => {
       if (!def || def.kind !== "query") return null;
-      return def.fetch(params);
+      return def.fetch(
+        params,
+        mutationUi.isOpen ? mutationUi.payload : undefined,
+      );
     },
     enabled: false,
   });
@@ -202,6 +237,19 @@ export function useMaybeOp(store: OpsStore, name: string): OpView | null {
         (async () => {
           /* host not ready */
         }),
+      isOpen: mutationUi.isOpen,
+      payload: mutationUi.payload,
+      open:
+        q?.open ??
+        ((payload?: unknown, nextParams?: Record<string, unknown>) => {
+          if (nextParams && Object.keys(nextParams).length > 0) {
+            store.getState().setParams(name, nextParams);
+          }
+          store.getState().open(name, payload);
+        }),
+      close: () => {
+        if (store.getState().ui.open === name) store.getState().close();
+      },
     };
   }
 

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import type { IOrder } from "@moon-tailors/contracts";
+import { useState } from "react";
+import type { IOrder, TMeasurementValues } from "@moon-tailors/contracts";
 import {
   EOrderStatus,
   updateOrderSchema,
@@ -9,12 +9,20 @@ import { Alert } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { SchemaForm } from "~/components/form-ui";
-import { MeasurementForm } from "~/features/measurements";
+import {
+  MeasurementDisplay,
+  MeasurementForm,
+} from "~/features/measurements";
 import { useI18n } from "~/hooks/use-i18n";
-import { OpsComponent, useOp, type OpsStore } from "~/ops";
+import { useMaybeOp, type OpsStore } from "~/ops";
 import type { TranslationKey } from "~/locales";
+import {
+  dueMoneyClass,
+  orderStatusBadgeClass,
+  paidMoneyClass,
+} from "../status-style";
 
-export function OrderDetailPanel({
+export function OrderDetail({
   store,
   order,
   isPending,
@@ -28,36 +36,26 @@ export function OrderDetailPanel({
   const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [editingMeasures, setEditingMeasures] = useState(false);
-  const update = useOp(store, "updateOrder");
-  const updateMeasurement = useOp(store, "updateMeasurement");
-  const getMeasurement = useOp(store, "getMeasurement");
-  const applyMeasurementsToDefault = useOp(
+  const update = useMaybeOp(store, "updateOrder");
+  const updateMeasurement = useMaybeOp(store, "updateMeasurement");
+  const applyMeasurementsToDefault = useMaybeOp(
     store,
     "applyMeasurementsToDefault",
   );
 
-  useEffect(() => {
-    if (getMeasurement.kind !== "query") return;
-    const id = order?.measurementId ?? "";
-    const garmentType = order?.garmentType ?? "";
-    if (
-      getMeasurement.params.id !== id ||
-      getMeasurement.params.garmentType !== garmentType
-    ) {
-      getMeasurement.setParams({ id, garmentType });
-    }
-  }, [getMeasurement, order?.garmentType, order?.measurementId]);
-
-  if (update.kind !== "mutation") return null;
-  if (updateMeasurement.kind !== "mutation") return null;
-  if (applyMeasurementsToDefault.kind !== "mutation") return null;
-
-  function confirmForceEdit() {
-    return window.confirm(t("orders.forceEditConfirm"));
-  }
+  const canUpdate = update?.kind === "mutation" && update.allowed;
+  const canEditMeasures = Boolean(
+    updateMeasurement?.kind === "mutation" &&
+      updateMeasurement.allowed &&
+      order?.measurementId,
+  );
+  const canApplyDefaults = Boolean(
+    applyMeasurementsToDefault?.kind === "mutation" &&
+      applyMeasurementsToDefault.allowed,
+  );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-6 overflow-x-hidden">
       {isPending && !order ? (
         <p className="text-muted-foreground text-sm">
           {t("common.actions.loading")}
@@ -72,7 +70,9 @@ export function OrderDetailPanel({
       {order ? (
         <>
           <div className="flex flex-wrap gap-2">
-            <Badge>
+            <Badge
+              className={`h-7 px-3 text-sm ${orderStatusBadgeClass(order.status)}`}
+            >
               {t(`orders.status.${order.status}` as TranslationKey)}
             </Badge>
             {order.isDelayed ? (
@@ -86,23 +86,18 @@ export function OrderDetailPanel({
             ) : null}
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
-            <section className="rounded-xl border border-border/60 p-4">
+          <div className="grid gap-2 lg:grid-cols-2 lg:items-start">
+            <section className="rounded-xl border border-border/60 bg-card p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <h2 className="font-heading text-base font-semibold">
                   {t("orders.details")}
                 </h2>
-                {update.allowed ? (
+                {canUpdate ? (
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      if (order.isLocked && !editing && !confirmForceEdit()) {
-                        return;
-                      }
-                      setEditing((value) => !value);
-                    }}
+                    onClick={() => setEditing((value) => !value)}
                   >
                     {editing
                       ? t("common.actions.cancel")
@@ -114,9 +109,10 @@ export function OrderDetailPanel({
               </div>
               {editing ? (
                 <SchemaForm
-                  schema={updateOrderSchema.omit({ forceEdit: true })}
+                  schema={updateOrderSchema}
                   defaultValues={order}
                   fieldConfig={{
+                    forceEdit: { hidden: true },
                     garmentType: {
                       label: t("orders.garmentType"),
                       placeholder: t("orders.garmentTypePlaceholder"),
@@ -132,18 +128,23 @@ export function OrderDetailPanel({
                         value: status,
                       })),
                     },
-                    totalCost: { label: t("orders.totalCost") },
-                    paidAmount: { label: t("orders.paidAmount") },
+                    totalCost: { label: `${t("orders.totalCost")} (PKR)` },
+                    paidAmount: { label: `${t("orders.paidAmount")} (PKR)` },
                     notes: { label: t("orders.notes") },
                   }}
                   submitLabel={t("common.actions.save")}
                   onSubmit={async (values) => {
-                    await update.run({
-                      id: order.id,
-                      ...(values as TUpdateOrderData),
-                      forceEdit: order.isLocked || undefined,
-                    });
-                    setEditing(false);
+                    if (update?.kind !== "mutation") return;
+                    try {
+                      await update.run({
+                        id: order.id,
+                        ...(values as TUpdateOrderData),
+                        forceEdit: order.isLocked || undefined,
+                      });
+                      setEditing(false);
+                    } catch {
+                      /* confirm cancelled */
+                    }
                   }}
                 />
               ) : (
@@ -165,23 +166,25 @@ export function OrderDetailPanel({
                       {t("orders.totalCost")}
                     </dt>
                     <dd className="tabular-nums">
-                      {order.totalCost.toFixed(2)}
+                      {t("orders.money", { amount: order.totalCost.toFixed(2) })}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground text-xs">
                       {t("orders.paidAmount")}
                     </dt>
-                    <dd className="tabular-nums">
-                      {order.paidAmount.toFixed(2)}
+                    <dd className={paidMoneyClass}>
+                      {t("orders.money", { amount: order.paidAmount.toFixed(2) })}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-muted-foreground text-xs">
                       {t("orders.remainingAmount")}
                     </dt>
-                    <dd className="tabular-nums">
-                      {order.remainingAmount.toFixed(2)}
+                    <dd className={dueMoneyClass(order.remainingAmount)}>
+                      {t("orders.money", {
+                        amount: order.remainingAmount.toFixed(2),
+                      })}
                     </dd>
                   </div>
                   {order.notes ? (
@@ -196,26 +199,17 @@ export function OrderDetailPanel({
               )}
             </section>
 
-            <section className="rounded-xl border border-border/60 p-4">
+            <section className="rounded-xl border border-border/60 bg-card p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h2 className="font-heading text-base font-semibold">
                   {t("orders.orderMeasurements")}
                 </h2>
-                {updateMeasurement.allowed ? (
+                {canEditMeasures ? (
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={() => {
-                      if (
-                        order.isLocked &&
-                        !editingMeasures &&
-                        !confirmForceEdit()
-                      ) {
-                        return;
-                      }
-                      setEditingMeasures((value) => !value);
-                    }}
+                    onClick={() => setEditingMeasures((value) => !value)}
                   >
                     {editingMeasures
                       ? t("common.actions.cancel")
@@ -223,7 +217,7 @@ export function OrderDetailPanel({
                   </Button>
                 ) : null}
               </div>
-              {editingMeasures ? (
+              {editingMeasures && canEditMeasures ? (
                 <div className="space-y-4">
                   {order.garmentType ? (
                     <div>
@@ -238,31 +232,38 @@ export function OrderDetailPanel({
                   <MeasurementForm
                     measurement={order.measurement}
                     submitLabel={t("common.actions.save")}
-                    onSubmit={async (values) => {
-                      await updateMeasurement.run({
-                        measurementId: order.measurementId,
-                        ...values,
-                        forceEdit: order.isLocked || undefined,
-                      });
-                      setEditingMeasures(false);
+                    onSubmit={async (values: TMeasurementValues) => {
+                      if (updateMeasurement?.kind !== "mutation") return;
+                      try {
+                        await updateMeasurement.run({
+                          id: order.measurementId,
+                          ...values,
+                          forceEdit: order.isLocked || undefined,
+                        });
+                        setEditingMeasures(false);
+                      } catch {
+                        /* confirm cancelled */
+                      }
                     }}
                   />
                 </div>
               ) : (
-                <OpsComponent store={store} name="getMeasurement" />
+                <MeasurementDisplay
+                  measurement={order.measurement}
+                  garmentType={order.garmentType}
+                />
               )}
-              {applyMeasurementsToDefault.allowed ? (
+              {canApplyDefaults && applyMeasurementsToDefault?.kind === "mutation" ? (
                 <div className="mt-4 border-t border-border/60 pt-4">
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
+                    disabled={applyMeasurementsToDefault.isPending}
                     onClick={() => {
-                      if (window.confirm(t("orders.updateDefaultsConfirm"))) {
-                        void applyMeasurementsToDefault
-                          .run({ id: order.id })
-                          .catch(() => {});
-                      }
+                      void applyMeasurementsToDefault
+                        .run({ id: order.id })
+                        .catch(() => {});
                     }}
                   >
                     {t("orders.updateDefaults")}

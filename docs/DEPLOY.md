@@ -35,7 +35,7 @@ Needs **Docker Compose v2** (`docker compose`). Engine-only installs fail with `
 | `docker/compose.yml` | Single compose (full stack) |
 | `scripts/deploy.mjs` | Deploy entry |
 
-Env files: [ENV.md](ENV.md) (`env/docker.env` is laptop-only; remote uses `env/staging/…`).
+Env files: [ENV.md](ENV.md) (`env/docker.env` is laptop-only; remote uses `env/production/…`).
 
 ---
 
@@ -83,7 +83,7 @@ The Docker **gateway** is the only published HTTP port. Paths do not change by m
 
 ## Environment banner (Docker / deploy)
 
-Staging (and local) stacks show a **top bar** + `[env]` document title.
+Local stacks show a **top bar** + `[env]` document title. Production (`VITE_APP_ENV=production`) hides it.
 
 Baked in at **image build** (Vite `define` / Astro `PUBLIC_*`). After changing these, redeploy **client** and/or **website**.
 
@@ -92,9 +92,9 @@ Baked in at **image build** (Vite `define` / Astro `PUBLIC_*`). After changing t
 | Client (`/app/`) | `env/<host>/client.env` | `VITE_APP_ENV` | `EnvironmentBanner` in the app shells |
 | Website (`/`) | `env/<host>/website.env` | `PUBLIC_ENV` (alias `PUBLIC_APP_ENV`) | Same bar on the Astro landing |
 
-This repo uses **local** (`development` banner) and **staging**. Aliases: `dev`/`local` → development, `stage` → staging.
+This repo uses **local** (`development` banner) and **production** (no banner). Aliases: `dev`/`local` → development, `prod` → production.
 
-Examples already in git: `env/staging/client.env.example` (`VITE_APP_ENV=staging`), `env/staging/website.env.example` (`PUBLIC_ENV=staging`). Local files default to `development`.
+Examples in git: `env/production/client.env.example` (`VITE_APP_ENV=production`), `env/production/website.env.example` (`PUBLIC_ENV=production`). Local files default to `development`.
 
 Banner height is `32px` (`--env-banner-height`). Links on the bar: Hub `/hub/`, website `/`, Scalar `/server/api/docs`, API `/server/api/` (client); website bar also links to `/app/`.
 
@@ -108,7 +108,7 @@ Set on **`docker/environments.json` → `client.clientMode`**. Do **not** duplic
 
 `nginx`, `nest`, and `cdn` all use the same SPA image (`client.Dockerfile` target **`build`**, `CLIENT_SSR=false`). **ssr** is different: a long-running **client** container (`react-router-serve`). Nest does **not** compile the client; `server.Dockerfile` is API-only (`runtime`).
 
-In **prod/staging** (not local), compose always bind-mounts `client/build/client` → `/app/client-static` on the **server** and sets `CLIENT_STATIC_DIR`. Nest uses that folder. Nginx/ssr still serve `/app/` from the gateway / client container; the mount is unused for browsers.
+In **production** (not local), compose always bind-mounts `client/build/client` → `/app/client-static` on the **server** and sets `CLIENT_STATIC_DIR`. Nest uses that folder. Nginx/ssr still serve `/app/` from the gateway / client container; the mount is unused for browsers.
 
 | | **nginx** | **ssr** | **nest** | **cdn** |
 |---|---|---|---|---|
@@ -120,7 +120,7 @@ In **prod/staging** (not local), compose always bind-mounts `client/build/client
 | **Prune on deploy client** | Skip images; drop leftover `*-client` container if present (keep image) | Same (container removed then started again if you chose start) | Same | n/a |
 
 ```json
-"client": { "clientMode": "nginx", "env": "env/staging/client.env" }
+"client": { "clientMode": "nginx", "env": "env/production/client.env" }
 ```
 
 Local Vite SSR toggle: `CLIENT_SSR` in `env/client.env`. Deploy `ssr` forces `CLIENT_SSR=true`.
@@ -164,10 +164,10 @@ Before a non-CDN **client** deploy, any leftover `*-client` container is **remov
 
 ```bash
 pnpm remote                              # ask host + action
-pnpm remote --host staging status
-pnpm remote --host staging stop server
-pnpm remote --host staging logs client
-pnpm remote --host staging clean
+pnpm remote --host production status
+pnpm remote --host production stop server
+pnpm remote --host production logs client
+pnpm remote --host production clean
 ```
 
 **Deploy** — git sync → build (+ optional env sync / prune / start). Asks:
@@ -183,10 +183,10 @@ Multi-app deploy (e.g. server + client + website) prepares the VPS **once**. Lat
 **Reload** — sync env + recreate containers (same images). Pick **gateway** alone to reload nginx routing without touching server, client, or infra.
 
 ```bash
-pnpm remote --host staging env
+pnpm remote --host production env
 pnpm reload gateway                    # local Docker profile
-node scripts/remote.mjs --host staging --action pull
-node scripts/remote.mjs --host staging --action reload gateway
+node scripts/remote.mjs --host production --action pull
+node scripts/remote.mjs --host production --action reload gateway
 ```
 
 Gateway nginx configs are **bind-mounted** from `docker/nginx-gateway.*.conf.template` — no image build. After editing templates on the host (via **pull**), recreate the gateway container only. Gateway-only reload uses `docker compose up -d --no-deps --force-recreate gateway`. Reloading server/client with gateway as a side effect does **not** use `--no-deps`.
@@ -212,7 +212,7 @@ Push to GitHub before Deploy. Host resets to origin; **`env/` is kept**.
 ## Direct (optional)
 
 ```bash
-node scripts/deploy.mjs --host staging --target server
+node scripts/deploy.mjs --host production --target server
 node scripts/deploy.mjs --target website
 node scripts/deploy.mjs --target client --client-mode nginx
 ```
@@ -220,23 +220,23 @@ node scripts/deploy.mjs --target client --client-mode nginx
 Add a new environment as `environments.<name>` matching `hosts.json`, with **`env/<name>/`** files — never `env/docker.env` for a remote host.
 
 ```json
-"staging": {
-  "projectName": "moon-tailors-staging",
-  "dockerEnv": "env/staging/docker.env",
+"production": {
+  "projectName": "moon-tailors-production",
+  "dockerEnv": "env/production/docker.env",
   "server": {
     "buildTarget": "runtime",
-    "nodeEnv": "staging",
+    "nodeEnv": "production",
     "restart": "unless-stopped",
-    "env": "env/staging/server.env",
+    "env": "env/production/server.env",
     "needs": ["postgres", "redis"]
   },
   "client": {
     "clientMode": "nginx",
-    "env": "env/staging/client.env"
+    "env": "env/production/client.env"
   },
   "website": {
     "mode": "docker",
-    "env": "env/staging/website.env"
+    "env": "env/production/website.env"
   }
 }
 ```

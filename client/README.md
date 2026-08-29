@@ -36,7 +36,7 @@ Three layout groups in `app/routes.ts`. Guards (middleware-style) wrap shells �
 | Group | Guard | Shell | Routes |
 |---|---|---|---|
 | Auth | `GuestGuard` | `AuthShell` | `/` (login) |
-| App | `AuthGuard` → `AccessGuard` | `AppShell` | `/dashboard`, `/customers`, `/orders`, … |
+| App | `AuthGuard` → `AccessGuard` | `AppShell` | `/dashboard`, `/customers`, … |
 
 Marketing landing lives on the **website** package (`http://localhost:8088/`), not here.
 

@@ -105,6 +105,10 @@ export class UsersService implements OnModuleInit {
     return { message: `Platform owner created: ${user.email}` };
   }
 
+  attachToTenant(id: string, tenantId: string): Promise<UserEntity | null> {
+    return this.baseUsers.attachToTenant(id, tenantId);
+  }
+
 
 
   /** afterCreate: level permissions + default preference settings (same TX as user insert). */

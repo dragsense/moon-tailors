@@ -5,11 +5,11 @@
  * Remote deploy auto-prepares the host (folder / git / missing env / Docker)
  * and skips steps that already exist.
  *
- *   node scripts/deploy.mjs --host staging --target server
- *   node scripts/deploy.mjs --host staging --target all
+ *   node scripts/deploy.mjs --host production --target server
+ *   node scripts/deploy.mjs --host production --target all
  *   node scripts/deploy.mjs --target website
  *   node scripts/deploy.mjs --target client   # CDN mode (hosts.json clientMode=cdn)
- *   node scripts/deploy.mjs --target server --env staging   # on the server
+ *   node scripts/deploy.mjs --target server --env production   # on the server
  *
  * clientMode (deploy-only): nginx | ssr | nest | cdn
  * Website / client CDN: provider "manual" | "pages" | "rsync"
@@ -67,7 +67,7 @@ Usage:
   node scripts/deploy.mjs --host <name> --target server|client|all [--verbose]
   node scripts/deploy.mjs --target website
   node scripts/deploy.mjs --target client          # when clientMode=cdn
-  node scripts/deploy.mjs --target server|client|all [--env ${envs || "staging|production"}] [--client-mode ${CLIENT_MODES.join("|")}]
+  node scripts/deploy.mjs --target server|client|all [--env ${envs || "production"}] [--client-mode ${CLIENT_MODES.join("|")}]
 
 Remote: auto-creates folder/git/env/Docker only when missing; otherwise skips.
   --verbose   show raw SSH commands
@@ -1259,7 +1259,7 @@ if (args.target === "website" && !args.host) {
   } else {
     deployLocal(
       "website",
-      args.env || process.env.DEPLOY_ENV || "staging",
+      args.env || process.env.DEPLOY_ENV || "production",
       clientModeArg || undefined,
       { start: Boolean(args.start) },
     );
@@ -1271,7 +1271,7 @@ if (args.target === "website" && !args.host) {
   } else {
     deployLocal(
       args.target,
-      args.env || process.env.DEPLOY_ENV || "staging",
+      args.env || process.env.DEPLOY_ENV || "production",
       clientModeArg || undefined,
       { start: Boolean(args.start) },
     );
@@ -1314,7 +1314,7 @@ if (args.target === "website" && !args.host) {
 } else if (args.target) {
   deployLocal(
     args.target,
-    args.env || process.env.DEPLOY_ENV || "staging",
+    args.env || process.env.DEPLOY_ENV || "production",
     clientModeArg || undefined,
     { start: Boolean(args.start), migrate: Boolean(args.migrate) },
   );

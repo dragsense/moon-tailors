@@ -34,16 +34,15 @@ export function DashboardView({
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:items-start">
         <div className="min-w-0">
           <OpsComponent store={store} name="listCustomers" />
         </div>
 
-        {summary ? (
-          <aside className="lg:sticky lg:top-6">
-            <DashboardStats summary={summary} />
-          </aside>
-        ) : null}
+        <aside className="hidden flex-col gap-4 lg:sticky lg:top-6 lg:flex">
+          {summary ? <DashboardStats summary={summary} /> : null}
+          <OpsComponent store={store} name="latestOrders" />
+        </aside>
       </div>
     </div>
   );

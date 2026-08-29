@@ -6,7 +6,7 @@ import {
 } from "~/features/settings";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
-import { APP_ROUTES } from "~/config/routes.config";
+import { dashboardOrdersPath } from "~/config/routes.config";
 
 type DashboardStatsProps = {
   summary: IDashboardSummary;
@@ -35,7 +35,7 @@ export function DashboardStats({ summary }: DashboardStatsProps) {
       </div>
 
       <Link
-        to={APP_ROUTES.ORDERS}
+        to={dashboardOrdersPath()}
         className={cn(
           "rounded-lg border px-3 py-2 text-sm transition-colors hover:border-primary/40",
           delayed > 0

@@ -18,16 +18,19 @@ const MEASURE_FIELDS = [
   "elastic",
 ] as const;
 
-/** measurementOpsCore.getMeasurement component. */
-export function MeasurementView({
-  data,
-  isPending,
-  params,
-}: QueryOpComponentProps) {
+export type MeasurementDisplayProps = {
+  measurement?: IMeasurement | TMeasurementValues | null;
+  garmentType?: string | null;
+  isPending?: boolean;
+};
+
+/** Presentational readout — use when measurement is already on a parent relation. */
+export function MeasurementDisplay({
+  measurement,
+  garmentType = null,
+  isPending = false,
+}: MeasurementDisplayProps) {
   const { t } = useI18n();
-  const measurement = data as IMeasurement | TMeasurementValues | null | undefined;
-  const garmentType =
-    typeof params.garmentType === "string" ? params.garmentType : null;
 
   if (isPending && !measurement) {
     return (
@@ -63,7 +66,7 @@ export function MeasurementView({
             return (
               <div key={key}>
                 <dt className="text-muted-foreground text-xs">
-                  {t(`measurements.${key}` as TranslationKey)}
+                  {t(`measurements.${key}` as TranslationKey)} ({t("measurements.unit")})
                 </dt>
                 <dd className="font-medium tabular-nums">{value}</dd>
               </div>
@@ -80,5 +83,22 @@ export function MeasurementView({
         </dl>
       ) : null}
     </div>
+  );
+}
+
+/** measurementOpsCore.getMeasurement component. */
+export function MeasurementView({
+  data,
+  isPending,
+  params,
+}: QueryOpComponentProps) {
+  return (
+    <MeasurementDisplay
+      measurement={data as IMeasurement | TMeasurementValues | null | undefined}
+      garmentType={
+        typeof params.garmentType === "string" ? params.garmentType : null
+      }
+      isPending={isPending}
+    />
   );
 }

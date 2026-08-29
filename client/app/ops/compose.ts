@@ -66,20 +66,19 @@ export function refetchOp(ops: OpsBag, name: string): void {
 
 /**
  * Invalidate all queries under a domain prefix — works across page packs.
- * Use in mutation onSuccess alongside refetchOp for mounted siblings.
+ * Active queries refetch automatically.
  */
 export function invalidateQueriesKey(key: readonly unknown[]): void {
   void queryClient.invalidateQueries({ queryKey: key });
 }
 
-/** Invalidate domain prefix + refetch sibling op when mounted on this page. */
+/** Invalidate a domain prefix (alias for packs that name the intent “refresh”). */
 export function refreshDomain(
   key: readonly unknown[],
-  ops: OpsBag,
-  opName: string,
+  _ops?: OpsBag,
+  _opName?: string,
 ): void {
   invalidateQueriesKey(key);
-  refetchOp(ops, opName);
 }
 
 /**

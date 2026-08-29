@@ -5,8 +5,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --font-display: "Playfair Display", Georgia, serif;
-  --font-body: "Figtree", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Noto Sans Arabic", system-ui, sans-serif;
+  --font-body: "Plus Jakarta Sans", "Noto Sans Arabic", system-ui, sans-serif;
   --gold: #c4a35a;
   --hero-fg: oklch(0.22 0.04 30);
   --hero-muted: oklch(0.42 0.03 45);

@@ -35,6 +35,15 @@ export type QueryOpHandle = {
   params: Record<string, unknown>;
   setParams: (patch: Record<string, unknown>) => void;
   refetch: () => Promise<unknown>;
+  /**
+   * Modal shell: `open(payload, params?)`
+   * - `payload` → passed to `fetch` as 2nd arg (params unchanged by payload)
+   * - `params` → optional initial/setParams patch
+   */
+  isOpen: boolean;
+  payload: unknown;
+  open: (payload?: unknown, params?: Record<string, unknown>) => void;
+  close: () => void;
 };
 
 export type MutationOpHandle = {
@@ -75,6 +84,11 @@ export type MutationConfirmConfig = {
   confirmLabel?: string | ((vars: unknown) => string);
   cancelLabel?: string;
   tone?: "destructive" | "default" | "secondary";
+  /**
+   * When set, confirm only if this returns true for the `run` vars.
+   * Omit / always true → confirm every run.
+   */
+  when?: (vars: unknown) => boolean;
   /** Custom confirm UI; omit to use the default Confirm dialog. */
   component?: ComponentType<OpConfirmProps>;
 };
@@ -116,6 +130,10 @@ export type QueryOpComponentProps = {
   params: Record<string, unknown>;
   setParams: (patch: Record<string, unknown>) => void;
   refetch: () => Promise<unknown>;
+  isOpen: boolean;
+  payload: unknown;
+  open: (payload?: unknown, params?: Record<string, unknown>) => void;
+  close: () => void;
   /** Present when mounted as a form control via OpsComponent `field`. */
   field?: OpFieldProps;
 };
@@ -145,7 +163,8 @@ export type QueryOpConfig<TResult = unknown, TParams = Record<string, unknown>> 
     /** When set, query + component are skipped unless the user has this permission. */
     permission?: OpPermission;
     initialParams?: TParams;
-    fetch: (params: TParams) => Promise<TResult>;
+    /** `payload` is whatever was passed to `open(payload)` (undefined if not open). */
+    fetch: (params: TParams, payload?: unknown) => Promise<TResult>;
     onSuccess?: (
       result: TResult,
       params: TParams,
@@ -157,9 +176,9 @@ export type QueryOpConfig<TResult = unknown, TParams = Record<string, unknown>> 
     /**
      * Domain cache key — same API data shares one cache across page packs.
      * Pair with `invalidateKey` (e.g. `taskKeys.list` + `taskKeys.lists()`).
-     * Omit for pack-scoped keys `[storeId, opName, params]`.
+     * Omit for pack-scoped keys `[storeId, opName, params, payload]`.
      */
-    queryKey?: (params: TParams) => readonly unknown[];
+    queryKey?: (params: TParams, payload?: unknown) => readonly unknown[];
     /** Prefix for invalidate/refetch — all param variants under this key. */
     invalidateKey?: readonly unknown[];
     /** UI for this query (e.g. list). Gets QueryOpComponentProps. */
@@ -340,7 +359,27 @@ export function createOps(config: CreateOpsConfig): OpsStore {
       set({ ui: { open: opName, payload } });
     },
     close: () => {
-      set({ ui: { open: null, payload: null } });
+      const openName = get().ui.open;
+      set((s) => {
+        if (!openName) {
+          return { ui: { open: null, payload: null } };
+        }
+        const op = config.ops[openName];
+        const nextParams =
+          op?.kind === "query"
+            ? {
+                ...s.params,
+                [openName]: {
+                  ...((op.initialParams as Record<string, unknown> | undefined) ??
+                    {}),
+                },
+              }
+            : s.params;
+        return {
+          ui: { open: null, payload: null },
+          params: nextParams,
+        };
+      });
     },
     _patchQuery: (opName, slot) => {
       set((s) => ({
@@ -378,8 +417,13 @@ export function createOps(config: CreateOpsConfig): OpsStore {
   return store;
 }
 
-export function queryKey(storeId: string, opName: string, params: unknown) {
-  return [storeId, opName, params] as const;
+export function queryKey(
+  storeId: string,
+  opName: string,
+  params: unknown,
+  payload?: unknown,
+) {
+  return [storeId, opName, params, payload] as const;
 }
 
 /** Pack-scoped key — default when op has no domain `queryKey`. */
@@ -391,11 +435,12 @@ export function resolveOpQueryKey(
   opName: string,
   op: QueryOpConfig,
   params: unknown,
+  payload?: unknown,
 ): readonly unknown[] {
   if (op.queryKey) {
-    return op.queryKey(params as Record<string, unknown>);
+    return op.queryKey(params as Record<string, unknown>, payload);
   }
-  return packQueryKey(storeId, opName, params);
+  return packQueryKey(storeId, opName, params, payload);
 }
 
 /** Prefix for invalidateQueries / refetchOp. */

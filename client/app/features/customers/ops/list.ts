@@ -3,18 +3,18 @@ import {
   createOps,
   invalidateQueriesKey,
   pickOps,
-  refetchOp,
   type OpsBag,
 } from "~/ops";
 import { measurementOpsCore } from "~/features/measurements/ops";
 import { orderOpsCore } from "~/features/orders/ops/core";
-import { customerOpsCore, refreshCustomers } from "./core";
+import { orderKeys } from "~/features/orders/query-keys";
+import { customerOpsCore } from "./core";
 import { customerKeys } from "../query-keys";
 
-const refreshHostCustomer = (_r: unknown, _v: unknown, ops: OpsBag) => {
-  refetchOp(ops, "getCustomer");
-  refetchOp(ops, "listOrders");
+const refreshHostCustomer = (_r: unknown, _v: unknown, _ops: OpsBag) => {
   invalidateQueriesKey(customerKeys.detail());
+  invalidateQueriesKey(orderKeys.list());
+  invalidateQueriesKey(orderKeys.detail());
 };
 
 export const customersListOps = createOps({
@@ -29,16 +29,15 @@ export const customerDetailOps = createOps({
   ops: {
     ...pickOps(customerOpsCore, ["getCustomer", "updateCustomer"]),
     ...pickOps(measurementOpsCore, {
-      getMeasurement: true,
-      updateDefaultMeasurements: {
-        onSuccess: composeSuccess(
-          measurementOpsCore.updateDefaultMeasurements.onSuccess,
-          refreshCustomers,
-        ),
-      },
       updateMeasurement: {
         onSuccess: composeSuccess(
           measurementOpsCore.updateMeasurement.onSuccess,
+          refreshHostCustomer,
+        ),
+      },
+      addMeasurement: {
+        onSuccess: composeSuccess(
+          measurementOpsCore.addMeasurement.onSuccess,
           refreshHostCustomer,
         ),
       },
@@ -52,9 +51,7 @@ export const customerDetailOps = createOps({
     ...pickOps(orderOpsCore, {
       listOrders: {
         initialParams: { page: 1, limit: 20 },
-        component: undefined,
       },
-      getOrder: { component: undefined },
       viewOrder: true,
       createOrder: {
         onSuccess: composeSuccess(

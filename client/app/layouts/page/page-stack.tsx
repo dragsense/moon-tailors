@@ -34,15 +34,17 @@ export function PageStack({
   contentClassName,
 }: PageStackProps) {
   return (
-    <section className={cn("flex min-h-full flex-col gap-6", className)}>
-      {header ?? (
-        <PageHeader
-          title={title}
-          description={description}
-          actions={actions}
-          breadcrumbItems={breadcrumbItems}
-        />
-      )}
+    <section className={cn("flex min-h-0 min-w-0 flex-col overflow-x-hidden gap-6 pr-1", className)}>
+      <div className="shrink-0">
+        {header ?? (
+          <PageHeader
+            title={title}
+            description={description}
+            actions={actions}
+            breadcrumbItems={breadcrumbItems}
+          />
+        )}
+      </div>
       <div className={cn("min-h-0 flex-1", contentClassName)}>{children}</div>
       {footer ? <PageFooter>{footer}</PageFooter> : null}
     </section>

@@ -46,7 +46,7 @@ One screen, no page scroll: overlay **header** (M mark + prefs + login) and **fo
 | Variable | Purpose |
 |---|---|
 | `PUBLIC_SITE_NAME` | Brand |
-| `PUBLIC_ENV` | `development` \| `staging` — env banner |
+| `PUBLIC_ENV` | `development` \| `production` — env banner (hidden in production) |
 | `PUBLIC_SITE_TAGLINE` | Optional EN headline override |
 | `PUBLIC_SITE_DESCRIPTION` | Optional EN support override |
 | `PUBLIC_APP_URL` | Client origin (default `http://localhost:8088/app`) |

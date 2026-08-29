@@ -1,74 +1,50 @@
-import { useEffect } from "react";
 import type { IOrder } from "@moon-tailors/contracts";
 import { Modal } from "~/components/layout-ui";
 import { useI18n } from "~/hooks/use-i18n";
-import { useOp, type MutationOpComponentProps } from "~/ops";
-import {
-  ORDER_WORKSPACE_MODAL_BODY_CLASS,
-  ORDER_WORKSPACE_MODAL_CLASS,
-} from "../order-modal";
-import { OrderDetailPanel } from "./order-detail-panel";
+import type { QueryOpComponentProps } from "~/ops";
+import { OrderDetail } from "./order-detail";
 
-function orderIdFromPayload(payload: unknown): string | null {
-  if (typeof payload === "string" && payload) return payload;
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "id" in payload &&
-    typeof (payload as { id: unknown }).id === "string"
-  ) {
-    return (payload as { id: string }).id;
-  }
-  return null;
-}
-
+/** `viewOrder` query modal — data comes from this op’s own `fetch`. */
 export function ViewOrderModal({
   isOpen,
-  payload,
+  data,
+  isPending,
+  isError,
+  error,
   close,
   store,
-}: MutationOpComponentProps) {
+}: QueryOpComponentProps) {
   const { t } = useI18n();
-  const orderId = orderIdFromPayload(payload);
-  const get = useOp(store, "getOrder");
 
-  useEffect(() => {
-    if (
-      isOpen &&
-      orderId &&
-      get.kind === "query" &&
-      get.params.id !== orderId
-    ) {
-      get.setParams({ id: orderId });
-    }
-  }, [isOpen, orderId, get]);
+  if (!isOpen) return null;
 
-  if (!isOpen || !orderId) return null;
-  if (get.kind !== "query") return null;
-
-  const order = get.data as IOrder | null | undefined;
+  const order = data as IOrder | null | undefined;
   const errorMessage =
-    get.isError && get.error instanceof Error
-      ? get.error.message
-      : get.isError
+    isError && error instanceof Error
+      ? error.message
+      : isError
         ? t("orders.loadFailed")
         : null;
 
   return (
     <Modal
-      title={order?.orderNumber ?? t("orders.profile")}
+      title={
+        order?.orderNumber ? (
+          <>
+            <span className="font-bold">{t("orders.numberLabel")}</span>{" "}
+            {order.orderNumber}
+          </>
+        ) : (
+          t("orders.profile")
+        )
+      }
       description={t("orders.detail")}
       onClose={close}
-      className={ORDER_WORKSPACE_MODAL_CLASS}
-      contentClassName={ORDER_WORKSPACE_MODAL_BODY_CLASS}
+      className="flex h-[min(90vh,52rem)] max-h-[90vh] w-[calc(100vw-1.5rem)] max-w-full flex-col overflow-hidden sm:max-w-5xl"
+      contentClassName="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto pr-1"
       error={errorMessage}
     >
-      <OrderDetailPanel
-        store={store}
-        order={order}
-        isPending={get.isPending}
-        errorMessage={null}
-      />
+      <OrderDetail store={store} order={order} isPending={isPending} />
     </Modal>
   );
 }

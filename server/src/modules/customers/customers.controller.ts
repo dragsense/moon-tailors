@@ -3,8 +3,10 @@ import { ApiTags } from "@nestjs/swagger";
 import type {
   ICustomer,
   IPaginatedResponse,
+  IMessageResponse,
   TCreateCustomerData,
   TCustomerListQuery,
+  TGetQuery,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import {
@@ -12,6 +14,7 @@ import {
   customerListQuerySchema,
   EPermissionAction,
   EResource,
+  getQuerySchema,
   updateCustomerSchema,
 } from "@moon-tailors/contracts";
 import { RequirePermissions } from "../../common/auth";
@@ -31,7 +34,7 @@ export class CustomersController {
   create(
     @Body(new ZodValidationPipe(createCustomerSchema))
     body: TCreateCustomerData,
-  ): Promise<ICustomer> {
+  ): Promise<IMessageResponse> {
     return this.customersService.create(body);
   }
 
@@ -52,8 +55,11 @@ export class CustomersController {
     resource: EResource.CUSTOMERS,
     action: EPermissionAction.READ,
   })
-  get(@Param("id") id: string): Promise<ICustomer> {
-    return this.customersService.get(id);
+  get(
+    @Param("id") id: string,
+    @Query(new ZodValidationPipe(getQuerySchema)) query: TGetQuery,
+  ): Promise<ICustomer> {
+    return this.customersService.get(id, query);
   }
 
   @Patch(":id")
@@ -65,7 +71,7 @@ export class CustomersController {
     @Param("id") id: string,
     @Body(new ZodValidationPipe(updateCustomerSchema))
     body: TUpdateCustomerData,
-  ): Promise<ICustomer> {
+  ): Promise<IMessageResponse> {
     return this.customersService.update(id, body);
   }
 }

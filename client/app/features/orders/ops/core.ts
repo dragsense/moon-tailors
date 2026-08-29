@@ -5,25 +5,47 @@ import type {
 import {
   EPermissionAction,
   EResource,
+  getQuerySchema,
   orderListQuerySchema,
 } from "@moon-tailors/contracts";
-import {
-  invalidateQueriesKey,
-  refetchOp,
-  type OpConfig,
-  type OpsBag,
-} from "~/ops";
+import { invalidateQueriesKey, type OpConfig, type OpsBag } from "~/ops";
+import { opT } from "~/locales";
 import { ordersService } from "../api";
 import { CreateOrderModal } from "../form/create-order-modal";
 import { OrderList } from "../list/order-list";
+import { LatestOrders } from "../list/latest-orders";
 import { orderKeys } from "../query-keys";
 import { ViewOrderModal } from "../view/view-order-modal";
 
-export const refreshOrders = (_r: unknown, _v: unknown, ops: OpsBag) => {
-  refetchOp(ops, "listOrders");
-  refetchOp(ops, "getOrder");
+function orderIdFromPayload(payload: unknown): string {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "id" in payload &&
+    typeof (payload as { id: unknown }).id === "string"
+  ) {
+    return (payload as { id: string }).id;
+  }
+  return "";
+}
+
+export const refreshOrders = (_r: unknown, _v: unknown, _ops: OpsBag) => {
   invalidateQueriesKey(orderKeys.list());
   invalidateQueriesKey(orderKeys.detail());
+};
+
+const forceEditConfirm = {
+  when: (vars: unknown) =>
+    Boolean(
+      vars &&
+        typeof vars === "object" &&
+        "forceEdit" in vars &&
+        (vars as { forceEdit?: boolean }).forceEdit,
+    ),
+  title: () => opT("orders.forceEdit"),
+  description: () => opT("orders.forceEditConfirm"),
+  confirmLabel: () => opT("orders.forceEdit"),
+  tone: "destructive" as const,
 };
 
 /** Prefixed op names so packs can compose with customers/measurements safely. */
@@ -42,37 +64,34 @@ export const orderOpsCore = {
       console.error("[orders.listOrders]", error.message);
     },
   },
-  getOrder: {
+  latestOrders: {
     kind: "query" as const,
     permission: { resource: EResource.ORDERS, action: EPermissionAction.READ },
-    initialParams: { id: "" },
-    queryKey: orderKeys.detailWithParams,
-    invalidateKey: orderKeys.detail(),
-    fetch: (params: Record<string, unknown>) => {
-      const id = typeof params.id === "string" ? params.id : "";
-      if (!id) return Promise.resolve(null);
-      return ordersService.getOne(id);
-    },
+    initialParams: { page: 1, limit: 3, sortBy: "createdAt", sortOrder: "DESC" },
+    queryKey: orderKeys.listWithParams,
+    invalidateKey: orderKeys.list(),
+    fetch: (params: Record<string, unknown>) =>
+      ordersService.list(orderListQuerySchema.parse(params)),
+    component: LatestOrders,
     auto: false,
     onError: (error: Error) => {
-      console.error("[orders.getOrder]", error.message);
+      console.error("[orders.latestOrders]", error.message);
     },
   },
   viewOrder: {
-    kind: "mutation" as const,
+    kind: "query" as const,
     permission: { resource: EResource.ORDERS, action: EPermissionAction.READ },
-    mutate: async (vars: unknown) => {
-      const id =
-        typeof vars === "string"
-          ? vars
-          : vars &&
-              typeof vars === "object" &&
-              "id" in vars &&
-              typeof (vars as { id: unknown }).id === "string"
-            ? (vars as { id: string }).id
-            : "";
-      if (!id) return null;
-      return ordersService.getOne(id);
+    initialParams: { _relations: ["measurement"] },
+    queryKey: (params: Record<string, unknown>, payload?: unknown) => {
+      const id = orderIdFromPayload(payload);
+      return [...orderKeys.detail(), id, params] as const;
+    },
+    invalidateKey: orderKeys.detail(),
+    fetch: (params: Record<string, unknown>, payload?: unknown) => {
+      const id = orderIdFromPayload(payload);
+      if (!id) return Promise.resolve(null);
+      const query = getQuerySchema.parse(params);
+      return ordersService.getOne(id, query);
     },
     component: ViewOrderModal,
     auto: true,
@@ -100,6 +119,7 @@ export const orderOpsCore = {
       resource: EResource.ORDERS,
       action: EPermissionAction.UPDATE,
     },
+    confirm: forceEditConfirm,
     mutate: (vars: unknown) => {
       const { id, ...body } = vars as TUpdateOrderData & { id: string };
       return ordersService.update(id, body);

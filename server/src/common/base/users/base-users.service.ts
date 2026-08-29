@@ -73,6 +73,15 @@ export class BaseUsersService {
       .getOne();
   }
 
+  /** Bind a user to a business tenant (platform-owner seed). */
+  async attachToTenant(id: string, tenantId: string): Promise<UserEntity | null> {
+    const user = await this.findByIdForAuth(id);
+    if (!user) return null;
+    if (user.tenantId === tenantId) return user;
+    user.tenantId = tenantId;
+    return this.entity.getRepository().save(user);
+  }
+
   requireById(id: EntityKey): Promise<UserEntity> {
     return this.entity.require(id, { access: [] });
   }

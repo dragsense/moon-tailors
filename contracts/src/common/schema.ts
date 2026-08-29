@@ -109,6 +109,15 @@ export const listQuerySchema = z.object({
   }),
 });
 
+/**
+ * Single-entity GET query — FE-driven joins / select.
+ * `GET /orders/:id?_relations=measurement,customer`
+ */
+export const getQuerySchema = listQuerySchema.pick({
+  _relations: true,
+  _select: true,
+});
+
 /** Flat paginated envelope (`IPaginatedResponse`). */
 export function createPaginatedSchema<TItem extends z.ZodTypeAny>(
   itemSchema: TItem,

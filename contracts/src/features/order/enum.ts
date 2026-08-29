@@ -5,4 +5,5 @@ export enum EOrderStatus {
   STITCHED = "stitched",
   READY = "ready",
   DELIVERED = "delivered",
+  CANCELED = "canceled",
 }

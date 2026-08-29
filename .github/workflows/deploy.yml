@@ -40,9 +40,8 @@ jobs:
             if [ "${{ github.ref_name }}" = "main" ]; then
               git checkout main
               git pull origin main
-              node ./scripts/deploy.mjs --target "$TARGET" --env production
             else
               git checkout develop
               git pull origin develop
-              node ./scripts/deploy.mjs --target "$TARGET" --env staging
             fi
+            node ./scripts/deploy.mjs --target "$TARGET" --env production

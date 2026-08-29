@@ -51,18 +51,25 @@ export function ConfirmCard({
         if (!next) onCancel();
       }}
     >
-      <DialogContent className={cn("sm:max-w-md", className)} showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {(error || children) && (
-          <div className="space-y-2">
-            {children}
-            {error ? <p className="text-sm text-destructive">{error}</p> : null}
-          </div>
-        )}
-        <DialogFooter className="border-t-0 bg-transparent p-0 sm:justify-end">
+      <DialogContent
+        className={cn("gap-0 p-0 sm:max-w-md", className)}
+        showCloseButton={false}
+      >
+        <div className="space-y-4 p-6">
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{description}</DialogDescription>
+          </DialogHeader>
+          {(error || children) && (
+            <div className="space-y-2">
+              {children}
+              {error ? (
+                <p className="text-sm text-destructive">{error}</p>
+              ) : null}
+            </div>
+          )}
+        </div>
+        <DialogFooter className="mx-0 mb-0 border-t-0 bg-transparent px-6 pb-6 pt-0 sm:justify-end">
           <Button type="button" variant="outline" onClick={onCancel} disabled={busy}>
             {cancelLabel}
           </Button>

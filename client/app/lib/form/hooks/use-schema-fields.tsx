@@ -12,13 +12,13 @@ import type { z } from "zod";
 import type { FieldConfigMap, FieldUiConfig } from "../field-config";
 import { SchemaField } from "../schema-field";
 
-type AnyZodObject = z.ZodObject<z.ZodRawShape>;
+type AnyZodSchema = z.ZodTypeAny;
 
 /** field name → ready-to-place control (reactive to form values + fieldConfig). */
 export type SchemaFieldMap = Record<string, ReactNode>;
 
 export type UseSchemaFieldsArgs<TFieldValues extends FieldValues> = {
-  schema: AnyZodObject;
+  schema: AnyZodSchema;
   register: UseFormRegister<TFieldValues>;
   control: Control<TFieldValues>;
   errors: FieldErrors<TFieldValues>;

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import {
   Card,
+  CardAction,
   CardContent,
   CardHeader,
   CardTitle,
@@ -40,10 +41,7 @@ export function CardRow({
   return (
     <Card size={size} className={className}>
       <CardHeader
-        className={cn(
-          "flex-row items-center justify-between gap-3 space-y-0",
-          headerClassName,
-        )}
+        className={cn("items-center gap-3", headerClassName)}
       >
         <div className="flex min-w-0 items-center gap-3">
           {leading}
@@ -54,7 +52,11 @@ export function CardRow({
           </CardTitle>
         </div>
         {actions != null ? (
-          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+          <CardAction className="self-center">
+            <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:justify-end">
+              {actions}
+            </div>
+          </CardAction>
         ) : null}
       </CardHeader>
       {children != null ? (

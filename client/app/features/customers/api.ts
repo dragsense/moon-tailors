@@ -4,6 +4,7 @@ import type {
   IPaginatedResponse,
   TCreateCustomerData,
   TCustomerListQuery,
+  TGetQuery,
   TUpdateCustomerData,
 } from "@moon-tailors/contracts";
 import { BaseService } from "~/lib/api";
@@ -22,8 +23,8 @@ class CustomersService extends BaseService<
     return this.get<IPaginatedResponse<ICustomer>>(query);
   }
 
-  getOne(id: string) {
-    return this.getSingle(id);
+  getOne(id: string, query: TGetQuery = {}) {
+    return this.getSingle(id, query);
   }
 
   create(body: TCreateCustomerData) {

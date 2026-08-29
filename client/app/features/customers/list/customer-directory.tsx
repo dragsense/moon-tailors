@@ -1,11 +1,13 @@
-import type { ICustomer, IPaginatedResponse } from "@moon-tailors/contracts";
-import { Link } from "react-router";
+import {
+  type ICustomer,
+  type IPaginatedResponse,
+} from "@moon-tailors/contracts";
+import { PlusIcon } from "lucide-react";
 import { Alert, ListPagination } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
 import { useI18n } from "~/hooks/use-i18n";
 import { useOp, type QueryOpComponentProps } from "~/ops";
-import { customerPath } from "~/config/routes.config";
-import { CustomerAvatar } from "../components/customer-avatar";
+import { CustomerCard } from "./customer-card";
 import { CustomerFilters } from "./customer-filters";
 
 export function CustomerDirectory({
@@ -42,16 +44,29 @@ export function CustomerDirectory({
           })
         }
         actions={
-          createCustomer.allowed ? (
-            <Button
-              type="button"
-              size="lg"
-              className="shrink-0"
-              onClick={() => createCustomer.open()}
-            >
-              {t("customers.new")}
-            </Button>
-          ) : null
+          <>
+            {createCustomer.allowed ? (
+              <>
+                <Button
+                  type="button"
+                  size="lg"
+                  className="size-11 px-0 lg:hidden"
+                  aria-label={t("customers.new")}
+                  onClick={() => createCustomer.open()}
+                >
+                  <PlusIcon className="size-5" />
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  className="hidden shrink-0 lg:inline-flex"
+                  onClick={() => createCustomer.open()}
+                >
+                  {t("customers.new")}
+                </Button>
+              </>
+            ) : null}
+          </>
         }
       />
 
@@ -70,31 +85,9 @@ export function CustomerDirectory({
         <p className="text-muted-foreground text-base">{t("customers.empty")}</p>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {rows.map((customer) => (
-          <Link
-            key={customer.id}
-            to={customerPath(customer.id)}
-            className="rounded-2xl border border-border/70 bg-card p-5 transition-colors hover:border-primary/40"
-          >
-            <div className="flex items-center gap-4">
-              <CustomerAvatar
-                customer={customer}
-                className="size-16 text-base"
-              />
-              <div className="min-w-0">
-                <p className="truncate text-lg font-semibold">{customer.name}</p>
-                <p className="text-muted-foreground truncate text-sm">
-                  {customer.phone}
-                </p>
-                {customer.alternative ? (
-                  <p className="text-muted-foreground truncate text-sm">
-                    {customer.alternative}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          </Link>
+          <CustomerCard key={customer.id} customer={customer} />
         ))}
       </div>
 

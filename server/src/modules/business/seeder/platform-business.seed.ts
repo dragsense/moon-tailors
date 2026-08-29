@@ -21,21 +21,36 @@ export class PlatformBusinessSeed implements OnModuleInit {
   }
 
   async run(): Promise<void> {
-    const existing = await this.businesses.findPlatform();
-    if (existing) {
-      this.logger.log(
-        `Platform business already exists: ${existing.name} (${existing.id})`,
+    let business = await this.businesses.findPlatform();
+    if (!business) {
+      const owner = await this.users.findByLevel(EUserLevel.PLATFORM_OWNER);
+      await this.businesses.create(
+        { name: "Platform" },
+        {
+          ownerUserId: owner?.id,
+          isPlatform: true,
+        },
       );
-      return;
+      business = await this.businesses.findPlatform();
+    } else {
+      this.logger.log(
+        `Platform business already exists: ${business.name} (${business.id})`,
+      );
     }
 
+    await this.attachOwnerToPlatform(business);
+  }
+
+  /** Shop owner must live in the platform tenant so tenant-scoped updates work. */
+  private async attachOwnerToPlatform(
+    business: Awaited<ReturnType<BusinessService["findPlatform"]>>,
+  ): Promise<void> {
+    if (!business?.tenantId) return;
     const owner = await this.users.findByLevel(EUserLevel.PLATFORM_OWNER);
-    await this.businesses.create(
-      { name: "Platform" },
-      {
-        ownerUserId: owner?.id,
-        isPlatform: true,
-      },
+    if (!owner || owner.tenantId === business.tenantId) return;
+    await this.users.attachToTenant(owner.id, business.tenantId);
+    this.logger.log(
+      `Platform owner ${owner.email} attached to tenant ${business.tenantId}`,
     );
   }
 }

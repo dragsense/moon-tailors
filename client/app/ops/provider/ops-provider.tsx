@@ -52,6 +52,14 @@ export type OpsRenderCtx = {
 export type OpsProviderProps = {
   store: OpsStore;
   /**
+   * Per-op param seed applied before the first query fetch
+   * (route ids, scoped filters, …). Merged onto each op’s `initialParams`.
+   *
+   * @example
+   * initialParams={{ getCustomer: { id }, listOrders: { customerId: id } }}
+   */
+  initialParams?: Record<string, Record<string, unknown>>;
+  /**
    * Custom layout for non-auto op UIs (lists, page blocks).
    * Ops with `auto: true` always mount regardless.
    */
@@ -74,13 +82,27 @@ export type OpsProviderProps = {
  * // RQ + auto modals only (page body is yours)
  * <OpsProvider store={tasksOps} />
  * <CreateTask />
+ *
+ * // Seed query params from the route before first fetch
+ * <OpsProvider
+ *   store={customerDetailOps}
+ *   initialParams={{ getCustomer: { id }, listOrders: { customerId: id } }}
+ * />
  */
-export function OpsProvider({ store, children }: OpsProviderProps) {
+export function OpsProvider({
+  store,
+  initialParams,
+  children,
+}: OpsProviderProps) {
   const qc = useQueryClient();
   const runFns = useRef<Record<string, RunFn>>({});
+  const seededRef = useRef<string | null>(null);
   const { confirm, ConfirmDialog } = useConfirm();
   const confirmRef = useRef(confirm);
   confirmRef.current = confirm;
+
+  // Sync before QueryBridge reads params / fires the first fetch.
+  applyProviderInitialParams(store, initialParams, seededRef);
 
   const opsConfig = store.config.ops;
   const opNames = useMemo(() => Object.keys(opsConfig), [opsConfig]);
@@ -94,29 +116,45 @@ export function OpsProvider({ store, children }: OpsProviderProps) {
           kind: "query",
           get data() {
             const params = store.getState().params[name] ?? {};
+            const payload =
+              store.getState().ui.open === name
+                ? store.getState().ui.payload
+                : undefined;
             return qc.getQueryData(
-              resolveOpQueryKey(store.id, name, def, params),
+              resolveOpQueryKey(store.id, name, def, params, payload),
             );
           },
           get error() {
             const params = store.getState().params[name] ?? {};
+            const payload =
+              store.getState().ui.open === name
+                ? store.getState().ui.payload
+                : undefined;
             const st = qc.getQueryState(
-              resolveOpQueryKey(store.id, name, def, params),
+              resolveOpQueryKey(store.id, name, def, params, payload),
             );
             return st?.error instanceof Error ? st.error : null;
           },
           get isPending() {
             const params = store.getState().params[name] ?? {};
+            const payload =
+              store.getState().ui.open === name
+                ? store.getState().ui.payload
+                : undefined;
             const st = qc.getQueryState(
-              resolveOpQueryKey(store.id, name, def, params),
+              resolveOpQueryKey(store.id, name, def, params, payload),
             );
             if (!st) return true;
             return st.status === "pending";
           },
           get isError() {
             const params = store.getState().params[name] ?? {};
+            const payload =
+              store.getState().ui.open === name
+                ? store.getState().ui.payload
+                : undefined;
             const st = qc.getQueryState(
-              resolveOpQueryKey(store.id, name, def, params),
+              resolveOpQueryKey(store.id, name, def, params, payload),
             );
             return st?.status === "error";
           },
@@ -129,6 +167,24 @@ export function OpsProvider({ store, children }: OpsProviderProps) {
             await qc.invalidateQueries({
               queryKey: resolveOpInvalidateKey(store.id, name, def),
             });
+          },
+          get isOpen() {
+            return store.getState().ui.open === name;
+          },
+          get payload() {
+            return store.getState().ui.open === name
+              ? store.getState().ui.payload
+              : null;
+          },
+          open: (payload, params) => {
+            if (!isOpAllowed(qc, def)) return;
+            if (params && Object.keys(params).length > 0) {
+              store.getState().setParams(name, params);
+            }
+            store.getState().open(name, payload);
+          },
+          close: () => {
+            if (store.getState().ui.open === name) store.getState().close();
           },
         } satisfies QueryOpHandle;
       } else {
@@ -163,7 +219,10 @@ export function OpsProvider({ store, children }: OpsProviderProps) {
               return Promise.reject(new Error("Not allowed"));
             }
             const confirmConfig = normalizeConfirmConfig(def.confirm);
-            if (confirmConfig) {
+            const needsConfirm =
+              confirmConfig != null &&
+              (confirmConfig.when?.(vars) ?? true);
+            if (needsConfirm && confirmConfig) {
               return new Promise((resolve, reject) => {
                 confirmRef.current(
                   {
@@ -348,6 +407,10 @@ function OpComponentHost({
       params: op.params,
       setParams: op.setParams,
       refetch: op.refetch,
+      isOpen: op.isOpen,
+      payload: op.payload,
+      open: op.open,
+      close: op.close,
       field,
     };
     return <Component {...props} />;
@@ -369,6 +432,23 @@ function OpComponentHost({
   return <Component {...props} />;
 }
 
+/** Merge provider `initialParams` into the store once per signature. */
+function applyProviderInitialParams(
+  store: OpsStore,
+  initialParams: Record<string, Record<string, unknown>> | undefined,
+  seededRef: MutableRefObject<string | null>,
+) {
+  if (!initialParams) return;
+  const signature = JSON.stringify(initialParams);
+  if (seededRef.current === signature) return;
+  seededRef.current = signature;
+  for (const [name, patch] of Object.entries(initialParams)) {
+    const def = store.config.ops[name];
+    if (!def || def.kind !== "query") continue;
+    store.getState().setParams(name, patch);
+  }
+}
+
 function QueryBridge({
   store,
   name,
@@ -382,6 +462,9 @@ function QueryBridge({
 }) {
   const qc = useQueryClient();
   const params = store((s) => s.params[name] ?? {});
+  const payload = store((s) =>
+    s.ui.open === name ? s.ui.payload : undefined,
+  );
   const successRef = useRef(op.onSuccess);
   const errorRef = useRef(op.onError);
   successRef.current = op.onSuccess;
@@ -390,15 +473,15 @@ function QueryBridge({
   opsRef.current = opsBag;
 
   const cacheKey = useMemo(
-    () => resolveOpQueryKey(store.id, name, op, params),
-    [store.id, name, op, params],
+    () => resolveOpQueryKey(store.id, name, op, params, payload),
+    [store.id, name, op, params, payload],
   );
 
   useApiQueryKeyed(
     cacheKey,
     async () => {
       try {
-        const result = await op.fetch(params);
+        const result = await op.fetch(params, payload);
         successRef.current?.(result, params, opsRef.current);
         return result;
       } catch (err) {

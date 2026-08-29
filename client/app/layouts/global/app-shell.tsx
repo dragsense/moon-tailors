@@ -58,8 +58,10 @@ export function AppShell({
           </>
         }
       />
-      <main className="min-h-0 flex-1 overflow-auto p-6">{children}</main>
-      <AppFooter className="px-6 py-4">
+      <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden overflow-auto p-4 sm:p-6">
+        {children}
+      </main>
+      <AppFooter className="px-4 py-3 sm:px-6 sm:py-4">
         <p className="text-center text-xs text-muted-foreground">
           {t("app.copyright", { year, name: t("app.legalName") })}
         </p>

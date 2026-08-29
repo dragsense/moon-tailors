@@ -12,6 +12,7 @@ import type {
   IOrder,
   IPaginatedResponse,
   TCreateOrderData,
+  TGetQuery,
   TOrderListQuery,
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
@@ -20,6 +21,7 @@ import {
   createOrderSchema,
   EPermissionAction,
   EResource,
+  getQuerySchema,
   orderListQuerySchema,
   updateOrderSchema,
 } from "@moon-tailors/contracts";
@@ -61,8 +63,11 @@ export class OrdersController {
     resource: EResource.ORDERS,
     action: EPermissionAction.READ,
   })
-  get(@Param("id") id: string): Promise<IOrder> {
-    return this.ordersService.get(id);
+  get(
+    @Param("id") id: string,
+    @Query(new ZodValidationPipe(getQuerySchema)) query: TGetQuery,
+  ): Promise<IOrder> {
+    return this.ordersService.get(id, query);
   }
 
   @Patch(":id")

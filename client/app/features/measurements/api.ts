@@ -1,5 +1,6 @@
 import type {
   IMeasurement,
+  IMessageResponse,
   IOrder,
   TUpdateMeasurementData,
 } from "@moon-tailors/contracts";
@@ -23,17 +24,17 @@ class MeasurementsService extends BaseService<
 
   /** GET /measurements/:id */
   getOne(id: string) {
-    return this.getSingle<IMeasurement>(id);
+    return this.getSingle(id);
   }
 
   /** PATCH /measurements/:id */
   update(id: string, body: TUpdateMeasurementData) {
-    return this.patch<IMeasurement>(id)(body);
+    return this.patch<IMessageResponse>(id)(body);
   }
 
-  /** PATCH /measurements/customers/:customerId */
-  upsertByCustomer(customerId: string, body: TUpdateMeasurementData) {
-    return this.patch<IMeasurement>()(
+  /** PATCH /measurements/customers/:customerId — create/upsert usual measurements */
+  addForCustomer(customerId: string, body: TUpdateMeasurementData) {
+    return this.patch<IMessageResponse>()(
       body,
       undefined,
       `/customers/${customerId}`,
@@ -45,7 +46,7 @@ class MeasurementsService extends BaseService<
     const url = buildApiUrl("/orders", {
       customPath: `/${orderId}/apply-measurements-to-default`,
     });
-    return apiRequest<IOrder>(url, "POST", {});
+    return apiRequest<IMessageResponse>(url, "POST", {});
   }
 }
 

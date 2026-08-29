@@ -9,7 +9,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const appDir = fileURLToPath(new URL("./app", import.meta.url));
 
-/** Canonical path inside the container is `/app/env/client.env` (compose mounts env/staging/client.env there). */
+/** Canonical path inside the container is `/app/env/client.env` (compose mounts env/<host>/client.env there). */
 function loadClientEnv(): Record<string, string> {
   const candidates = [
     "/app/env/client.env",

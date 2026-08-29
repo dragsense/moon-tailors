@@ -1,6 +1,6 @@
 /**
  * Resolve deploy-only client hosting mode.
- * Dev (Vite) ignores this — only production/staging Docker + CDN deploys use it.
+ * Dev (Vite) ignores this — only production Docker + CDN deploys use it.
  *
  *   nginx  — build SPA; gateway serves static files at /app (no client container)
  *   ssr    — Docker: Node react-router-serve; gateway reverse-proxies /app

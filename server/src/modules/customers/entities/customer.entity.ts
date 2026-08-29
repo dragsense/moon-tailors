@@ -1,4 +1,4 @@
-import { Column, Entity, Index, OneToMany } from "typeorm";
+import { Column, Entity, Index, JoinColumn, OneToMany, OneToOne } from "typeorm";
 import { EGender } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../common/entities";
 import { MeasurementEntity } from "../../measurements/entities/measurement.entity";
@@ -29,8 +29,13 @@ export class CustomerEntity extends GeneralBaseEntity {
   @Column({ type: "text", nullable: true })
   notes!: string | null;
 
-  @OneToMany(() => MeasurementEntity, (measurement) => measurement.customer)
-  measurements?: MeasurementEntity[];
+  /** Usual / default measurement for this customer. */
+  @Column({ type: "uuid", nullable: true })
+  measurementId!: string | null;
+
+  @OneToOne(() => MeasurementEntity, { onDelete: "SET NULL", nullable: true })
+  @JoinColumn({ name: "measurementId" })
+  measurement?: MeasurementEntity | null;
 
   @OneToMany(() => OrderEntity, (order) => order.customer)
   orders?: OrderEntity[];

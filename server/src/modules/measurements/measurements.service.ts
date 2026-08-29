@@ -10,8 +10,10 @@ import {
   hasMeasurementValues,
   MEASUREMENT_VALUE_KEYS,
 } from "@moon-tailors/contracts";
+import type { EntityManager } from "typeorm";
 import { ActivityLogRegistry } from "../../common/activity-logs";
 import { PermissionsService } from "../../common/base";
+import { RequestContext } from "../../common/context";
 import {
   EntityService,
   type IBoundEntityService,
@@ -28,24 +30,12 @@ export const MEASUREMENT_QUERY: EntityQueryConfig = {
   defaultSort: { field: "createdAt", order: "DESC" },
 };
 
-const CUSTOMER_LOOKUP_QUERY: EntityQueryConfig = {
-  alias: "customer",
+const LOOKUP: EntityQueryConfig = {
+  alias: "row",
   searchable: [],
   sortable: ["createdAt"],
   defaultSort: { field: "createdAt", order: "DESC" },
 };
-
-const ORDER_LOOKUP_QUERY: EntityQueryConfig = {
-  alias: "order",
-  searchable: [],
-  sortable: ["createdAt"],
-  defaultSort: { field: "createdAt", order: "DESC" },
-};
-
-function emptyToNull(value?: string | null) {
-  const text = value?.trim();
-  return text ? text : null;
-}
 
 @Injectable()
 export class MeasurementsService implements OnModuleInit {
@@ -61,11 +51,8 @@ export class MeasurementsService implements OnModuleInit {
       MeasurementEntity,
       MEASUREMENT_QUERY,
     );
-    this.customers = this.entityService.bind(
-      CustomerEntity,
-      CUSTOMER_LOOKUP_QUERY,
-    );
-    this.orders = this.entityService.bind(OrderEntity, ORDER_LOOKUP_QUERY);
+    this.customers = this.entityService.bind(CustomerEntity, LOOKUP);
+    this.orders = this.entityService.bind(OrderEntity, LOOKUP);
   }
 
   async onModuleInit() {
@@ -77,114 +64,48 @@ export class MeasurementsService implements OnModuleInit {
     });
   }
 
-  pickValues(
-    input: TMeasurementValues | MeasurementEntity,
-  ): TMeasurementValues {
-    const values: TMeasurementValues = {};
-    for (const key of MEASUREMENT_VALUE_KEYS) {
-      if (key === "extraNotes") {
-        values.extraNotes =
-          emptyToNull(
-            (input as { extraNotes?: string | null }).extraNotes,
-          ) ?? undefined;
-        continue;
-      }
-      values[key] = num((input as Record<string, unknown>)[key]);
-    }
-    return values;
-  }
-
-  toPayload(row: MeasurementEntity): IMeasurement {
-    const values = this.pickValues(row);
-    return {
-      ...values,
-      id: row.id,
-      customerId: row.customerId,
-      orderId: row.orderId,
-      createdAt: toIso(row.createdAt),
-      updatedAt: toIso(row.updatedAt),
-    };
-  }
-
-  /** Customer’s single usual measurement (`orderId` null). */
-  findDefault(customerId: string): Promise<MeasurementEntity | null> {
-    return this.entity
-      .getRepository()
-      .createQueryBuilder("measurement")
-      .where("measurement.customerId = :customerId", { customerId })
-      .andWhere("measurement.orderId IS NULL")
-      .andWhere("measurement.deletedAt IS NULL")
-      .orderBy("measurement.updatedAt", "DESC")
-      .getOne();
-  }
-
-  /** Keep at most one default row per customer (soft-delete extras). */
-  private async collapseExtraDefaults(
-    customerId: string,
-    keepId: string,
-  ): Promise<void> {
-    const extras = await this.entity
-      .getRepository()
-      .createQueryBuilder("measurement")
-      .where("measurement.customerId = :customerId", { customerId })
-      .andWhere("measurement.orderId IS NULL")
-      .andWhere("measurement.deletedAt IS NULL")
-      .andWhere("measurement.id != :keepId", { keepId })
-      .getMany();
-    for (const row of extras) {
-      await this.entity.softDelete(row.id);
-    }
-  }
-
-  async upsertDefault(
-    customerId: string,
-    values?: TMeasurementValues,
-  ): Promise<MeasurementEntity> {
-    const existing = await this.findDefault(customerId);
-    if (existing) {
-      await this.collapseExtraDefaults(customerId, existing.id);
-      if (hasMeasurementValues(values)) {
-        return this.updateValues(existing.id, values);
-      }
-      return this.entity.require(existing.id);
-    }
-    const created = await this.entity.create({
-      customerId,
-      orderId: null,
-    });
-    if (hasMeasurementValues(values)) {
-      return this.updateValues(created.id, values);
-    }
-    return this.entity.require(created.id);
-  }
-
-  /** HTTP: upsert usual measurements for a customer (no row yet or by customer). */
-  async upsertCustomerDefault(
-    customerId: string,
-    input: TUpdateMeasurementData,
-  ): Promise<IMeasurement> {
-    await this.customers.require(customerId);
-    const { forceEdit: _force, ...values } = input;
-    const row = await this.upsertDefault(customerId, values);
-    return this.toPayload(row);
-  }
-
-  /** HTTP: get one measurement by id. */
-  async getById(id: string): Promise<IMeasurement> {
-    const row = await this.entity.require(id);
-    return this.toPayload(row);
+  /** GET /measurements/:id */
+  async getOne(id: string): Promise<IMeasurement> {
+    return this.toPayload(await this.entity.require(id));
   }
 
   /**
-   * HTTP: update any measurement row by id (customer default or order snapshot).
-   * Order-linked rows respect delivered lock unless `forceEdit`.
+   * PATCH /measurements/customers/:customerId
+   * Updates the customer’s usual measurement (creates + links if missing).
    */
-  async updateById(
+  async upsertDefault(
+    customerId: string,
+    input?: TMeasurementValues | TUpdateMeasurementData,
+  ): Promise<IMeasurement> {
+    const customer = await this.customers.require(customerId);
+    const values = stripForceEdit(input);
+
+    let measurementId = customer.measurementId;
+    if (!measurementId) {
+      const created = await this.entity.create({
+        customerId,
+        orderId: null,
+        ...this.columnPatch(values),
+      });
+      measurementId = created.id;
+      await this.customers.update(customerId, { measurementId });
+      return this.toPayload(created);
+    }
+
+    if (hasMeasurementValues(values)) {
+      return this.toPayload(await this.applyValues(measurementId, values));
+    }
+    return this.toPayload(await this.entity.require(measurementId));
+  }
+
+  /** PATCH /measurements/:id — order snapshot or usual (delivered lock). */
+  async update(
     id: string,
     input: TUpdateMeasurementData,
   ): Promise<IMeasurement> {
     const { forceEdit, ...values } = input;
     const row = await this.entity.require(id);
+
     if (row.orderId) {
       const order = await this.orders.require(row.orderId);
       if (order.status === EOrderStatus.DELIVERED && !forceEdit) {
@@ -193,68 +114,122 @@ export class MeasurementsService implements OnModuleInit {
         );
       }
     }
-    const updated = await this.updateValues(id, values);
-    return this.toPayload(updated);
+
+    return this.toPayload(await this.applyValues(id, values));
   }
 
+  /**
+   * Always create usual measurement in the same TX as the customer.
+   * Caller sets `customer.measurementId` after this returns.
+   */
+  async createForCustomer(
+    customerId: string,
+    values: TMeasurementValues | undefined,
+    manager: EntityManager,
+  ): Promise<MeasurementEntity> {
+    const repo = manager.getRepository(MeasurementEntity);
+    const row = repo.create({
+      customerId,
+      orderId: null,
+      tenantId: RequestContext.get("tenantId") ?? null,
+      ...this.columnPatch(values ?? {}),
+    });
+    return manager.save(row);
+  }
+
+  /** Copy customer usual → new order measurement (separate row). */
   async createOrderSnapshot(
     customerId: string,
     values?: TMeasurementValues,
   ): Promise<MeasurementEntity> {
-    const source = await this.findDefault(customerId);
+    const customer = await this.customers.require(customerId);
+    const source = customer.measurementId
+      ? await this.entity.require(customer.measurementId)
+      : null;
+
     const created = await this.entity.create({
       customerId,
       orderId: null,
-      ...(source ? this.toColumnValues(this.pickValues(source)) : {}),
+      ...(source ? this.columnPatch(this.pickValues(source)) : {}),
     });
+
     if (hasMeasurementValues(values)) {
-      return this.updateValues(created.id, values);
+      return this.applyValues(created.id, values);
     }
     return this.entity.require(created.id);
-  }
-
-  async updateValues(
-    id: string,
-    input: TMeasurementValues,
-  ): Promise<MeasurementEntity> {
-    const values = this.pickValues(input);
-    const patch: Partial<MeasurementEntity> = {};
-    for (const key of MEASUREMENT_VALUE_KEYS) {
-      if (input[key] !== undefined) {
-        if (key === "extraNotes") {
-          patch.extraNotes = emptyToNull(values.extraNotes);
-        } else {
-          (patch as Record<string, unknown>)[key] = dec(
-            values[key] as number | null | undefined,
-          );
-        }
-      }
-    }
-    await this.entity.update(id, patch);
-    return this.entity.require(id);
-  }
-
-  get(id: string): Promise<MeasurementEntity> {
-    return this.entity.require(id);
   }
 
   attachToOrder(id: string, orderId: string): Promise<MeasurementEntity> {
     return this.entity.update(id, { orderId });
   }
 
-  private toColumnValues(
-    values: TMeasurementValues,
-  ): Partial<MeasurementEntity> {
-    const patch: Partial<MeasurementEntity> = {};
+  get(id: string): Promise<MeasurementEntity> {
+    return this.entity.require(id);
+  }
+
+  pickValues(
+    input: TMeasurementValues | MeasurementEntity | IMeasurement,
+  ): TMeasurementValues {
+    const values: TMeasurementValues = {};
     for (const key of MEASUREMENT_VALUE_KEYS) {
       if (key === "extraNotes") {
-        patch.extraNotes = emptyToNull(values.extraNotes);
+        values.extraNotes =
+          emptyToNull((input as { extraNotes?: string | null }).extraNotes) ??
+          undefined;
         continue;
       }
-      (patch as Record<string, unknown>)[key] = dec(values[key]);
+      values[key] = num((input as Record<string, unknown>)[key]);
+    }
+    return values;
+  }
+
+  toPayload(row: MeasurementEntity): IMeasurement {
+    return {
+      ...this.pickValues(row),
+      id: row.id,
+      customerId: row.customerId,
+      orderId: row.orderId,
+      createdAt: toIso(row.createdAt),
+      updatedAt: toIso(row.updatedAt),
+    };
+  }
+
+  private async applyValues(id: string, input: TMeasurementValues) {
+    await this.entity.update(id, this.columnPatch(input, true));
+    return this.entity.require(id);
+  }
+
+  private columnPatch(
+    input: TMeasurementValues,
+    onlyDefined = false,
+  ): Partial<MeasurementEntity> {
+    const values = this.pickValues(input);
+    const patch: Partial<MeasurementEntity> = {};
+    for (const key of MEASUREMENT_VALUE_KEYS) {
+      if (onlyDefined && input[key] === undefined) continue;
+      if (key === "extraNotes") {
+        patch.extraNotes = emptyToNull(values.extraNotes);
+      } else {
+        (patch as Record<string, unknown>)[key] = dec(
+          values[key] as number | null | undefined,
+        );
+      }
     }
     return patch;
   }
+}
+
+function stripForceEdit(
+  input?: TMeasurementValues | TUpdateMeasurementData,
+): TMeasurementValues {
+  if (!input) return {};
+  const { forceEdit: _f, ...values } = input as TUpdateMeasurementData;
+  return values;
+}
+
+function emptyToNull(value?: string | null) {
+  const text = value?.trim();
+  return text ? text : null;
 }
 
 function num(value: unknown): number | null {

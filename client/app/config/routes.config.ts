@@ -50,6 +50,13 @@ export function orderPath(id: string) {
   return fillPath(APP_ROUTES.ORDER, { id });
 }
 
+/** Opens the orders list modal on the dashboard. */
+export const DASHBOARD_ORDERS_QUERY = "orders";
+
+export function dashboardOrdersPath() {
+  return `${APP_ROUTES.DASHBOARD}?${DASHBOARD_ORDERS_QUERY}=1`;
+}
+
 export const COMMON_ROUTES = {
   UNAUTHORIZED: "/unauthorized",
   NOT_FOUND: "*",

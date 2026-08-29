@@ -6,22 +6,16 @@ import {
   customerListQuerySchema,
   EPermissionAction,
   EResource,
+  getQuerySchema,
 } from "@moon-tailors/contracts";
-import {
-  invalidateQueriesKey,
-  refetchOp,
-  type OpConfig,
-  type OpsBag,
-} from "~/ops";
+import { invalidateQueriesKey, type OpConfig, type OpsBag } from "~/ops";
 import { customersService } from "../api";
 import { CreateCustomerModal } from "../form/create-customer-modal";
 import { CustomerDirectory } from "../list/customer-directory";
 import { customerKeys } from "../query-keys";
 import { CustomerDetail } from "../view/customer-detail";
 
-export const refreshCustomers = (_r: unknown, _v: unknown, ops: OpsBag) => {
-  refetchOp(ops, "listCustomers");
-  refetchOp(ops, "getCustomer");
+export const refreshCustomers = (_r: unknown, _v: unknown, _ops: OpsBag) => {
   invalidateQueriesKey(customerKeys.list());
   invalidateQueriesKey(customerKeys.detail());
 };
@@ -51,13 +45,14 @@ export const customerOpsCore = {
       resource: EResource.CUSTOMERS,
       action: EPermissionAction.READ,
     },
-    initialParams: { id: "" },
+    initialParams: { id: "", _relations: ["measurement"] },
     queryKey: customerKeys.detailWithParams,
     invalidateKey: customerKeys.detail(),
     fetch: (params: Record<string, unknown>) => {
       const id = typeof params.id === "string" ? params.id : "";
       if (!id) return Promise.resolve(null);
-      return customersService.getOne(id);
+      const query = getQuerySchema.parse(params);
+      return customersService.getOne(id, query);
     },
     component: CustomerDetail,
     auto: false,

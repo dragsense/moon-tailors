@@ -1,6 +1,7 @@
 import type { IPaginationMeta } from "@moon-tailors/contracts";
 import { Loader2Icon } from "lucide-react";
 import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 import { PaginationBar, type PaginationBarProps } from "./pagination-bar";
 
 export type ListPaginationMode = "bar" | "load-more" | "none";
@@ -39,7 +40,7 @@ export function ListPagination({
     if (!meta.hasNextPage) return null;
 
     return (
-      <div className={`flex justify-center border-t pt-6 ${className ?? ""}`}>
+      <div className={cn("flex justify-center border-t pt-4", className)}>
         <Button
           type="button"
           variant="outline"
@@ -60,7 +61,7 @@ export function ListPagination({
   }
 
   return (
-    <div className={`border-t pt-6 ${className ?? ""}`}>
+    <div className={cn("border-t pt-4", className)}>
       <PaginationBar
         meta={meta}
         pageItemCount={pageItemCount}

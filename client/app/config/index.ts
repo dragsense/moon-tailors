@@ -20,6 +20,8 @@ export {
   ROUTE_TITLES,
   canAccessRoute,
   customerPath,
+  dashboardOrdersPath,
+  DASHBOARD_ORDERS_QUERY,
   getRouteTitle,
   orderPath,
   type AppRoute,
