@@ -26,7 +26,16 @@ const themeInitScript = `(function(){try{var k=${JSON.stringify(THEME_STORAGE_KE
 
 const localeInitScript = `(function(){try{var k=${JSON.stringify(LANGUAGE_STORAGE_KEY)};var lang=localStorage.getItem(k)||'en';if(lang==='ar'){lang='ur';localStorage.setItem(k,'ur');}var dir=lang==='ur'?'rtl':'ltr';document.documentElement.lang=lang;document.documentElement.dir=dir;document.documentElement.setAttribute('dir',dir);}catch(e){}})();`;
 
+const appAsset = (file: string) => {
+  const base = import.meta.env.BASE_URL.endsWith("/")
+    ? import.meta.env.BASE_URL
+    : `${import.meta.env.BASE_URL}/`;
+  return `${base}${file}`;
+};
+
 export const links: Route.LinksFunction = () => [
+  { rel: "icon", href: appAsset("favicon.svg"), type: "image/svg+xml" },
+  { rel: "apple-touch-icon", href: appAsset("apple-touch-icon.png") },
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",

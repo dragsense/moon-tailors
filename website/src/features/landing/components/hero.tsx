@@ -1,6 +1,7 @@
 import { en } from "@/locales/en";
 import { ur } from "@/locales/ur";
 import { getSiteChrome } from "@/config";
+import { HeroCover } from "./hero-cover";
 
 /**
  * Static HTML (no `client:*`). Copy switches with `html[lang]` via `[data-locale]`.
@@ -16,12 +17,7 @@ export function LandingHero() {
 
   return (
     <section className="hero" aria-label={en.hero.title}>
-      <img
-        className="hero__cover"
-        src={chrome.coverImage}
-        alt=""
-        decoding="async"
-      />
+      <HeroCover />
       <div className="hero__veil" aria-hidden="true" />
 
       <div className="hero__content">

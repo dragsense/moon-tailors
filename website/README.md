@@ -49,7 +49,8 @@ One screen, no page scroll: overlay **header** (M mark + prefs + login) and **fo
 | `PUBLIC_ENV` | `development` \| `production` — env banner (hidden in production) |
 | `PUBLIC_SITE_TAGLINE` | Optional EN headline override |
 | `PUBLIC_SITE_DESCRIPTION` | Optional EN support override |
-| `PUBLIC_APP_URL` | Client origin (default `http://localhost:8088/app`) |
+| `PUBLIC_APP_URL` | Shop path (default `/app`; loopback hosts stay same-origin) |
+| `PUBLIC_API_URL` | API path (default `/server/api`; landing session check) |
 
 ```bash
 pnpm --filter @moon-tailors/website dev      # http://localhost:4321

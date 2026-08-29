@@ -8,8 +8,26 @@ import { getRequestTimezone } from "./timezone";
 import { getCsrfToken, setCsrfToken } from "./csrf";
 import { toQueryString } from "./query-params";
 
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL ?? "http://localhost:8088/server/api";
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0", "::1"]);
+
+/** Loopback API hosts become `/server/api` so tunnels/LAN stay on the page origin. */
+function resolveApiBaseUrl(raw: string | undefined): string {
+  const fallback = "/server/api";
+  const value = (raw ?? fallback).trim();
+  if (!value) return fallback;
+  if (value.startsWith("/")) return value.replace(/\/$/, "") || fallback;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^\[|\]$/g, "").toLowerCase();
+    const path = url.pathname.replace(/\/$/, "") || fallback;
+    if (LOOPBACK_HOSTS.has(host) || host.endsWith(".localhost")) return path;
+    return `${url.origin}${path}`;
+  } catch {
+    return fallback;
+  }
+}
+
+export const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
 
 export type THttpMethod = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 

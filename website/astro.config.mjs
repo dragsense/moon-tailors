@@ -72,6 +72,12 @@ export default defineConfig({
     },
     server: {
       host: "0.0.0.0",
+      allowedHosts: [
+        "localhost",
+        ".localhost",
+        "moon.dragsense.com",
+        ".dragsense.com",
+      ],
       watch: watchPolling(),
       hmr: hmrBehindGateway(),
     },

@@ -2,6 +2,7 @@
 import Base from "../layouts/Base.astro";
 import SiteShell from "../layouts/global/site-shell.astro";
 import { getLoginUrl, getSiteChrome, SITE_ROUTES } from "../config";
+import { HeroCover } from "../features/landing/components/hero-cover";
 import { en } from "../locales/en";
 import { ur } from "../locales/ur";
 
@@ -16,7 +17,7 @@ const chrome = getSiteChrome();
 >
   <SiteShell>
     <section class="hero">
-      <img class="hero__cover" src={chrome.coverImage} alt="" />
+      <HeroCover />
       <div class="hero__veil"></div>
 
       <div class="hero__content">

@@ -90,7 +90,7 @@ Login sets an HttpOnly JWT cookie on `{SERVER_PUBLIC_PATH}/api` (e.g. `/server/a
 | Key | Role |
 |---|---|
 | `VITE_APP_ENV` | `development` (laptop) or `production` (VPS, no banner) — baked at SPA build |
-| `VITE_API_URL` | gateway API (`http://localhost:8088/server/api`) |
+| `VITE_API_URL` | gateway API path (`/server/api`). Loopback hosts (`localhost`) are treated as same-origin so tunnels/LAN work. |
 | `CLIENT_SSR` | local Vite SSR toggle |
 
 Rebuild/restart the client after changing public vars. Docker/remote: the banner is compiled into the SPA — redeploy **client**.
@@ -117,8 +117,8 @@ Full table: [DEPLOY.md](DEPLOY.md#environment-banner-docker--deploy).
 |---|---|
 | `PUBLIC_ENV` | same values as `VITE_APP_ENV` — website env banner (baked at Astro build) |
 | `PUBLIC_APP_ENV` | optional alias for `PUBLIC_ENV` |
-| `PUBLIC_APP_URL` | gateway origin + `/app` |
-| `PUBLIC_API_URL` | gateway API (`http://localhost:8088/server/api`) — landing session check |
+| `PUBLIC_APP_URL` | shop path (`/app`). Loopback hosts become same-origin so Login follows the page the user opened. |
+| `PUBLIC_API_URL` | gateway API (`/server/api`) — landing session check |
 
 Compose also injects `DATABASE_URL` from `POSTGRES_*` in `docker.env` so DB user/password stay in one place. Redis is injected as `REDIS_URL=redis://redis:6379`.
 

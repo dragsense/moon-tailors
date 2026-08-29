@@ -8,6 +8,15 @@ const site = getSiteConfig();
 ---
 
 <Base title={site.name} description={site.description}>
+  <link
+    slot="head"
+    rel="preload"
+    as="image"
+    type="image/webp"
+    imagesrcset="/images/hero-cover-800.webp 800w, /images/hero-cover.webp 1280w"
+    imagesizes="100vw"
+    fetchpriority="high"
+  />
   <SiteShell>
     <LandingHero />
   </SiteShell>

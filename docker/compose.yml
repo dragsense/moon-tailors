@@ -48,7 +48,7 @@ services:
       dockerfile: docker/server.Dockerfile
       target: ${SERVER_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
+        VITE_API_URL: ${VITE_API_URL:-/server/api}
         CLIENT_MODE: ${CLIENT_MODE:-nginx}
     image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-server${IMAGE_SUFFIX:-}
     container_name: ${COMPOSE_PROJECT_NAME:-moon-tailors}-server
@@ -69,7 +69,7 @@ services:
       WATCHPACK_POLL_INTERVAL: ${WATCHPACK_POLL_INTERVAL:-1000}
       TSC_WATCHFILE: ${TSC_WATCHFILE:-DynamicPriorityPolling}
       TSC_WATCHDIRECTORY: ${TSC_WATCHDIRECTORY:-DynamicPriorityPolling}
-      CORS_ORIGIN: http://localhost:${GATEWAY_EXPOSE:-8088}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:${GATEWAY_EXPOSE:-8088}}
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:${POSTGRES_INTERNAL:-5432}/${POSTGRES_DB:-moon_tailors_db}
       REDIS_URL: redis://redis:${REDIS_INTERNAL:-6379}
       GATEWAY_EXPOSE: ${GATEWAY_EXPOSE:-8088}
@@ -101,7 +101,7 @@ services:
       dockerfile: docker/client.Dockerfile
       target: ${CLIENT_BUILD_TARGET:-${BUILD_TARGET:-runtime}}
       args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
+        VITE_API_URL: ${VITE_API_URL:-/server/api}
         CLIENT_SSR: ${CLIENT_SSR:-false}
         CLIENT_ENV_FILE: ${CLIENT_ENV_FILE:-env/client.env}
     image: ${COMPOSE_PROJECT_NAME:-moon-tailors}-client${IMAGE_SUFFIX:-}
@@ -110,7 +110,7 @@ services:
       - "${CLIENT_INTERNAL:-5173}"
     environment:
       NODE_ENV: ${CLIENT_NODE_ENV:-${NODE_ENV:-production}}
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:${GATEWAY_EXPOSE:-8088}/server/api}
+      VITE_API_URL: ${VITE_API_URL:-/server/api}
       # From env/client.env (Vite) or forced true when clientMode=ssr — see react-router.config.ts
       CLIENT_SSR: ${CLIENT_SSR:-false}
       FORCE_COLOR: "1"
