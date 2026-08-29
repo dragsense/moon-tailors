@@ -35,6 +35,16 @@ export const en = {
       error: "Error",
       empty: "Nothing here yet",
     },
+    pagination: {
+      rowsPerPage: "Rows per page",
+      rows: "{{shown}} of {{total}}",
+      page: "Page {{page}} of {{last}}",
+      pageShort: "{{page}} / {{last}}",
+      first: "First page",
+      previous: "Previous page",
+      next: "Next page",
+      last: "Last page",
+    },
   },
   auth: {
     logOut: "Log out",

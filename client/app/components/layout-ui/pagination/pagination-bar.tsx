@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { useI18n } from "~/hooks/use-i18n";
+import { cn } from "~/lib/utils";
 
 export type PaginationBarProps = {
   meta: IPaginationMeta;
@@ -28,7 +30,7 @@ export type PaginationBarProps = {
 };
 
 /**
- * Full pagination bar* Rows-per-page select, page X of Y, first/prev/next/last.
+ * Full pagination bar — compact on small screens, full labels on large.
  */
 export function PaginationBar({
   meta,
@@ -39,6 +41,7 @@ export function PaginationBar({
   onLimitChange,
   className,
 }: PaginationBarProps) {
+  const { t } = useI18n();
   const componentId = useId();
   const [, startTransition] = useTransition();
   const sizes = useMemo(() => pageSizeOptions, [pageSizeOptions]);
@@ -54,26 +57,46 @@ export function PaginationBar({
     });
   };
 
-  const summary =
-    selectedCount != null && selectedCount > 0
-      ? `${selectedCount} of ${meta.total} row${meta.total === 1 ? "" : "s"} selected`
-      : `${pageItemCount} of ${meta.total} row${meta.total === 1 ? "" : "s"}`;
+  const shown =
+    selectedCount != null && selectedCount > 0 ? selectedCount : pageItemCount;
+  const rowsLabel = t("common.pagination.rows", {
+    shown,
+    total: meta.total,
+  });
+  const pageLabel = t("common.pagination.page", {
+    page: meta.page,
+    last: meta.lastPage,
+  });
+  const pageShortLabel = t("common.pagination.pageShort", {
+    page: meta.page,
+    last: meta.lastPage,
+  });
 
   return (
     <div
-      className={`flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between ${className ?? ""}`}
+      className={cn(
+        "flex min-w-0 items-center justify-between gap-2",
+        className,
+      )}
       data-component-id={componentId}
     >
-      <p className="text-sm text-muted-foreground">{summary}</p>
+      <p className="min-w-0 truncate text-xs text-muted-foreground sm:text-sm">
+        {rowsLabel}
+      </p>
 
-      <div className="flex min-w-0 flex-wrap items-center gap-3 sm:gap-6 lg:gap-8">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">Rows per page</p>
+      <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
+        <div className="hidden items-center gap-2 sm:flex">
+          <p className="hidden text-sm font-medium lg:block">
+            {t("common.pagination.rowsPerPage")}
+          </p>
           <Select
             value={`${meta.limit}`}
             onValueChange={(value) => handleLimitChange(Number(value))}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger
+              className="h-8 w-[4.25rem]"
+              aria-label={t("common.pagination.rowsPerPage")}
+            >
               <SelectValue placeholder={meta.limit} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -86,54 +109,55 @@ export function PaginationBar({
           </Select>
         </div>
 
-        <p className="min-w-[100px] text-center text-sm font-medium">
-          Page {meta.page} of {meta.lastPage}
+        <p className="shrink-0 text-xs font-medium sm:text-sm">
+          <span className="sm:hidden">{pageShortLabel}</span>
+          <span className="hidden sm:inline">{pageLabel}</span>
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="hidden h-8 w-8 lg:inline-flex"
+            className="hidden size-8 lg:inline-flex"
             onClick={() => handlePageChange(1)}
             disabled={!meta.hasPrevPage}
           >
-            <span className="sr-only">Go to first page</span>
-            <ChevronsLeftIcon className="h-4 w-4" />
+            <span className="sr-only">{t("common.pagination.first")}</span>
+            <ChevronsLeftIcon className="size-4" />
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="size-8"
             onClick={() => handlePageChange(meta.page - 1)}
             disabled={!meta.hasPrevPage}
           >
-            <span className="sr-only">Go to previous page</span>
-            <ChevronLeftIcon className="h-4 w-4" />
+            <span className="sr-only">{t("common.pagination.previous")}</span>
+            <ChevronLeftIcon className="size-4" />
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="h-8 w-8"
+            className="size-8"
             onClick={() => handlePageChange(meta.page + 1)}
             disabled={!meta.hasNextPage}
           >
-            <span className="sr-only">Go to next page</span>
-            <ChevronRightIcon className="h-4 w-4" />
+            <span className="sr-only">{t("common.pagination.next")}</span>
+            <ChevronRightIcon className="size-4" />
           </Button>
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="hidden h-8 w-8 lg:inline-flex"
+            className="hidden size-8 lg:inline-flex"
             onClick={() => handlePageChange(meta.lastPage)}
             disabled={!meta.hasNextPage}
           >
-            <span className="sr-only">Go to last page</span>
-            <ChevronsRightIcon className="h-4 w-4" />
+            <span className="sr-only">{t("common.pagination.last")}</span>
+            <ChevronsRightIcon className="size-4" />
           </Button>
         </div>
       </div>

@@ -34,6 +34,16 @@ export const ur = {
       error: "خرابی",
       empty: "ابھی یہاں کچھ نہیں",
     },
+    pagination: {
+      rowsPerPage: "فی صفحہ",
+      rows: "{{shown}} از {{total}}",
+      page: "صفحہ {{page}} از {{last}}",
+      pageShort: "{{page}} / {{last}}",
+      first: "پہلا صفحہ",
+      previous: "پچھلا صفحہ",
+      next: "اگلا صفحہ",
+      last: "آخری صفحہ",
+    },
   },
   auth: {
     logOut: "لاگ آؤٹ",
