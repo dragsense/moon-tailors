@@ -1,20 +1,18 @@
 import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
-import type {
-  ICustomer,
-  IPaginatedResponse,
-  IMessageResponse,
-  TCreateCustomerData,
-  TCustomerListQuery,
-  TGetQuery,
-  TUpdateCustomerData,
-} from "@moon-tailors/contracts";
 import {
   createCustomerSchema,
   customerListQuerySchema,
   EPermissionAction,
   EResource,
   getQuerySchema,
+  type ICustomer,
+  type IMessageResponse,
+  type IPaginatedResponse,
+  type TCreateCustomerData,
+  type TCustomerListQuery,
+  type TGetQuery,
+  type TUpdateCustomerData,
   updateCustomerSchema,
 } from "@moon-tailors/contracts";
 import { RequirePermissions } from "../../common/auth";

@@ -6,9 +6,8 @@ const nodeExternals = require("webpack-node-externals");
  * condition (TypeScript source) and is bundled so edits trigger rebuilds.
  * Production keeps contracts external and resolves to dist.
  *
- * Docker / WSL bind mounts often drop inotify unlink/change events — without
- * polling, Nest can keep compiling deleted files (stale fork-ts-checker program).
- * Set WATCHPACK_POLLING=true (compose does this for the server service).
+ * Compose defaults to native FS events. Set WATCHPACK_POLLING / CHOKIDAR_USEPOLLING
+ * when Docker Desktop / WSL drops inotify.
  */
 module.exports = (options) => {
   const isProd = process.env.NODE_ENV === "production";
@@ -17,7 +16,7 @@ module.exports = (options) => {
     process.env.WATCHPACK_POLLING === "1" ||
     process.env.CHOKIDAR_USEPOLLING === "true" ||
     process.env.CHOKIDAR_USEPOLLING === "1";
-  const pollMs = Number(process.env.WATCHPACK_POLL_INTERVAL || 1000);
+  const pollMs = Number(process.env.WATCHPACK_POLL_INTERVAL || 250);
 
   const rules = (options.module?.rules ?? []).map((rule) => {
     if (!rule || !rule.test || !String(rule.test).includes("tsx?")) {
@@ -56,7 +55,7 @@ module.exports = (options) => {
       ...(options.watchOptions ?? {}),
       ignored: /node_modules/,
       aggregateTimeout: 300,
-      ...(polling ? { poll: Number.isFinite(pollMs) ? pollMs : 1000 } : {}),
+      ...(polling ? { poll: Number.isFinite(pollMs) ? pollMs : 250 } : {}),
     },
   };
 };

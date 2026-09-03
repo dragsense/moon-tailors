@@ -24,9 +24,9 @@ pnpm bootstrap --fresh
 
 Local Docker uses the **local** block in `docker/environments.json` and `docker/compose.yml` (postgres + redis via `server.needs`; bind mounts + `dev` build target).
 
-**Watch (server / client / website):** compose sets `WATCHPACK_POLLING` + `CHOKIDAR_USEPOLLING` so create/edit/**delete** on the host rebuild under Docker Desktop / WSL (inotify is often dropped). If a delete leaves a stale module, use **Clear cache** (local or remote) — caches are **not** wiped on every `dev` start. App containers use `tty: true` + `FORCE_COLOR` so Nest / Vite / Astro keep ANSI colors in `pnpm logs` (`docker compose --ansi always`).
+**Watch (server / client / website):** compose defaults to **native FS events** (`CHOKIDAR_USEPOLLING=false` / `WATCHPACK_POLLING=false`). If create/edit/**delete** is missed under Docker Desktop / WSL, set those to `true` in `env/docker.env` (see `env/docker.env.example`). If a delete leaves a stale module, use **Clear cache** (local or remote) — caches are **not** wiped on every `dev` start. App containers use `tty: true` + `FORCE_COLOR` so Nest / Vite / Astro keep ANSI colors in `pnpm logs` (`docker compose --ansi always`).
 
-Website HMR talks to the **gateway** (`:8088`), not Astro’s internal `:4321`. Recreate `website` + `gateway` after changing `astro.config.mjs` or the nginx template so the browser websocket can refresh the page.
+Client HMR talks to the **gateway** (`:8088`), not Vite’s internal `:5173`. Recreate `client` + `gateway` after changing `vite.config.ts` or the nginx template so the browser websocket can refresh the page.
 
 ### Start / Stop / Logs
 

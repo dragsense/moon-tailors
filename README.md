@@ -55,6 +55,8 @@ pnpm remote                # deploy + SSH host control
 
 > Do **not** use `pnpm setup`, `pnpm restart`, `pnpm pkg`, or `pnpm deploy` (reserved). Use `pnpm bootstrap`, `pnpm reload`, `pnpm add-pkg`, `pnpm remote`.
 
+**Watch (server / client / website):** compose defaults to **native FS events** (`CHOKIDAR_USEPOLLING=false`). If create/edit/delete is missed under Docker Desktop / WSL, set `CHOKIDAR_USEPOLLING=true` / `WATCHPACK_POLLING=true` in `env/docker.env`. Client HMR uses the gateway port (`GATEWAY_EXPOSE`, default `8088`).
+
 ## App responsibilities
 
 | Package | Role |

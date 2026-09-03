@@ -49,18 +49,18 @@ function viteEnvDefine(env: Record<string, string>): Record<string, string> {
 }
 
 /**
- * Docker/WSL bind mounts often drop inotify — poll so deletes/edits rebuild.
- * Compose sets CHOKIDAR_USEPOLLING; default stays polling for Docker local.
+ * Docker/WSL bind mounts may drop inotify — enable polling only when needed.
+ * Compose default CHOKIDAR_USEPOLLING=false (native FS events). Set true if edits/deletes miss.
  */
 function watchPolling() {
-  const disabled =
-    process.env.CHOKIDAR_USEPOLLING === "false" ||
-    process.env.CHOKIDAR_USEPOLLING === "0";
-  if (disabled) return {};
-  const interval = Number(process.env.WATCHPACK_POLL_INTERVAL || 1000);
+  const enabled =
+    process.env.CHOKIDAR_USEPOLLING === "true" ||
+    process.env.CHOKIDAR_USEPOLLING === "1";
+  if (!enabled) return {};
+  const interval = Number(process.env.WATCHPACK_POLL_INTERVAL || 250);
   return {
     usePolling: true,
-    interval: Number.isFinite(interval) ? interval : 1000,
+    interval: Number.isFinite(interval) ? interval : 250,
   };
 }
 
@@ -69,6 +69,8 @@ export default defineConfig(({ command }) => {
   for (const [key, value] of Object.entries(clientEnv)) {
     process.env[key] = value;
   }
+
+  const gatewayPort = Number(process.env.GATEWAY_EXPOSE || 8088);
 
   return {
     // Do not load client/.env.* — only env/client.env (via define below).
@@ -126,6 +128,12 @@ export default defineConfig(({ command }) => {
         ".dragsense.com",
       ],
       watch: watchPolling(),
+      // Browser hits the gateway, not container :5173 — HMR websocket must use that port.
+      hmr: {
+        host: "localhost",
+        clientPort: Number.isFinite(gatewayPort) ? gatewayPort : 8088,
+        path: "/app/",
+      },
       warmup: {
         clientFiles: ["./app/root.tsx", "./app/routes.ts"],
       },

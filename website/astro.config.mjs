@@ -37,26 +37,19 @@ function loadWebsiteEnv() {
 loadWebsiteEnv();
 
 /**
- * Docker/WSL bind mounts often drop inotify — poll so deletes/edits rebuild.
- * Compose sets CHOKIDAR_USEPOLLING; default stays polling for Docker local.
+ * Docker/WSL bind mounts may drop inotify — enable polling only when needed.
+ * Compose default CHOKIDAR_USEPOLLING=false (native FS events). Set true if edits/deletes miss.
  */
 function watchPolling() {
-  const disabled =
-    process.env.CHOKIDAR_USEPOLLING === "false" ||
-    process.env.CHOKIDAR_USEPOLLING === "0";
-  if (disabled) return {};
-  const interval = Number(process.env.WATCHPACK_POLL_INTERVAL || 1000);
+  const enabled =
+    process.env.CHOKIDAR_USEPOLLING === "true" ||
+    process.env.CHOKIDAR_USEPOLLING === "1";
+  if (!enabled) return {};
+  const interval = Number(process.env.WATCHPACK_POLL_INTERVAL || 250);
   return {
     usePolling: true,
-    interval: Number.isFinite(interval) ? interval : 1000,
+    interval: Number.isFinite(interval) ? interval : 250,
   };
-}
-
-/** Browser hits the gateway, not container :4321 — HMR websocket must use that port. */
-function hmrBehindGateway() {
-  const clientPort = Number(process.env.GATEWAY_EXPOSE || 8088);
-  if (!Number.isFinite(clientPort) || clientPort <= 0) return undefined;
-  return { clientPort };
 }
 
 export default defineConfig({
@@ -79,7 +72,6 @@ export default defineConfig({
         ".dragsense.com",
       ],
       watch: watchPolling(),
-      hmr: hmrBehindGateway(),
     },
   },
 });
