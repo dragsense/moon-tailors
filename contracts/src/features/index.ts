@@ -8,3 +8,5 @@ export * from "./dashboard/index.js";
 export * from "./measurement/index.js";
 export * from "./customer/index.js";
 export * from "./order/index.js";
+export * from "./staff/index.js";
+export * from "./vendor/index.js";

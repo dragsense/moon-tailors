@@ -125,6 +125,18 @@ export const updateOrderSchema = createOrderObject
 
 export const applyMeasurementsToDefaultSchema = z.object({});
 
+/** POST /orders/:id/receive-payment — money the customer paid; added to paidAmount. */
+export const receiveOrderPaymentSchema = z.object({
+  amount: field(z.coerce.number().positive("Amount must be more than 0"), {
+    type: "number",
+    label: "Amount received",
+    required: true,
+    order: 1,
+  }),
+});
+
+export type TReceiveOrderPaymentData = z.infer<typeof receiveOrderPaymentSchema>;
+
 const orderCustomerSchema = customerSchema.pick({
   id: true,
   name: true,

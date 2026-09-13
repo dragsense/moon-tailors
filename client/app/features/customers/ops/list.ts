@@ -65,6 +65,12 @@ export const customerDetailOps = createOps({
           refreshHostCustomer,
         ),
       },
+      receiveOrderPayment: {
+        onSuccess: composeSuccess(
+          orderOpsCore.receiveOrderPayment.onSuccess,
+          refreshHostCustomer,
+        ),
+      },
     }),
   },
 });

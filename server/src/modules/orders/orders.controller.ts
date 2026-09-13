@@ -14,6 +14,7 @@ import type {
   TCreateOrderData,
   TGetQuery,
   TOrderListQuery,
+  TReceiveOrderPaymentData,
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
 import {
@@ -23,6 +24,7 @@ import {
   EResource,
   getQuerySchema,
   orderListQuerySchema,
+  receiveOrderPaymentSchema,
   updateOrderSchema,
 } from "@moon-tailors/contracts";
 import { RequirePermissions } from "../../common/auth";
@@ -81,6 +83,19 @@ export class OrdersController {
     body: TUpdateOrderData,
   ): Promise<IOrder> {
     return this.ordersService.update(id, body);
+  }
+
+  @Post(":id/receive-payment")
+  @RequirePermissions({
+    resource: EResource.ORDERS,
+    action: EPermissionAction.UPDATE,
+  })
+  receivePayment(
+    @Param("id") id: string,
+    @Body(new ZodValidationPipe(receiveOrderPaymentSchema))
+    body: TReceiveOrderPaymentData,
+  ): Promise<IOrder> {
+    return this.ordersService.receivePayment(id, body);
   }
 
   @Post(":id/apply-measurements-to-default")

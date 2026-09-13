@@ -7,6 +7,8 @@ import {
 import { PermissionsService } from "../../common/base";
 import { CustomersService } from "../customers/customers.service";
 import { OrdersService } from "../orders/orders.service";
+import { StaffService } from "../staff/staff.service";
+import { VendorsService } from "../vendors/vendors.service";
 
 @Injectable()
 export class DashboardService implements OnModuleInit {
@@ -14,6 +16,8 @@ export class DashboardService implements OnModuleInit {
     private readonly permissions: PermissionsService,
     private readonly customers: CustomersService,
     private readonly orders: OrdersService,
+    private readonly staff: StaffService,
+    private readonly vendors: VendorsService,
   ) {}
 
   async onModuleInit() {
@@ -21,10 +25,13 @@ export class DashboardService implements OnModuleInit {
   }
 
   async getSummary(): Promise<IDashboardSummary> {
-    const [customerCount, orderCounts] = await Promise.all([
-      this.customers.count(),
-      this.orders.counts(),
-    ]);
+    const [customerCount, orderCounts, staffCounts, vendorSummary] =
+      await Promise.all([
+        this.customers.count(),
+        this.orders.counts(),
+        this.staff.counts(),
+        this.vendors.summary(),
+      ]);
     const activity =
       orderCounts.delayed > 0
         ? [
@@ -57,6 +64,9 @@ export class DashboardService implements OnModuleInit {
           label: "Orders",
           value: orderCounts.total,
           hint: "All time",
+          subLabel: "Total",
+          subValue: orderCounts.totalAmount,
+          subCurrency: "PKR",
         },
         {
           key: "active",
@@ -65,10 +75,48 @@ export class DashboardService implements OnModuleInit {
           hint: "Not yet delivered",
         },
         {
+          key: "delivered",
+          label: "Delivered orders",
+          value: orderCounts.delivered,
+          hint: "Handed to customers",
+          subLabel: "Revenue",
+          subValue: orderCounts.deliveredRevenue,
+          subCurrency: "PKR",
+          subTone: "success",
+        },
+        {
           key: "delayed",
-          label: "Delayed",
+          label: "Delayed orders",
           value: orderCounts.delayed,
           hint: "Past expected date",
+        },
+        {
+          key: "staff",
+          label: "Active staff",
+          value: staffCounts.active,
+          hint: `${staffCounts.fixed} fixed · ${staffCounts.onDemand} on demand`,
+        },
+        {
+          key: "vendors",
+          label: "Vendors",
+          value: vendorSummary.count,
+          hint: "Suppliers in the book",
+        },
+        {
+          key: "vendorPaid",
+          label: "Paid to vendors",
+          value: vendorSummary.paid,
+          hint: "All vendor payments",
+          currency: "PKR",
+          tone: "success",
+        },
+        {
+          key: "vendorPayable",
+          label: "Owed to vendors",
+          value: vendorSummary.remaining,
+          hint: "Purchases minus payments",
+          currency: "PKR",
+          tone: vendorSummary.remaining > 0 ? "danger" : "default",
         },
       ],
       activity,

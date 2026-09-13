@@ -58,7 +58,7 @@ export function CustomerDetailActions({ store }: CustomerDetailActionsProps) {
   if (createOrder.kind !== "mutation" || !customer) return null;
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center justify-end gap-2">
       <CustomerOrdersMenu store={store} customer={customer} />
       {createOrder.allowed ? (
         <Button

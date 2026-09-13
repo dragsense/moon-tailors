@@ -1,5 +1,4 @@
 import { composeSuccess, createOps, pickOps } from "~/ops";
-import { customerOpsCore } from "~/features/customers/ops/core";
 import {
   measurementOpsCore,
   refreshMeasurements,
@@ -12,13 +11,13 @@ export const dashboardPageOps = createOps({
   scope: "page",
   ops: {
     ...dashboardOpsCore,
-    ...pickOps(customerOpsCore, ["listCustomers", "createCustomer"]),
     ...pickOps(orderOpsCore, [
       "latestOrders",
       "listOrders",
       "viewOrder",
       "createOrder",
       "updateOrder",
+      "receiveOrderPayment",
     ]),
     ...pickOps(measurementOpsCore, {
       updateMeasurement: {

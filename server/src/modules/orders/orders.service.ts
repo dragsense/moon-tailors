@@ -10,6 +10,7 @@ import type {
   TCreateOrderData,
   TGetQuery,
   TOrderListQuery,
+  TReceiveOrderPaymentData,
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
 import {
@@ -168,6 +169,35 @@ export class OrdersService implements OnModuleInit {
     return this.get(key);
   }
 
+  /**
+   * Money received from the customer — added to paidAmount.
+   * Allowed on delivered orders (payment on collection); never above what is still owed.
+   */
+  async receivePayment(
+    key: EntityKey,
+    input: TReceiveOrderPaymentData,
+  ): Promise<IOrder> {
+    const existing = await this.entity.require(key);
+    if (existing.status === EOrderStatus.CANCELED) {
+      throw new BadRequestException("Cannot receive payment for a canceled order");
+    }
+    const totalCost = Number(existing.totalCost ?? 0);
+    const paidAmount = Number(existing.paidAmount ?? 0);
+    const remaining = Math.max(0, totalCost - paidAmount);
+    if (remaining <= 0) {
+      throw new BadRequestException("This order is already fully paid");
+    }
+    if (input.amount > remaining + 0.001) {
+      throw new BadRequestException(
+        `Payment cannot be more than the amount still to pay (${remaining})`,
+      );
+    }
+
+    const nextPaid = Math.round((paidAmount + input.amount) * 100) / 100;
+    await this.entity.update(key, { paidAmount: String(nextPaid) });
+    return this.get(key);
+  }
+
   async applyMeasurementsToDefault(orderId: string): Promise<IOrder> {
     const order = await this.get(orderId);
     if (!order.measurement) {
@@ -186,7 +216,7 @@ export class OrdersService implements OnModuleInit {
       .createQueryBuilder("order")
       .where("order.deletedAt IS NULL");
     const today = new Date().toISOString().slice(0, 10);
-    const [total, active, delayed] = await Promise.all([
+    const [total, active, delayed, delivered] = await Promise.all([
       base.clone().getCount(),
       base
         .clone()
@@ -201,8 +231,33 @@ export class OrdersService implements OnModuleInit {
         })
         .andWhere("order.expectedCompletionDate < :today", { today })
         .getCount(),
+      base
+        .clone()
+        .andWhere("order.status = :delivered", {
+          delivered: EOrderStatus.DELIVERED,
+        })
+        .getCount(),
     ]);
-    return { total, active, delayed };
+    const sumTotalCost = async (qb: typeof base) => {
+      const row = await qb
+        .select("COALESCE(SUM(order.totalCost), 0)", "sum")
+        .getRawOne<{ sum: string }>();
+      return Math.round(Number(row?.sum ?? 0) * 100) / 100;
+    };
+    const [totalAmount, deliveredRevenue] = await Promise.all([
+      // Value of all orders except canceled ones.
+      sumTotalCost(
+        base.clone().andWhere("order.status != :canceled", {
+          canceled: EOrderStatus.CANCELED,
+        }),
+      ),
+      sumTotalCost(
+        base.clone().andWhere("order.status = :delivered", {
+          delivered: EOrderStatus.DELIVERED,
+        }),
+      ),
+    ]);
+    return { total, active, delayed, delivered, totalAmount, deliveredRevenue };
   }
 
   private assertWritable(order: OrderEntity, forceEdit?: boolean) {

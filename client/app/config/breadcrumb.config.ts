@@ -10,7 +10,10 @@ const ID_SEGMENT =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ROUTE_CRUMB_KEYS: Record<string, TranslationKey> = {
+  [APP_ROUTES.CUSTOMERS]: "nav.items.customers",
   [APP_ROUTES.ORDERS]: "nav.items.orders",
+  [APP_ROUTES.STAFF]: "nav.items.staff",
+  [APP_ROUTES.VENDORS]: "nav.items.vendors",
   [APP_ROUTES.PROFILE]: "nav.items.profile",
   [APP_ROUTES.RESET_PASSWORD]: "nav.items.resetPassword",
   [APP_ROUTES.SETTINGS]: "nav.items.settings",
@@ -34,27 +37,31 @@ export function buildBreadcrumbs(
   const items: BreadcrumbItem[] = [];
   const parts = pathname.split("/").filter(Boolean);
   let current = "";
-  let resource: "customers" | "orders" | null = null;
+  let resource: "customers" | "orders" | "staff" | "vendors" | null = null;
 
   for (const part of parts) {
     current += `/${part}`;
-
-    if (current === APP_ROUTES.CUSTOMERS) {
-      resource = "customers";
-      continue;
-    }
 
     const knownKey = ROUTE_CRUMB_KEYS[current];
     if (knownKey) {
       items.push({ label: t(knownKey), href: current });
       if (current === APP_ROUTES.ORDERS) resource = "orders";
+      if (current === APP_ROUTES.CUSTOMERS) resource = "customers";
+      if (current === APP_ROUTES.STAFF) resource = "staff";
+      if (current === APP_ROUTES.VENDORS) resource = "vendors";
       continue;
     }
 
     if (ID_SEGMENT.test(part)) {
       items.push({
         label:
-          resource === "orders" ? t("orders.profile") : t("customers.profile"),
+          resource === "orders"
+            ? t("orders.profile")
+            : resource === "staff"
+              ? t("staff.profile")
+              : resource === "vendors"
+                ? t("vendors.profile")
+                : t("customers.profile"),
         href: current,
       });
       continue;

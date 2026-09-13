@@ -23,6 +23,10 @@ export default [
           route(path(APP_ROUTES.CUSTOMER), "pages/protected/customers/detail.tsx"),
           route(path(APP_ROUTES.ORDERS), "pages/protected/orders/list.tsx"),
           route(path(APP_ROUTES.ORDER), "pages/protected/orders/detail.tsx"),
+          route(path(APP_ROUTES.STAFF), "pages/protected/staff/list.tsx"),
+          route(path(APP_ROUTES.STAFF_MEMBER), "pages/protected/staff/detail.tsx"),
+          route(path(APP_ROUTES.VENDORS), "pages/protected/vendors/list.tsx"),
+          route(path(APP_ROUTES.VENDOR), "pages/protected/vendors/detail.tsx"),
           route(path(APP_ROUTES.PROFILE), "pages/protected/profile.tsx"),
           route(
             path(APP_ROUTES.RESET_PASSWORD),

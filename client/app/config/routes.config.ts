@@ -29,6 +29,10 @@ export const APP_ROUTES = {
   CUSTOMER: "/customers/:id",
   ORDERS: "/orders",
   ORDER: "/orders/:id",
+  STAFF: "/staff",
+  STAFF_MEMBER: "/staff/:id",
+  VENDORS: "/vendors",
+  VENDOR: "/vendors/:id",
   PROFILE: "/profile",
   RESET_PASSWORD: "/reset-password",
   SETTINGS: "/settings",
@@ -50,11 +54,24 @@ export function orderPath(id: string) {
   return fillPath(APP_ROUTES.ORDER, { id });
 }
 
+export function staffPath(id: string) {
+  return fillPath(APP_ROUTES.STAFF_MEMBER, { id });
+}
+
+export function vendorPath(id: string) {
+  return fillPath(APP_ROUTES.VENDOR, { id });
+}
+
 /** Opens the orders list modal on the dashboard. */
 export const DASHBOARD_ORDERS_QUERY = "orders";
 
-export function dashboardOrdersPath() {
-  return `${APP_ROUTES.DASHBOARD}?${DASHBOARD_ORDERS_QUERY}=1`;
+/** With the orders modal: pre-apply the "Late only" filter. */
+export const DASHBOARD_DELAYED_QUERY = "delayed";
+
+export function dashboardOrdersPath(options: { delayed?: boolean } = {}) {
+  const query = new URLSearchParams({ [DASHBOARD_ORDERS_QUERY]: "1" });
+  if (options.delayed) query.set(DASHBOARD_DELAYED_QUERY, "1");
+  return `${APP_ROUTES.DASHBOARD}?${query.toString()}`;
 }
 
 export const COMMON_ROUTES = {
@@ -68,6 +85,8 @@ export const ROUTE_TITLES: Record<string, string> = {
   [APP_ROUTES.DASHBOARD]: "Home",
   [APP_ROUTES.CUSTOMERS]: "Customers",
   [APP_ROUTES.ORDERS]: "Orders",
+  [APP_ROUTES.STAFF]: "Staff",
+  [APP_ROUTES.VENDORS]: "Vendors",
   [APP_ROUTES.PROFILE]: "Profile",
   [APP_ROUTES.RESET_PASSWORD]: "Reset password",
   [APP_ROUTES.SETTINGS]: "Settings",
@@ -101,6 +120,22 @@ export const ROUTE_PERMISSIONS: Partial<
   },
   [APP_ROUTES.ORDER]: {
     resource: EResource.ORDERS,
+    action: EPermissionAction.READ,
+  },
+  [APP_ROUTES.STAFF]: {
+    resource: EResource.STAFF,
+    action: EPermissionAction.READ,
+  },
+  [APP_ROUTES.STAFF_MEMBER]: {
+    resource: EResource.STAFF,
+    action: EPermissionAction.READ,
+  },
+  [APP_ROUTES.VENDORS]: {
+    resource: EResource.VENDORS,
+    action: EPermissionAction.READ,
+  },
+  [APP_ROUTES.VENDOR]: {
+    resource: EResource.VENDORS,
     action: EPermissionAction.READ,
   },
 };

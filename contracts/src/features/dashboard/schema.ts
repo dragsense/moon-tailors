@@ -6,6 +6,15 @@ export const dashboardStatSchema = z.object({
   label: z.string(),
   value: z.number(),
   hint: z.string().optional(),
+  /** Set for money stats (e.g. "PKR") so the client shows the currency. */
+  currency: z.string().optional(),
+  /** Colour for the whole card: green (success) or red (danger). */
+  tone: z.enum(["default", "success", "danger"]).optional(),
+  /** Optional second line, e.g. "Revenue PKR 120,000". */
+  subLabel: z.string().optional(),
+  subValue: z.number().optional(),
+  subCurrency: z.string().optional(),
+  subTone: z.enum(["default", "success", "danger"]).optional(),
 });
 
 /** Lightweight activity row (example feed). */

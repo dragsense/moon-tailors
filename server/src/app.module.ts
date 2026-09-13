@@ -21,6 +21,8 @@ import { DashboardModule } from "./modules/dashboard";
 import { CustomersModule } from "./modules/customers/customers.module";
 import { MeasurementsModule } from "./modules/measurements/measurements.module";
 import { OrdersModule } from "./modules/orders/orders.module";
+import { StaffModule } from "./modules/staff/staff.module";
+import { VendorsModule } from "./modules/vendors/vendors.module";
 import { ServerGatewayModule } from "./common/gateways";
 
 @Module({
@@ -43,6 +45,8 @@ import { ServerGatewayModule } from "./common/gateways";
     MeasurementsModule,
     CustomersModule,
     OrdersModule,
+    StaffModule,
+    VendorsModule,
     DashboardModule,
   ],
   controllers: [HealthController],

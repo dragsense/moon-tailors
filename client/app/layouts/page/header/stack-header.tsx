@@ -47,7 +47,7 @@ export function StackHeader({
       {breadcrumb}
       {title || description || actions ? (
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="space-y-1">
+          <div className="min-w-0 space-y-1">
             {title ? (
               <h1 className="font-heading text-2xl font-semibold tracking-tight sm:text-3xl">
                 {title}

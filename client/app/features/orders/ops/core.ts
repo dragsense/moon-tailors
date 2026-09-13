@@ -1,5 +1,6 @@
 import type {
   TCreateOrderData,
+  TReceiveOrderPaymentData,
   TUpdateOrderData,
 } from "@moon-tailors/contracts";
 import {
@@ -12,6 +13,7 @@ import { invalidateQueriesKey, type OpConfig, type OpsBag } from "~/ops";
 import { opT } from "~/locales";
 import { ordersService } from "../api";
 import { CreateOrderModal } from "../form/create-order-modal";
+import { ReceivePaymentModal } from "../form/receive-payment-modal";
 import { OrderList } from "../list/order-list";
 import { LatestOrders } from "../list/latest-orders";
 import { orderKeys } from "../query-keys";
@@ -127,6 +129,24 @@ export const orderOpsCore = {
     onSuccess: refreshOrders,
     onError: (error: Error) => {
       console.error("[orders.updateOrder]", error.message);
+    },
+  },
+  /** Opened with the order as payload — money received from the customer. */
+  receiveOrderPayment: {
+    kind: "mutation" as const,
+    permission: {
+      resource: EResource.ORDERS,
+      action: EPermissionAction.UPDATE,
+    },
+    mutate: (vars: unknown) => {
+      const { id, ...body } = vars as TReceiveOrderPaymentData & { id: string };
+      return ordersService.receivePayment(id, body);
+    },
+    component: ReceivePaymentModal,
+    auto: true,
+    onSuccess: refreshOrders,
+    onError: (error: Error) => {
+      console.error("[orders.receiveOrderPayment]", error.message);
     },
   },
 } satisfies Record<string, OpConfig>;

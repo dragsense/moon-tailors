@@ -21,7 +21,7 @@ export function DashboardView({
         : null;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex min-w-0 flex-col gap-4">
       {errorMessage ? (
         <Alert title={t("dashboard.loadError")} tone="danger">
           {errorMessage}
@@ -34,15 +34,15 @@ export function DashboardView({
         </p>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:items-start">
+      {/* Phones/tablets: stacked (glance, then orders).
+          Desktop: glance takes the width, latest orders in a narrow right column. */}
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:items-start">
         <div className="min-w-0">
-          <OpsComponent store={store} name="listCustomers" />
-        </div>
-
-        <aside className="hidden flex-col gap-4 lg:sticky lg:top-6 lg:flex">
           {summary ? <DashboardStats summary={summary} /> : null}
+        </div>
+        <div className="min-w-0">
           <OpsComponent store={store} name="latestOrders" />
-        </aside>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,8 @@ export enum EResource {
   CUSTOMERS = "customers",
   MEASUREMENTS = "measurements",
   ORDERS = "orders",
+  STAFF = "staff",
+  VENDORS = "vendors",
 }
 
 export enum EPermissionAction {

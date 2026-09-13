@@ -47,6 +47,7 @@ export function OrderList({
   const { t } = useI18n();
   const view = useOp(store, "viewOrder");
   const updateOrder = useOp(store, "updateOrder");
+  const receivePayment = useOp(store, "receiveOrderPayment");
   const page = data as IPaginatedResponse<IOrder> | undefined;
   const rows = page?.data ?? [];
   const errorMessage =
@@ -137,6 +138,19 @@ export function OrderList({
                       ))}
                     </SelectContent>
                   </Select>
+                ) : null}
+                {receivePayment.kind === "mutation" &&
+                receivePayment.allowed &&
+                order.remainingAmount > 0 &&
+                order.status !== EOrderStatus.CANCELED ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="w-full sm:h-9 sm:w-auto"
+                    onClick={() => receivePayment.open(order)}
+                  >
+                    {t("orders.receivePayment")}
+                  </Button>
                 ) : null}
                 {view.kind === "query" && view.allowed ? (
                   <Button

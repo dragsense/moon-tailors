@@ -68,7 +68,7 @@ export function CustomerDetail({
                     size="sm"
                     className="size-10 shrink-0 text-sm"
                   />
-                  <h2 className="font-heading truncate text-base font-semibold">
+                  <h2 className="font-heading break-words text-base font-semibold">
                     {customer.name}
                   </h2>
                 </div>
