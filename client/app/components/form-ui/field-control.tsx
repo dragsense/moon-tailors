@@ -1,4 +1,6 @@
 import type { IFieldMeta } from "@moon-tailors/contracts";
+import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { useState } from "react";
 import {
   Controller,
   type Control,
@@ -39,6 +41,7 @@ export function FieldControl<TFieldValues extends FieldValues>({
   disabled = false,
 }: FieldControlProps<TFieldValues>) {
   const { t } = useI18n();
+  const [showPassword, setShowPassword] = useState(false);
   const label = meta.label ?? String(name);
   const selectPlaceholder =
     meta.placeholder ?? t("common.actions.select");
@@ -123,6 +126,7 @@ export function FieldControl<TFieldValues extends FieldValues>({
     );
   }
 
+  const isPassword = meta.type === "password";
   const inputType =
     meta.type === "email" ||
     meta.type === "password" ||
@@ -134,14 +138,37 @@ export function FieldControl<TFieldValues extends FieldValues>({
   return (
     <div className="space-y-1.5">
       <Label htmlFor={name}>{label}</Label>
-      <Input
-        id={name}
-        type={inputType}
-        placeholder={meta.placeholder}
-        disabled={disabled}
-        aria-invalid={Boolean(error)}
-        {...register(name)}
-      />
+      <div className="relative">
+        <Input
+          id={name}
+          type={isPassword && showPassword ? "text" : inputType}
+          placeholder={meta.placeholder}
+          disabled={disabled}
+          aria-invalid={Boolean(error)}
+          className={isPassword ? "pe-10" : undefined}
+          {...register(name)}
+        />
+        {isPassword ? (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            disabled={disabled}
+            aria-label={
+              showPassword
+                ? t("common.actions.hidePassword")
+                : t("common.actions.showPassword")
+            }
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 end-0 flex w-10 items-center justify-center text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
+          >
+            {showPassword ? (
+              <EyeOffIcon className="size-4" />
+            ) : (
+              <EyeIcon className="size-4" />
+            )}
+          </button>
+        ) : null}
+      </div>
       <FieldError message={error} />
     </div>
   );

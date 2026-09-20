@@ -25,11 +25,11 @@ export class DashboardService implements OnModuleInit {
   }
 
   async getSummary(): Promise<IDashboardSummary> {
-    const [customerCount, orderCounts, staffCounts, vendorSummary] =
+    const [customerCount, orderCounts, staffSummary, vendorSummary] =
       await Promise.all([
         this.customers.count(),
         this.orders.counts(),
-        this.staff.counts(),
+        this.staff.summary(),
         this.vendors.summary(),
       ]);
     const activity =
@@ -92,9 +92,17 @@ export class DashboardService implements OnModuleInit {
         },
         {
           key: "staff",
-          label: "Active staff",
-          value: staffCounts.active,
-          hint: `${staffCounts.fixed} fixed · ${staffCounts.onDemand} on demand`,
+          label: "Staff",
+          value: staffSummary.count,
+          hint: `${staffSummary.fixed} fixed · ${staffSummary.onDemand} on demand`,
+          hintParams: {
+            fixed: staffSummary.fixed,
+            onDemand: staffSummary.onDemand,
+          },
+          subLabel: "Paid",
+          subValue: staffSummary.paid,
+          subCurrency: "PKR",
+          subTone: "success",
         },
         {
           key: "vendors",

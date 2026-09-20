@@ -8,6 +8,7 @@ import {
   EPermissionAction,
   EResource,
   vendorListQuerySchema,
+  vendorSlipQuerySchema,
 } from "@moon-tailors/contracts";
 import { opT } from "~/locales";
 import { formatAmount } from "~/lib/money";
@@ -23,6 +24,7 @@ import { VendorDetail } from "../view/vendor-detail";
 export const refreshVendors = (_r: unknown, _v: unknown, _ops: OpsBag) => {
   invalidateQueriesKey(vendorKeys.list());
   invalidateQueriesKey(vendorKeys.detail());
+  invalidateQueriesKey(vendorKeys.slip());
 };
 
 /** Payment form vars: API body + vendor details shown in the confirm box. */
@@ -150,6 +152,27 @@ export const vendorOpsCore = {
     onSuccess: refreshVendors,
     onError: (error: Error) => {
       console.error("[vendors.addVendorPayment]", error.message);
+    },
+  },
+  /** Params are set by the slip panel; idle until both id and month are set. */
+  getVendorSlip: {
+    kind: "query" as const,
+    permission: {
+      resource: EResource.VENDORS,
+      action: EPermissionAction.READ,
+    },
+    initialParams: { id: "", month: "" },
+    queryKey: vendorKeys.slipWithParams,
+    invalidateKey: vendorKeys.slip(),
+    fetch: (params: Record<string, unknown>) => {
+      const id = typeof params.id === "string" ? params.id : "";
+      const month = typeof params.month === "string" ? params.month : "";
+      if (!id || !month) return Promise.resolve(null);
+      return vendorsService.slip(id, vendorSlipQuerySchema.parse({ month }));
+    },
+    auto: false,
+    onError: (error: Error) => {
+      console.error("[vendors.getVendorSlip]", error.message);
     },
   },
 } satisfies Record<string, OpConfig>;

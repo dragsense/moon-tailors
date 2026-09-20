@@ -1,10 +1,15 @@
-import { EStaffPayType, EStaffStatus } from "@moon-tailors/contracts";
+import { EStaffPayType } from "@moon-tailors/contracts";
 import type { TranslationKey } from "~/locales";
 
 type Translate = (key: TranslationKey) => string;
 
 export function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** Current month as `YYYY-MM`. */
+export function currentMonth() {
+  return new Date().toISOString().slice(0, 7);
 }
 
 export function staffPayTypeLabel(payType: EStaffPayType, t: Translate) {
@@ -20,19 +25,12 @@ export function staffPayTypeOptions(t: Translate) {
   ];
 }
 
-export function staffStatusLabel(status: EStaffStatus, t: Translate) {
-  return status === EStaffStatus.LEFT ? t("staff.left") : t("staff.active");
-}
-
-export function staffStatusOptions(t: Translate) {
-  return [
-    { label: t("staff.active"), value: EStaffStatus.ACTIVE },
-    { label: t("staff.left"), value: EStaffStatus.LEFT },
-  ];
-}
-
-/** SchemaForm labels for plain staff info (create + edit). */
-export function staffProfileFieldConfig(t: Translate) {
+/**
+ * SchemaForm labels for the whole staff form (create + edit). On-demand staff
+ * have no monthly salary — their totals come from each payment instead — so
+ * the salary field disappears when that pay type is chosen.
+ */
+export function staffFieldConfig(t: Translate) {
   return {
     name: {
       label: t("staff.name"),
@@ -46,19 +44,16 @@ export function staffProfileFieldConfig(t: Translate) {
       label: t("staff.role"),
       placeholder: t("staff.rolePlaceholder"),
     },
-    address: { label: t("staff.address") },
-    notes: { label: t("staff.notes") },
-  };
-}
-
-/** SchemaForm labels for a work period (create + rejoin). */
-export function staffPeriodFieldConfig(t: Translate) {
-  return {
-    joinDate: { label: t("staff.joinDate") },
     payType: {
       label: t("staff.payType"),
       options: staffPayTypeOptions(t),
     },
-    salary: { label: t("staff.salary") },
+    salary: {
+      label: t("staff.salary"),
+      hidden: (values: { payType?: EStaffPayType }) =>
+        values.payType === EStaffPayType.ON_DEMAND,
+    },
+    address: { label: t("staff.address") },
+    notes: { label: t("staff.notes") },
   };
 }

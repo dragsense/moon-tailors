@@ -6,6 +6,7 @@ import { VendorPurchaseItemEntity } from "./entities/vendor-purchase-item.entity
 import { VendorPurchaseEntity } from "./entities/vendor-purchase.entity";
 import { VendorEntity } from "./entities/vendor.entity";
 import { VendorsController } from "./vendors.controller";
+import { VendorSlipService } from "./vendor-slip.service";
 import { VendorsService } from "./vendors.service";
 
 @Module({
@@ -19,7 +20,7 @@ import { VendorsService } from "./vendors.service";
     PermissionsModule,
   ],
   controllers: [VendorsController],
-  providers: [VendorsService],
+  providers: [VendorsService, VendorSlipService],
   exports: [VendorsService],
 })
 export class VendorsModule {}

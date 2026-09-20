@@ -5,10 +5,12 @@ import type {
   TCreateVendorData,
   TCreateVendorPaymentData,
   TCreateVendorPurchaseData,
+  IVendorSlip,
   TUpdateVendorData,
   TVendorListQuery,
+  TVendorSlipQuery,
 } from "@moon-tailors/contracts";
-import { BaseService } from "~/lib/api";
+import { API_BASE_URL, BaseService } from "~/lib/api";
 
 class VendorsService extends BaseService<
   IVendor,
@@ -52,6 +54,16 @@ class VendorsService extends BaseService<
       undefined,
       `/${id}/payments`,
     );
+  }
+
+  /** GET /vendors/:id/slip?month=YYYY-MM — single object, not a page. */
+  slip(id: string, query: TVendorSlipQuery) {
+    return this.getSingle<IVendorSlip>(undefined, query, `/${id}/slip`);
+  }
+
+  /** The printable statement, opened in a new tab rather than fetched. */
+  printUrl(id: string, month: string) {
+    return `${API_BASE_URL}/vendors/${id}/slip/print?month=${month}`;
   }
 }
 

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   type IVendor,
+  type IVendorSlip,
   type TUpdateVendorData,
   updateVendorSchema,
 } from "@moon-tailors/contracts";
@@ -10,6 +11,10 @@ import { Button } from "~/components/ui/button";
 import { CustomerAvatar } from "~/features/customers/components/customer-avatar";
 import { useI18n } from "~/hooks/use-i18n";
 import { useOp, type QueryOpComponentProps } from "~/ops";
+import {
+  currentMonth,
+  VendorMonthlySlip,
+} from "../components/vendor-monthly-slip";
 import { VendorPaymentHistory } from "../components/vendor-payment-history";
 import { VendorPurchaseHistory } from "../components/vendor-purchase-history";
 import { VendorPaymentBadge } from "../components/vendor-payment-badge";
@@ -25,15 +30,27 @@ export function VendorDetail({
 }: QueryOpComponentProps) {
   const { t } = useI18n();
   const [editing, setEditing] = useState(false);
+  const [slipMonth, setSlipMonth] = useState(currentMonth);
   const updateVendor = useOp(store, "updateVendor");
   const addPurchase = useOp(store, "addVendorPurchase");
   const addPayment = useOp(store, "addVendorPayment");
+  const slipOp = useOp(store, "getVendorSlip");
+
+  const vendor = data as IVendor | undefined;
+  const vendorId = vendor?.id;
+  const slipSetParams = slipOp.kind === "query" ? slipOp.setParams : undefined;
+
+  // The slip op is idle until it knows both the vendor and the month.
+  useEffect(() => {
+    if (!vendorId || !slipMonth || !slipSetParams) return;
+    slipSetParams({ id: vendorId, month: slipMonth });
+  }, [vendorId, slipMonth, slipSetParams]);
 
   if (updateVendor.kind !== "mutation") return null;
   if (addPurchase.kind !== "mutation") return null;
   if (addPayment.kind !== "mutation") return null;
+  if (slipOp.kind !== "query") return null;
 
-  const vendor = data as IVendor | undefined;
   const errorMessage =
     isError && error instanceof Error
       ? error.message
@@ -152,6 +169,20 @@ export function VendorDetail({
               <VendorTotals totals={vendor.totals} />
             </section>
           </div>
+
+          <VendorMonthlySlip
+            month={slipMonth}
+            onMonthChange={setSlipMonth}
+            slip={(slipOp.data as IVendorSlip | null) ?? null}
+            isPending={slipOp.isPending}
+            error={
+              slipOp.isError
+                ? slipOp.error instanceof Error
+                  ? slipOp.error.message
+                  : t("vendors.loadFailed")
+                : null
+            }
+          />
 
           <div className="grid min-w-0 gap-4 lg:grid-cols-2 lg:items-start">
             <VendorPurchaseHistory purchases={vendor.purchases ?? []} />

@@ -2,15 +2,16 @@ import type {
   IMessageResponse,
   IPaginatedResponse,
   IStaff,
+  IStaffSlip,
   TCreateStaffData,
+  TCreateStaffPaymentData,
   TGetQuery,
-  TStaffLeaveData,
   TStaffListQuery,
-  TStaffRejoinData,
-  TStaffSalaryData,
+  TStaffSlipQuery,
   TUpdateStaffData,
+  TUpdateStaffPaymentData,
 } from "@moon-tailors/contracts";
-import { BaseService } from "~/lib/api";
+import { API_BASE_URL, BaseService } from "~/lib/api";
 
 class StaffService extends BaseService<
   IStaff,
@@ -38,31 +39,36 @@ class StaffService extends BaseService<
     return this.patch<IMessageResponse>(id)(body);
   }
 
-  /** PATCH /staff/:id/salary — open work period only. */
-  changeSalary(id: string, body: TStaffSalaryData) {
+  /** POST /staff/:id/payments — uncapped. */
+  addPayment(id: string, body: TCreateStaffPaymentData) {
+    return this.post<IMessageResponse>(
+      body as unknown as TUpdateStaffData,
+      undefined,
+      `/${id}/payments`,
+    );
+  }
+
+  /** PATCH /staff/:id/payments/:paymentId */
+  updatePayment(
+    id: string,
+    paymentId: string,
+    body: TUpdateStaffPaymentData,
+  ) {
     return this.patch<IMessageResponse>()(
       body as unknown as TUpdateStaffData,
       undefined,
-      `/${id}/salary`,
+      `/${id}/payments/${paymentId}`,
     );
   }
 
-  /** POST /staff/:id/leave — body shape differs from create/update. */
-  leave(id: string, body: TStaffLeaveData) {
-    return this.post<IMessageResponse>(
-      body as unknown as TUpdateStaffData,
-      undefined,
-      `/${id}/leave`,
-    );
+  /** GET /staff/:id/slip?month=YYYY-MM — single object, not a page. */
+  slip(id: string, query: TStaffSlipQuery) {
+    return this.getSingle<IStaffSlip>(undefined, query, `/${id}/slip`);
   }
 
-  /** POST /staff/:id/rejoin */
-  rejoin(id: string, body: TStaffRejoinData) {
-    return this.post<IMessageResponse>(
-      body as unknown as TUpdateStaffData,
-      undefined,
-      `/${id}/rejoin`,
-    );
+  /** The printable slip page, opened in a new tab rather than fetched. */
+  printUrl(id: string, month: string) {
+    return `${API_BASE_URL}/staff/${id}/slip/print?month=${month}`;
   }
 }
 

@@ -6,4 +6,7 @@ export const staffKeys = {
   detail: () => [...staffKeys.all, "detail"] as const,
   detailWithParams: (params: Record<string, unknown>) =>
     [...staffKeys.detail(), params] as const,
+  slip: () => [...staffKeys.all, "slip"] as const,
+  slipWithParams: (params: Record<string, unknown>) =>
+    [...staffKeys.slip(), params] as const,
 };

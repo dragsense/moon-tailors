@@ -6,6 +6,11 @@ export const dashboardStatSchema = z.object({
   label: z.string(),
   value: z.number(),
   hint: z.string().optional(),
+  /**
+   * Numbers the client substitutes into its own translation of `hint`, so the
+   * card reads in the user's language instead of the server's English.
+   */
+  hintParams: z.record(z.union([z.string(), z.number()])).optional(),
   /** Set for money stats (e.g. "PKR") so the client shows the currency. */
   currency: z.string().optional(),
   /** Colour for the whole card: green (success) or red (danger). */

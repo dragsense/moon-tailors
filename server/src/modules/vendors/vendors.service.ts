@@ -10,12 +10,14 @@ import type {
   IVendor,
   IVendorPayment,
   IVendorPurchase,
+  IVendorSlip,
   IVendorTotals,
   TCreateVendorData,
   TCreateVendorPaymentData,
   TCreateVendorPurchaseData,
   TUpdateVendorData,
   TVendorListQuery,
+  TVendorSlipQuery,
 } from "@moon-tailors/contracts";
 import {
   EResource,
@@ -215,6 +217,55 @@ export class VendorsService implements OnModuleInit {
     return { message: "Payment added successfully" };
   }
 
+  /**
+   * One month with the vendor: purchases made, payments sent, and what is
+   * left of that month alone. The running balance across all time is on the
+   * vendor record, not here.
+   */
+  async slip(key: EntityKey, query: TVendorSlipQuery): Promise<IVendorSlip> {
+    const vendor = await this.entity.require(key);
+    const { month } = query;
+    const start = `${month}-01`;
+    const end = monthEnd(month);
+    const manager = this.entity.getManager();
+
+    const purchaseRow = await manager
+      .getRepository(VendorPurchaseItemEntity)
+      .createQueryBuilder("item")
+      .innerJoin("item.purchase", "purchase")
+      .select("COALESCE(SUM(item.quantity * item.unitPrice), 0)", "amount")
+      .where("purchase.vendorId = :vendorId", { vendorId: vendor.id })
+      .andWhere("item.deletedAt IS NULL")
+      .andWhere("purchase.deletedAt IS NULL")
+      .andWhere("purchase.purchaseDate BETWEEN :start AND :end", { start, end })
+      .getRawOne<{ amount: string }>();
+
+    const paymentRow = await manager
+      .getRepository(VendorPaymentEntity)
+      .createQueryBuilder("payment")
+      .select("COALESCE(SUM(payment.amount), 0)", "amount")
+      .where("payment.vendorId = :vendorId", { vendorId: vendor.id })
+      .andWhere("payment.deletedAt IS NULL")
+      .andWhere("payment.paymentDate BETWEEN :start AND :end", { start, end })
+      .getRawOne<{ amount: string }>();
+
+    const total = money(Number(purchaseRow?.amount ?? 0));
+    const paid = money(Number(paymentRow?.amount ?? 0));
+
+    return {
+      month,
+      vendor: {
+        id: vendor.id,
+        name: vendor.name,
+        phone: vendor.phone,
+        company: vendor.company ?? undefined,
+      },
+      total,
+      paid,
+      remaining: money(total - paid),
+    };
+  }
+
   /** Vendor count, total paid and total still owed across all vendors, for the dashboard. */
   async summary(): Promise<{ count: number; paid: number; remaining: number }> {
     const count = await this.entity
@@ -347,6 +398,13 @@ function toPaymentPayload(row: VendorPaymentEntity): IVendorPayment {
     amount: Number(row.amount),
     notes: row.notes ?? undefined,
   };
+}
+
+/** Last calendar day of a `YYYY-MM` month, as `YYYY-MM-DD`. */
+function monthEnd(month: string): string {
+  const [year, index] = month.split("-").map(Number);
+  // Day 0 of the next month is the last day of this one.
+  return new Date(Date.UTC(year, index, 0)).toISOString().slice(0, 10);
 }
 
 function money(value: number): number {

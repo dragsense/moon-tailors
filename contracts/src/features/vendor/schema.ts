@@ -128,5 +128,32 @@ export const vendorSchema = vendorProfileSchema.extend({
   updatedAt: z.string().datetime(),
 });
 
+/** GET /vendors/:id/slip?month=YYYY-MM */
+export const vendorSlipQuerySchema = z.object({
+  month: z
+    .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Month must look like 2026-09"),
+});
+
+/**
+ * One month with a vendor: what was bought, what was paid, what is left of
+ * that month. The running balance across all time lives on the vendor itself.
+ */
+export const vendorSlipSchema = z.object({
+  month: z.string(),
+  vendor: z.object({
+    id: z.string().uuid(),
+    name: z.string(),
+    phone: z.string(),
+    company: z.string().optional(),
+  }),
+  /** Purchases dated in the month, added up from their line items. */
+  total: z.number(),
+  /** Payments dated in the month. */
+  paid: z.number(),
+  /** `total − paid` for the month alone, negative when overpaid. */
+  remaining: z.number(),
+});
+
 export const vendorListQuerySchema = listQuerySchema.extend({});
 export const paginatedVendorsSchema = createPaginatedSchema(vendorSchema);

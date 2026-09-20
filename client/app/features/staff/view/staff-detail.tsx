@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  EStaffStatus,
+  EStaffPayType,
   type IStaff,
+  type IStaffSlip,
   type TUpdateStaffData,
   updateStaffSchema,
 } from "@moon-tailors/contracts";
@@ -10,10 +11,16 @@ import { Alert } from "~/components/layout-ui";
 import { Button } from "~/components/ui/button";
 import { CustomerAvatar } from "~/features/customers/components/customer-avatar";
 import { useI18n } from "~/hooks/use-i18n";
+import { formatAmount } from "~/lib/money";
+import { cn } from "~/lib/utils";
 import { useOp, type QueryOpComponentProps } from "~/ops";
-import { StaffEmploymentHistory } from "../components/staff-employment-history";
-import { StaffStatusBadge } from "../components/staff-status-badge";
-import { staffProfileFieldConfig } from "../lib/labels";
+import { StaffMonthlySlip } from "../components/staff-monthly-slip";
+import { StaffPaymentHistory } from "../components/staff-payment-history";
+import {
+  currentMonth,
+  staffFieldConfig,
+  staffPayTypeLabel,
+} from "../lib/labels";
 
 export function StaffDetail({
   data,
@@ -22,20 +29,29 @@ export function StaffDetail({
   error,
   store,
 }: QueryOpComponentProps) {
-  const { t } = useI18n();
+  const { t, intlLocale } = useI18n();
   const [editing, setEditing] = useState(false);
+  const [slipMonth, setSlipMonth] = useState(currentMonth);
   const updateStaff = useOp(store, "updateStaff");
-  const leaveStaff = useOp(store, "leaveStaff");
-  const rejoinStaff = useOp(store, "rejoinStaff");
-  const changeSalary = useOp(store, "changeStaffSalary");
-
-  if (updateStaff.kind !== "mutation") return null;
-  if (leaveStaff.kind !== "mutation") return null;
-  if (rejoinStaff.kind !== "mutation") return null;
-  if (changeSalary.kind !== "mutation") return null;
+  const addPayment = useOp(store, "addStaffPayment");
+  const editPayment = useOp(store, "editStaffPayment");
+  const slipOp = useOp(store, "getStaffSlip");
 
   const staff = data as IStaff | undefined;
-  const hasLeft = staff?.status === EStaffStatus.LEFT;
+  const staffId = staff?.id;
+  const slipSetParams = slipOp.kind === "query" ? slipOp.setParams : undefined;
+
+  // The slip op is idle until it knows both the staff member and the month.
+  useEffect(() => {
+    if (!staffId || !slipMonth || !slipSetParams) return;
+    slipSetParams({ id: staffId, month: slipMonth });
+  }, [staffId, slipMonth, slipSetParams]);
+
+  if (updateStaff.kind !== "mutation") return null;
+  if (addPayment.kind !== "mutation") return null;
+  if (editPayment.kind !== "mutation") return null;
+  if (slipOp.kind !== "query") return null;
+
   const errorMessage =
     isError && error instanceof Error
       ? error.message
@@ -69,38 +85,15 @@ export function StaffDetail({
                 <h2 className="font-heading break-words text-base font-semibold">
                   {staff.name}
                 </h2>
-                <StaffStatusBadge status={staff.status} />
               </div>
               <div className="flex flex-wrap gap-2">
-                {hasLeft && rejoinStaff.allowed ? (
+                {addPayment.allowed ? (
                   <Button
                     type="button"
                     size="sm"
-                    onClick={() => rejoinStaff.open(staff)}
+                    onClick={() => addPayment.open(staff)}
                   >
-                    {t("staff.rejoin")}
-                  </Button>
-                ) : null}
-                {!hasLeft &&
-                staff.currentEmployment &&
-                changeSalary.allowed ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => changeSalary.open(staff)}
-                  >
-                    {t("staff.changeSalary")}
-                  </Button>
-                ) : null}
-                {!hasLeft && leaveStaff.allowed ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => leaveStaff.open(staff)}
-                  >
-                    {t("staff.markLeft")}
+                    {t("staff.addPayment")}
                   </Button>
                 ) : null}
                 {updateStaff.allowed ? (
@@ -121,7 +114,7 @@ export function StaffDetail({
               <SchemaForm
                 schema={updateStaffSchema}
                 defaultValues={staff}
-                fieldConfig={staffProfileFieldConfig(t)}
+                fieldConfig={staffFieldConfig(t)}
                 submitLabel={t("common.actions.save")}
                 onSubmit={async (values) => {
                   await updateStaff.run({
@@ -135,18 +128,78 @@ export function StaffDetail({
               <dl className="grid gap-2 text-sm sm:grid-cols-2">
                 <Row label={t("staff.phone")} value={staff.phone} />
                 <Row label={t("staff.role")} value={staff.role || "—"} />
+                <Row
+                  label={t("staff.payType")}
+                  value={staffPayTypeLabel(staff.payType, t)}
+                />
+                {/* On-demand staff have no salary — totals live on each payment. */}
+                {staff.payType === EStaffPayType.ON_DEMAND ? null : (
+                  <Row
+                    label={t("staff.salary")}
+                    value={formatAmount(staff.salary, intlLocale)}
+                  />
+                )}
                 <Row label={t("staff.address")} value={staff.address || "—"} />
                 {staff.notes ? (
                   <Row label={t("staff.notes")} value={staff.notes} />
                 ) : null}
+
+                <Row
+                  label={t("staff.totalPaid")}
+                  value={formatAmount(staff.totalPaid, intlLocale)}
+                  tone="paid"
+                />
+                {/*
+                    Only on-demand staff accumulate a lifetime total, from the
+                    totals on their payments. A fixed salary has none, because
+                    nothing records which months they worked.
+                  */}
+                {staff.totalRemaining === null ? null : (
+                  <Row
+                    label={
+                      staff.totalRemaining < 0
+                        ? t("staff.totalOverpaid")
+                        : t("staff.totalRemaining")
+                    }
+                    value={formatAmount(
+                      Math.abs(staff.totalRemaining),
+                      intlLocale,
+                    )}
+                    tone={staff.totalRemaining < 0 ? "over" : "due"}
+                  />
+                )}
+                {staff.totalAmount === null ? null : (
+                  <Row
+                    label={t("staff.totalAmount")}
+                    value={formatAmount(staff.totalAmount, intlLocale)}
+                  />
+                )}
               </dl>
             )}
           </section>
 
-          {/* Left column on wide screens; below the details on phones. */}
-          <StaffEmploymentHistory
-            employments={staff.employments}
-            className="lg:order-first"
+          <StaffMonthlySlip
+            month={slipMonth}
+            onMonthChange={setSlipMonth}
+            slip={(slipOp.data as IStaffSlip | null) ?? null}
+            isPending={slipOp.isPending}
+            error={
+              slipOp.isError
+                ? slipOp.error instanceof Error
+                  ? slipOp.error.message
+                  : t("staff.loadFailed")
+                : null
+            }
+          />
+
+          <StaffPaymentHistory
+            payments={staff.payments ?? []}
+            onEdit={
+              editPayment.allowed
+                ? (payment) => editPayment.open({ staff, payment })
+                : undefined
+            }
+            className="lg:col-span-2"
           />
         </div>
       ) : null}
@@ -154,11 +207,26 @@ export function StaffDetail({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+/** Money colours: paid out, still owed, paid beyond the total. */
+const toneClass = {
+  paid: "font-semibold text-emerald-700 dark:text-emerald-400",
+  due: "font-semibold text-amber-700 dark:text-amber-400",
+  over: "font-semibold text-rose-700 dark:text-rose-400",
+};
+
+function Row({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: keyof typeof toneClass;
+}) {
   return (
     <div>
       <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className="tabular-nums">{value}</dd>
+      <dd className={cn("tabular-nums", tone && toneClass[tone])}>{value}</dd>
     </div>
   );
 }

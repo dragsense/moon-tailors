@@ -6,6 +6,7 @@ import {
   updateVendorSchema,
   vendorListQuerySchema,
   vendorPurchaseItemInputSchema,
+  vendorSlipQuerySchema,
 } from "./schema.js";
 
 export type TCreateVendorData = z.infer<typeof createVendorSchema>;
@@ -20,3 +21,4 @@ export type TCreateVendorPurchaseData = z.infer<
 export type TCreateVendorPaymentData = z.infer<
   typeof createVendorPaymentSchema
 >;
+export type TVendorSlipQuery = z.infer<typeof vendorSlipQuerySchema>;

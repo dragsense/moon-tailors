@@ -6,4 +6,7 @@ export const vendorKeys = {
   detail: () => [...vendorKeys.all, "detail"] as const,
   detailWithParams: (params: Record<string, unknown>) =>
     [...vendorKeys.detail(), params] as const,
+  slip: () => [...vendorKeys.all, "slip"] as const,
+  slipWithParams: (params: Record<string, unknown>) =>
+    [...vendorKeys.slip(), params] as const,
 };

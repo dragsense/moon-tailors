@@ -3,7 +3,7 @@ import { staffListQuerySchema } from "@moon-tailors/contracts";
 import type { ReactNode } from "react";
 import { SchemaFilters } from "~/components/form-ui";
 import { useI18n } from "~/hooks/use-i18n";
-import { staffStatusOptions } from "../lib/labels";
+import { staffPayTypeOptions } from "../lib/labels";
 
 type StaffFiltersProps = {
   values: Partial<TStaffListQuery>;
@@ -19,19 +19,19 @@ export function StaffFilters({ values, onChange, actions }: StaffFiltersProps) {
     <SchemaFilters
       schema={staffListQuerySchema}
       values={values}
-      names={["search", "status"]}
+      names={["search", "payType"]}
       onChange={onChange}
       fieldConfig={{
         search: {
           label: t("common.actions.search"),
           placeholder: t("staff.searchPlaceholder"),
         },
-        status: {
-          label: t("staff.status"),
-          placeholder: t("staff.anyStatus"),
+        payType: {
+          label: t("staff.payType"),
+          placeholder: t("staff.anyPayType"),
           options: [
-            { label: t("staff.anyStatus"), value: "__any__" },
-            ...staffStatusOptions(t),
+            { label: t("staff.anyPayType"), value: "__any__" },
+            ...staffPayTypeOptions(t),
           ],
         },
       }}
@@ -40,7 +40,7 @@ export function StaffFilters({ values, onChange, actions }: StaffFiltersProps) {
       {({ fields }) => (
         <div className="flex w-full flex-wrap items-end gap-2">
           <div className="min-w-0 flex-1 basis-48">{fields.search}</div>
-          <div className="w-36 shrink-0">{fields.status}</div>
+          <div className="w-40 shrink-0">{fields.payType}</div>
           {actions ? (
             <div className="flex shrink-0 items-end gap-2">{actions}</div>
           ) : null}

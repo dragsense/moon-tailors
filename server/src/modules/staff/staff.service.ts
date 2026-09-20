@@ -2,39 +2,36 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  NotFoundException,
   OnModuleInit,
 } from "@nestjs/common";
-import type { EntityManager } from "typeorm";
 import type {
   IMessageResponse,
   IPaginatedResponse,
   IStaff,
-  IStaffEmployment,
+  IStaffPayment,
+  IStaffSlip,
   TCreateStaffData,
+  TCreateStaffPaymentData,
   TGetQuery,
-  TStaffLeaveData,
   TStaffListQuery,
-  TStaffRejoinData,
-  TStaffSalaryData,
+  TStaffSlipQuery,
   TUpdateStaffData,
+  TUpdateStaffPaymentData,
 } from "@moon-tailors/contracts";
 import {
   EResource,
   EStaffPayType,
-  EStaffStatus,
   filtersFromListSchema,
   staffListQuerySchema,
 } from "@moon-tailors/contracts";
 import { ActivityLogRegistry } from "../../common/activity-logs";
 import { PermissionsService } from "../../common/base";
 import { RequestContext } from "../../common/context";
-import {
-  EntityService,
-  type IBoundEntityService,
-} from "../../common/database";
+import { EntityService, type IBoundEntityService } from "../../common/database";
 import { DomainEventRegistry } from "../../common/events";
 import type { EntityKey, EntityQueryConfig } from "../../common/query";
-import { StaffEmploymentEntity } from "./entities/staff-employment.entity";
+import { StaffPaymentEntity } from "./entities/staff-payment.entity";
 import { StaffEntity } from "./entities/staff.entity";
 
 export const STAFF_QUERY: EntityQueryConfig = {
@@ -44,8 +41,6 @@ export const STAFF_QUERY: EntityQueryConfig = {
   defaultSort: { field: "createdAt", order: "DESC" },
   filters: filtersFromListSchema(staffListQuerySchema),
 };
-
-const EMPLOYMENTS = "employments";
 
 @Injectable()
 export class StaffService implements OnModuleInit {
@@ -71,232 +66,264 @@ export class StaffService implements OnModuleInit {
     });
   }
 
-  /** Profile + first work period in one transaction. */
   async create(input: TCreateStaffData): Promise<IMessageResponse> {
-    const phone = input.phone.trim();
-    await this.assertPhoneAvailable(phone);
-
-    await this.entity.create(
-      {
-        name: input.name.trim(),
-        phone,
-        role: emptyToNull(input.role),
-        status: EStaffStatus.ACTIVE,
-        address: emptyToNull(input.address),
-        notes: emptyToNull(input.notes),
-      },
-      {
-        afterCreate: async (staff, manager) => {
-          await this.openEmployment(manager, staff.id, {
-            joinDate: input.joinDate,
-            payType: input.payType,
-            salary: input.salary,
-          });
-        },
-      },
-    );
-
+    await this.assertPhoneAvailable(input.phone.trim());
+    await this.entity.create(this.toRow(input));
     return { message: "Staff member created successfully" };
   }
 
   async list(query: TStaffListQuery): Promise<IPaginatedResponse<IStaff>> {
-    const page = await this.entity.list(query, { _relations: [EMPLOYMENTS] });
-    return { ...page, data: page.data.map((row) => this.toPayload(row)) };
+    const page = await this.entity.list(query);
+    const totals = await this.totalsByStaff(page.data.map((row) => row.id));
+    return {
+      ...page,
+      data: page.data.map((row) => toPayload(row, totals.get(row.id))),
+    };
   }
 
+  /** Detail adds every payment, newest first. */
   async get(key: EntityKey, query: TGetQuery = {}): Promise<IStaff> {
-    const relations = new Set([...(query._relations ?? []), EMPLOYMENTS]);
     const row = await this.entity.require(key, {
-      _relations: [...relations],
+      _relations: query._relations,
       _select: query._select,
     });
-    return this.toPayload(row);
+    const [totals, payments] = await Promise.all([
+      this.totalsByStaff([row.id]),
+      this.paymentsFor(row.id),
+    ]);
+    const payType = payTypeOf(row);
+    return {
+      ...toPayload(row, totals.get(row.id)),
+      payments: payments.map((payment) => toPaymentPayload(payment, payType)),
+    };
   }
 
-  /** Profile only — work periods change through leave / rejoin. */
   async update(
     key: EntityKey,
     input: TUpdateStaffData,
   ): Promise<IMessageResponse> {
     const existing = await this.entity.require(key);
-    const patch: Partial<StaffEntity> = {};
-    if (input.name !== undefined) patch.name = input.name.trim();
     if (input.phone !== undefined) {
-      const phone = input.phone.trim();
-      await this.assertPhoneAvailable(phone, existing.id);
-      patch.phone = phone;
+      await this.assertPhoneAvailable(input.phone.trim(), existing.id);
     }
-    if (input.role !== undefined) patch.role = emptyToNull(input.role);
-    if (input.address !== undefined) patch.address = emptyToNull(input.address);
-    if (input.notes !== undefined) patch.notes = emptyToNull(input.notes);
+    const patch = this.toRow(input);
     if (Object.keys(patch).length > 0) {
       await this.entity.update(key, patch);
     }
     return { message: "Staff member updated successfully" };
   }
 
-  /** Change salary / rate on the open work period (active staff only). */
-  async changeSalary(
+  /**
+   * Record money handed to the staff member. Deliberately uncapped — the
+   * amount is informational and nothing is derived from it.
+   */
+  async addPayment(
     key: EntityKey,
-    input: TStaffSalaryData,
+    input: TCreateStaffPaymentData,
   ): Promise<IMessageResponse> {
     const staff = await this.entity.require(key);
-    if (staff.status === EStaffStatus.LEFT) {
+    const onDemand = payTypeOf(staff) === EStaffPayType.ON_DEMAND;
+    // Fixed staff take their total from the salary, so any total sent is dropped.
+    if (onDemand && input.totalAmount === undefined) {
       throw new BadRequestException(
-        "This staff member has left — rejoin them to set a new salary",
+        "Total amount is required for on-demand staff",
       );
     }
+
     const manager = this.entity.getManager();
-    const open = await this.openPeriod(manager, staff.id);
-    if (!open) {
-      throw new BadRequestException("No open work period to update");
-    }
-    open.salary = String(input.salary ?? 0);
-    await manager.save(open);
-    return { message: "Salary updated successfully" };
-  }
-
-  /** Close the open work period and mark the staff member as left. */
-  async leave(
-    key: EntityKey,
-    input: TStaffLeaveData,
-  ): Promise<IMessageResponse> {
-    const existing = await this.entity.require(key);
-    if (existing.status === EStaffStatus.LEFT) {
-      throw new BadRequestException("This staff member has already left");
-    }
-
-    await this.entity.update(
-      key,
-      { status: EStaffStatus.LEFT },
-      {
-        afterUpdate: async (staff, manager) => {
-          const open = await this.openPeriod(manager, staff.id);
-          if (!open) {
-            throw new BadRequestException("No open work period to close");
-          }
-          if (input.leaveDate < dateOnly(open.joinDate)) {
-            throw new BadRequestException(
-              "Leave date must be on or after join date",
-            );
-          }
-          open.leaveDate = input.leaveDate;
-          open.leaveReason = emptyToNull(input.reason);
-          await manager.save(open);
-        },
-      },
+    await manager.save(
+      manager.getRepository(StaffPaymentEntity).create({
+        staffId: staff.id,
+        tenantId: RequestContext.get("tenantId") ?? null,
+        paymentDate: input.paymentDate,
+        totalAmount: onDemand ? String(input.totalAmount) : null,
+        amount: String(input.amount),
+        notes: emptyToNull(input.notes),
+      }),
     );
-    return { message: "Staff member marked as left" };
+    return { message: "Payment added successfully" };
   }
 
-  /** Start a new work period — pay type and salary may differ from before. */
-  async rejoin(
+  /** Correct a recorded payment. Same rules as adding one. */
+  async updatePayment(
     key: EntityKey,
-    input: TStaffRejoinData,
+    paymentId: string,
+    input: TUpdateStaffPaymentData,
   ): Promise<IMessageResponse> {
-    const existing = await this.entity.require(key);
-    if (existing.status === EStaffStatus.ACTIVE) {
-      throw new BadRequestException("This staff member is already active");
+    const staff = await this.entity.require(key);
+    const manager = this.entity.getManager();
+    const repo = manager.getRepository(StaffPaymentEntity);
+    const payment = await repo.findOne({
+      where: { id: paymentId, staffId: staff.id },
+    });
+    if (!payment || payment.deletedAt) {
+      throw new NotFoundException("Payment not found");
     }
 
-    await this.entity.update(
-      key,
-      { status: EStaffStatus.ACTIVE },
-      {
-        afterUpdate: async (staff, manager) => {
-          const lastDate = await this.lastHistoryDate(manager, staff.id);
-          if (lastDate && input.joinDate <= lastDate) {
-            throw new BadRequestException(
-              `Rejoin date must be after ${lastDate} (end of their previous work period)`,
-            );
-          }
-          await this.openEmployment(manager, staff.id, {
-            joinDate: input.joinDate,
-            payType: input.payType,
-            salary: input.salary,
-            notes: input.notes,
-          });
-        },
-      },
-    );
-    return { message: "Staff member rejoined" };
+    const onDemand = payTypeOf(staff) === EStaffPayType.ON_DEMAND;
+    if (input.paymentDate !== undefined) {
+      payment.paymentDate = input.paymentDate;
+    }
+    if (input.amount !== undefined) payment.amount = String(input.amount);
+    if (input.notes !== undefined) payment.notes = emptyToNull(input.notes);
+    // A fixed-salary member has no per-payment total, whatever was sent.
+    if (!onDemand) {
+      payment.totalAmount = null;
+    } else if (input.totalAmount !== undefined) {
+      payment.totalAmount = String(input.totalAmount);
+    }
+
+    await manager.save(payment);
+    return { message: "Payment updated successfully" };
   }
 
-  /** Active headcount split by the pay type of their open period. */
-  async counts(): Promise<{ active: number; fixed: number; onDemand: number }> {
+  /**
+   * One month of pay: what it was worth, what was handed over, what is left.
+   * The total is the monthly salary for fixed staff and the month’s recorded
+   * totals for on-demand staff. None of it caps `addPayment` — it is a
+   * read-out, not a rule.
+   */
+  async slip(key: EntityKey, query: TStaffSlipQuery): Promise<IStaffSlip> {
+    const staff = await this.entity.require(key);
+    const { month } = query;
+    const payType = payTypeOf(staff);
+    const payments = await this.paymentsFor(staff.id, {
+      start: `${month}-01`,
+      end: monthEnd(month),
+    });
+
+    const paid = money(
+      payments.reduce((sum, payment) => sum + Number(payment.amount), 0),
+    );
+    const salary = Number(staff.salary ?? 0);
+    const total =
+      payType === EStaffPayType.ON_DEMAND
+        ? money(
+            payments.reduce(
+              (sum, payment) => sum + Number(payment.totalAmount ?? 0),
+              0,
+            ),
+          )
+        : salary;
+    const totals = await this.totalsByStaff([staff.id]);
+
+    return {
+      month,
+      staff: {
+        id: staff.id,
+        name: staff.name,
+        phone: staff.phone,
+        role: staff.role ?? undefined,
+        payType,
+        salary,
+      },
+      total,
+      paid,
+      remaining: money(total - paid),
+      totalPaid: totals.get(staff.id)?.paid ?? 0,
+    };
+  }
+
+  /** Headcount split by pay type, plus everything ever paid, for the dashboard. */
+  async summary(): Promise<{
+    count: number;
+    fixed: number;
+    onDemand: number;
+    paid: number;
+  }> {
     const rows = await this.entity
-      .getManager()
-      .getRepository(StaffEmploymentEntity)
-      .createQueryBuilder("employment")
-      .innerJoin("employment.staff", "staff")
-      .select("employment.payType", "payType")
-      .addSelect("COUNT(DISTINCT staff.id)", "count")
+      .getRepository()
+      .createQueryBuilder("staff")
+      .select("staff.payType", "payType")
+      .addSelect("COUNT(staff.id)", "count")
       .where("staff.deletedAt IS NULL")
-      .andWhere("staff.status = :status", { status: EStaffStatus.ACTIVE })
-      .andWhere("employment.deletedAt IS NULL")
-      .andWhere("employment.leaveDate IS NULL")
-      .groupBy("employment.payType")
+      .groupBy("staff.payType")
       .getRawMany<{ payType: EStaffPayType; count: string }>();
     const byType = (type: EStaffPayType) =>
       Number(rows.find((row) => row.payType === type)?.count ?? 0);
     const fixed = byType(EStaffPayType.FIXED);
     const onDemand = byType(EStaffPayType.ON_DEMAND);
-    return { active: fixed + onDemand, fixed, onDemand };
+
+    const totals = await this.totalsByStaff();
+    let total = 0;
+    for (const value of totals.values()) total += value.paid;
+
+    return { count: fixed + onDemand, fixed, onDemand, paid: money(total) };
   }
 
-  private openEmployment(
-    manager: EntityManager,
+  /** Payments for one staff member, newest first, optionally within a date range. */
+  private paymentsFor(
     staffId: string,
-    input: {
-      joinDate: string;
-      payType: EStaffPayType;
-      salary?: number;
-      notes?: string;
-    },
-  ): Promise<StaffEmploymentEntity> {
-    const repo = manager.getRepository(StaffEmploymentEntity);
-    return manager.save(
-      repo.create({
-        staffId,
-        tenantId: RequestContext.get("tenantId") ?? null,
-        joinDate: input.joinDate,
-        leaveDate: null,
-        payType: input.payType,
-        salary: String(input.salary ?? 0),
-        leaveReason: null,
-        notes: emptyToNull(input.notes),
-      }),
-    );
+    range?: { start: string; end: string },
+  ): Promise<StaffPaymentEntity[]> {
+    const qb = this.entity
+      .getManager()
+      .getRepository(StaffPaymentEntity)
+      .createQueryBuilder("payment")
+      .where("payment.staffId = :staffId", { staffId })
+      .andWhere("payment.deletedAt IS NULL")
+      .orderBy("payment.paymentDate", "DESC")
+      .addOrderBy("payment.createdAt", "DESC");
+    if (range) {
+      qb.andWhere("payment.paymentDate BETWEEN :start AND :end", range);
+    }
+    return qb.getMany();
   }
 
-  private openPeriod(manager: EntityManager, staffId: string) {
-    return manager
-      .getRepository(StaffEmploymentEntity)
-      .createQueryBuilder("employment")
-      .where("employment.staffId = :staffId", { staffId })
-      .andWhere("employment.deletedAt IS NULL")
-      .andWhere("employment.leaveDate IS NULL")
-      .orderBy("employment.joinDate", "DESC")
-      .getOne();
+  /**
+   * Lifetime paid and recorded totals per staff member, in one grouped query.
+   * Pass no ids for everyone (dashboard). `total` stays null when no payment
+   * carried one, which is always the case for fixed-salary staff.
+   */
+  private async totalsByStaff(
+    staffIds?: string[],
+  ): Promise<Map<string, StaffTotals>> {
+    const result = new Map<string, StaffTotals>();
+    if (staffIds && staffIds.length === 0) return result;
+
+    const qb = this.entity
+      .getManager()
+      .getRepository(StaffPaymentEntity)
+      .createQueryBuilder("payment")
+      .innerJoin("payment.staff", "staff")
+      .select("payment.staffId", "staffId")
+      .addSelect("COALESCE(SUM(payment.amount), 0)", "paid")
+      .addSelect("SUM(payment.totalAmount)", "total")
+      .where("payment.deletedAt IS NULL")
+      .andWhere("staff.deletedAt IS NULL")
+      .groupBy("payment.staffId");
+    if (staffIds) {
+      qb.andWhere("payment.staffId IN (:...staffIds)", { staffIds });
+    }
+
+    const rows = await qb.getRawMany<{
+      staffId: string;
+      paid: string;
+      total: string | null;
+    }>();
+    for (const row of rows) {
+      const paid = money(Number(row.paid));
+      const total = row.total === null ? null : money(Number(row.total));
+      result.set(row.staffId, {
+        paid,
+        total,
+        remaining: total === null ? null : money(total - paid),
+      });
+    }
+    return result;
   }
 
-  /** Latest join or leave date across every period — new periods start after it. */
-  private async lastHistoryDate(
-    manager: EntityManager,
-    staffId: string,
-  ): Promise<string | null> {
-    const periods = await manager
-      .getRepository(StaffEmploymentEntity)
-      .createQueryBuilder("employment")
-      .where("employment.staffId = :staffId", { staffId })
-      .andWhere("employment.deletedAt IS NULL")
-      .getMany();
-    const dates = periods.flatMap((period) =>
-      period.leaveDate
-        ? [dateOnly(period.joinDate), dateOnly(period.leaveDate)]
-        : [dateOnly(period.joinDate)],
-    );
-    return dates.length ? dates.sort().at(-1)! : null;
+  /** Trimmed columns for create / update — only the keys actually supplied. */
+  private toRow(input: TUpdateStaffData): Partial<StaffEntity> {
+    const patch: Partial<StaffEntity> = {};
+    if (input.name !== undefined) patch.name = input.name.trim();
+    if (input.phone !== undefined) patch.phone = input.phone.trim();
+    if (input.role !== undefined) patch.role = emptyToNull(input.role);
+    if (input.payType !== undefined) patch.payType = input.payType;
+    if (input.salary !== undefined) patch.salary = String(input.salary);
+    if (input.address !== undefined) patch.address = emptyToNull(input.address);
+    if (input.notes !== undefined) patch.notes = emptyToNull(input.notes);
+    return patch;
   }
 
   private async assertPhoneAvailable(phone: string, excludeId?: string) {
@@ -315,44 +342,72 @@ export class StaffService implements OnModuleInit {
       );
     }
   }
-
-  private toPayload(row: StaffEntity): IStaff {
-    const employments = (row.employments ?? [])
-      .filter((employment) => !employment.deletedAt)
-      .map(toEmploymentPayload)
-      .sort((a, b) => b.joinDate.localeCompare(a.joinDate));
-    return {
-      id: row.id,
-      name: row.name,
-      phone: row.phone,
-      role: row.role ?? undefined,
-      status:
-        row.status === EStaffStatus.LEFT
-          ? EStaffStatus.LEFT
-          : EStaffStatus.ACTIVE,
-      address: row.address ?? undefined,
-      notes: row.notes ?? undefined,
-      currentEmployment: employments[0] ?? null,
-      employments,
-      createdAt: toIso(row.createdAt),
-      updatedAt: toIso(row.updatedAt),
-    };
-  }
 }
 
-function toEmploymentPayload(row: StaffEmploymentEntity): IStaffEmployment {
+/** Lifetime figures for one staff member. `total` is on-demand only. */
+type StaffTotals = {
+  paid: number;
+  total: number | null;
+  remaining: number | null;
+};
+
+const NO_TOTALS: StaffTotals = { paid: 0, total: null, remaining: null };
+
+function toPayload(row: StaffEntity, totals: StaffTotals = NO_TOTALS): IStaff {
+  // A fixed salary has no lifetime total, even if older payments still carry
+  // one from a spell on demand — their totals come from the salary instead.
+  const lifetime =
+    payTypeOf(row) === EStaffPayType.ON_DEMAND ? totals : NO_TOTALS;
+
   return {
     id: row.id,
-    joinDate: dateOnly(row.joinDate),
-    leaveDate: row.leaveDate ? dateOnly(row.leaveDate) : null,
-    payType:
-      row.payType === EStaffPayType.ON_DEMAND
-        ? EStaffPayType.ON_DEMAND
-        : EStaffPayType.FIXED,
+    name: row.name,
+    phone: row.phone,
+    role: row.role ?? undefined,
+    payType: payTypeOf(row),
     salary: Number(row.salary ?? 0),
-    leaveReason: row.leaveReason ?? undefined,
+    address: row.address ?? undefined,
+    notes: row.notes ?? undefined,
+    totalPaid: totals.paid,
+    totalAmount: lifetime.total,
+    totalRemaining: lifetime.remaining,
+    createdAt: toIso(row.createdAt),
+    updatedAt: toIso(row.updatedAt),
+  };
+}
+
+/** `payType` is the member's current one — fixed staff report no total. */
+function toPaymentPayload(
+  row: StaffPaymentEntity,
+  payType: EStaffPayType,
+): IStaffPayment {
+  const total =
+    payType === EStaffPayType.ON_DEMAND ? row.totalAmount : null;
+  return {
+    id: row.id,
+    paymentDate: dateOnly(row.paymentDate),
+    totalAmount: total === null ? null : Number(total),
+    amount: Number(row.amount),
     notes: row.notes ?? undefined,
   };
+}
+
+/** Anything not explicitly on-demand is a fixed salary. */
+function payTypeOf(row: StaffEntity): EStaffPayType {
+  return row.payType === EStaffPayType.ON_DEMAND
+    ? EStaffPayType.ON_DEMAND
+    : EStaffPayType.FIXED;
+}
+
+function money(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/** Last calendar day of a `YYYY-MM` month, as `YYYY-MM-DD`. */
+function monthEnd(month: string): string {
+  const [year, index] = month.split("-").map(Number);
+  // Day 0 of the next month is the last day of this one.
+  return new Date(Date.UTC(year, index, 0)).toISOString().slice(0, 10);
 }
 
 function emptyToNull(value?: string | null) {

@@ -7,6 +7,7 @@ import {
 } from "~/features/settings";
 import { useI18n } from "~/hooks/use-i18n";
 import { cn } from "~/lib/utils";
+import type { TranslationKey } from "~/locales";
 import { dashboardOrdersPath } from "~/config/routes.config";
 
 type DashboardStatsProps = {
@@ -22,6 +23,32 @@ const HIDDEN_STAT_KEYS = new Set(["delayed"]);
 /** Cards that keep their plain-text hint (e.g. staff: fixed · on demand). */
 const SHOW_HINT_KEYS = new Set(["staff"]);
 
+/**
+ * The API labels every stat in English. The client owns the wording instead,
+ * keyed by `stat.key`, and falls back to the server text for anything new.
+ */
+const STAT_LABELS: Record<string, TranslationKey> = {
+  customers: "dashboard.stats.customers",
+  orders: "dashboard.stats.orders",
+  active: "dashboard.stats.active",
+  delivered: "dashboard.stats.delivered",
+  delayed: "dashboard.stats.delayed",
+  staff: "dashboard.stats.staff",
+  vendors: "dashboard.stats.vendors",
+  vendorPaid: "dashboard.stats.vendorPaid",
+  vendorPayable: "dashboard.stats.vendorPayable",
+};
+
+const STAT_SUB_LABELS: Record<string, TranslationKey> = {
+  orders: "dashboard.stats.subTotal",
+  delivered: "dashboard.stats.subRevenue",
+  staff: "dashboard.stats.subPaid",
+};
+
+const STAT_HINTS: Record<string, TranslationKey> = {
+  staff: "dashboard.stats.staffHint",
+};
+
 const cardToneClass: Record<Tone, string> = {
   default: "border-border/60 bg-background",
   success:
@@ -36,7 +63,22 @@ const textToneClass: Record<Tone, string> = {
 };
 
 function StatCard({ stat, intlLocale }: { stat: Stat; intlLocale?: string }) {
+  const { t } = useI18n();
   const tone = stat.tone ?? "default";
+
+  const labelKey = STAT_LABELS[stat.key];
+  const label = labelKey ? t(labelKey) : stat.label;
+  const subLabelKey = STAT_SUB_LABELS[stat.key];
+  const subLabel = subLabelKey ? t(subLabelKey) : stat.subLabel;
+
+  // With a breakdown to show, that takes the top line and the label joins the
+  // number instead ("18 fixed · 2 on demand" over "20 staff").
+  const hintKey = STAT_HINTS[stat.key];
+  const hint = !SHOW_HINT_KEYS.has(stat.key)
+    ? null
+    : hintKey
+      ? t(hintKey, stat.hintParams)
+      : (stat.hint ?? null);
 
   return (
     <div
@@ -46,7 +88,7 @@ function StatCard({ stat, intlLocale }: { stat: Stat; intlLocale?: string }) {
       )}
     >
       <p className="text-muted-foreground break-words text-xs font-medium leading-tight">
-        {stat.label}
+        {hint ?? label}
       </p>
       <p
         className={cn(
@@ -59,11 +101,16 @@ function StatCard({ stat, intlLocale }: { stat: Stat; intlLocale?: string }) {
           <CompactAmount
             value={stat.value}
             currency={stat.currency}
-            label={stat.label}
+            label={label}
           />
         ) : (
           stat.value.toLocaleString(intlLocale)
         )}
+        {hint ? (
+          <span className="text-muted-foreground ml-1.5 text-xs font-normal lowercase tracking-normal">
+            {label}
+          </span>
+        ) : null}
       </p>
       {stat.subValue !== undefined ? (
         <p
@@ -74,18 +121,12 @@ function StatCard({ stat, intlLocale }: { stat: Stat; intlLocale?: string }) {
               : "text-muted-foreground",
           )}
         >
-          {stat.subLabel ? `${stat.subLabel} ` : ""}
+          {subLabel ? `${subLabel} ` : ""}
           <CompactAmount
             value={stat.subValue}
             currency={stat.subCurrency ?? null}
-            label={
-              stat.subLabel ? `${stat.label} · ${stat.subLabel}` : stat.label
-            }
+            label={subLabel ? `${label} · ${subLabel}` : label}
           />
-        </p>
-      ) : stat.hint && SHOW_HINT_KEYS.has(stat.key) ? (
-        <p className="text-muted-foreground break-words text-xs leading-tight">
-          {stat.hint}
         </p>
       ) : null}
     </div>

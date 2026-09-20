@@ -1,9 +1,8 @@
-import { Column, Entity, Index, OneToMany } from "typeorm";
-import { EStaffStatus } from "@moon-tailors/contracts";
+import { Column, Entity, Index } from "typeorm";
+import { EStaffPayType } from "@moon-tailors/contracts";
 import { GeneralBaseEntity } from "../../../common/entities";
-import { StaffEmploymentEntity } from "./staff-employment.entity";
 
-/** Plain staff info. Join date, pay type and salary live in `employments`. */
+/** A person who works in the shop, and how they are paid. */
 @Entity("staff")
 export class StaffEntity extends GeneralBaseEntity {
   @Column({ type: "varchar", length: 120 })
@@ -17,15 +16,16 @@ export class StaffEntity extends GeneralBaseEntity {
   role!: string | null;
 
   @Index()
-  @Column({ type: "varchar", length: 16, default: EStaffStatus.ACTIVE })
-  status!: EStaffStatus;
+  @Column({ type: "varchar", length: 16, default: EStaffPayType.FIXED })
+  payType!: EStaffPayType;
+
+  /** Monthly salary for fixed staff; the usual rate for on-demand staff. */
+  @Column({ type: "decimal", precision: 12, scale: 2, default: 0 })
+  salary!: string;
 
   @Column({ type: "varchar", length: 255, nullable: true })
   address!: string | null;
 
   @Column({ type: "text", nullable: true })
   notes!: string | null;
-
-  @OneToMany(() => StaffEmploymentEntity, (employment) => employment.staff)
-  employments?: StaffEmploymentEntity[];
 }

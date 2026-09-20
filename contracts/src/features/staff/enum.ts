@@ -2,12 +2,6 @@
 export enum EStaffPayType {
   /** Fixed monthly salary. */
   FIXED = "fixed",
-  /** Paid per job / on demand. */
+  /** Paid per job / on demand — no monthly figure to owe against. */
   ON_DEMAND = "on_demand",
-}
-
-/** Whether the staff member currently works in the shop. */
-export enum EStaffStatus {
-  ACTIVE = "active",
-  LEFT = "left",
 }

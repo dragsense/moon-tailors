@@ -15,5 +15,6 @@ export const vendorDetailOps = createOps({
     "updateVendor",
     "addVendorPurchase",
     "addVendorPayment",
+    "getVendorSlip",
   ]),
 });

@@ -1,6 +1,17 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
 import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Res,
+} from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
+import type { Response } from "express";
+import {
+  createStaffPaymentSchema,
   createStaffSchema,
   EPermissionAction,
   EResource,
@@ -8,27 +19,31 @@ import {
   type IMessageResponse,
   type IPaginatedResponse,
   type IStaff,
-  staffLeaveSchema,
+  type IStaffSlip,
   staffListQuerySchema,
-  staffRejoinSchema,
-  staffSalarySchema,
+  staffSlipQuerySchema,
   type TCreateStaffData,
+  type TCreateStaffPaymentData,
   type TGetQuery,
-  type TStaffLeaveData,
   type TStaffListQuery,
-  type TStaffRejoinData,
-  type TStaffSalaryData,
+  type TStaffSlipQuery,
   type TUpdateStaffData,
+  type TUpdateStaffPaymentData,
+  updateStaffPaymentSchema,
   updateStaffSchema,
 } from "@moon-tailors/contracts";
 import { RequirePermissions } from "../../common/auth";
 import { ZodValidationPipe } from "../../common/validation";
+import { StaffSlipService } from "./staff-slip.service";
 import { StaffService } from "./staff.service";
 
 @ApiTags("Staff")
 @Controller("staff")
 export class StaffController {
-  constructor(private readonly staffService: StaffService) {}
+  constructor(
+    private readonly staffService: StaffService,
+    private readonly slips: StaffSlipService,
+  ) {}
 
   @Post()
   @RequirePermissions({
@@ -66,6 +81,38 @@ export class StaffController {
     return this.staffService.get(id, query);
   }
 
+  @Get(":id/slip")
+  @RequirePermissions({
+    resource: EResource.STAFF,
+    action: EPermissionAction.READ,
+  })
+  slip(
+    @Param("id") id: string,
+    @Query(new ZodValidationPipe(staffSlipQuerySchema))
+    query: TStaffSlipQuery,
+  ): Promise<IStaffSlip> {
+    return this.staffService.slip(id, query);
+  }
+
+  /**
+   * The slip as a printable page. Uses `@Res()` directly so the global
+   * `BrowserHtmlInterceptor` (which wraps GET+HTML responses in its own debug
+   * shell) never touches this body.
+   */
+  @Get(":id/slip/print")
+  @RequirePermissions({
+    resource: EResource.STAFF,
+    action: EPermissionAction.READ,
+  })
+  async printSlip(
+    @Param("id") id: string,
+    @Query(new ZodValidationPipe(staffSlipQuerySchema))
+    query: TStaffSlipQuery,
+    @Res() res: Response,
+  ): Promise<void> {
+    res.type("html").send(await this.slips.render(id, query));
+  }
+
   @Patch(":id")
   @RequirePermissions({
     resource: EResource.STAFF,
@@ -79,42 +126,30 @@ export class StaffController {
     return this.staffService.update(id, body);
   }
 
-  @Patch(":id/salary")
+  @Post(":id/payments")
   @RequirePermissions({
     resource: EResource.STAFF,
     action: EPermissionAction.UPDATE,
   })
-  changeSalary(
+  addPayment(
     @Param("id") id: string,
-    @Body(new ZodValidationPipe(staffSalarySchema))
-    body: TStaffSalaryData,
+    @Body(new ZodValidationPipe(createStaffPaymentSchema))
+    body: TCreateStaffPaymentData,
   ): Promise<IMessageResponse> {
-    return this.staffService.changeSalary(id, body);
+    return this.staffService.addPayment(id, body);
   }
 
-  @Post(":id/leave")
+  @Patch(":id/payments/:paymentId")
   @RequirePermissions({
     resource: EResource.STAFF,
     action: EPermissionAction.UPDATE,
   })
-  leave(
+  updatePayment(
     @Param("id") id: string,
-    @Body(new ZodValidationPipe(staffLeaveSchema))
-    body: TStaffLeaveData,
+    @Param("paymentId") paymentId: string,
+    @Body(new ZodValidationPipe(updateStaffPaymentSchema))
+    body: TUpdateStaffPaymentData,
   ): Promise<IMessageResponse> {
-    return this.staffService.leave(id, body);
-  }
-
-  @Post(":id/rejoin")
-  @RequirePermissions({
-    resource: EResource.STAFF,
-    action: EPermissionAction.UPDATE,
-  })
-  rejoin(
-    @Param("id") id: string,
-    @Body(new ZodValidationPipe(staffRejoinSchema))
-    body: TStaffRejoinData,
-  ): Promise<IMessageResponse> {
-    return this.staffService.rejoin(id, body);
+    return this.staffService.updatePayment(id, paymentId, body);
   }
 }

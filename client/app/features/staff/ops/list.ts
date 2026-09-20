@@ -13,8 +13,8 @@ export const staffDetailOps = createOps({
   ops: pickOps(staffOpsCore, [
     "getStaff",
     "updateStaff",
-    "changeStaffSalary",
-    "leaveStaff",
-    "rejoinStaff",
+    "addStaffPayment",
+    "editStaffPayment",
+    "getStaffSlip",
   ]),
 });
